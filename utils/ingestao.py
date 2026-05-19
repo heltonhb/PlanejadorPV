@@ -137,6 +137,44 @@ def processar_instagram(perfil: str, max_posts: int = 10) -> dict:
         return {"status": "erro", "mensagem": str(e)}
 
 
+def processar_planilha(arquivo_bytes: bytes, nome_arquivo: str = "planilha.xlsx") -> dict:
+    try:
+        import openpyxl
+        import io
+        wb = openpyxl.load_workbook(io.BytesIO(arquivo_bytes), data_only=True)
+        partes = [f"Planilha: {nome_arquivo}", f"Abas: {wb.sheetnames}"]
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            linhas_texto = []
+            for row in ws.iter_rows(values_only=True):
+                celulas = [str(c).strip() for c in row if c is not None]
+                if celulas:
+                    linhas_texto.append(" | ".join(celulas))
+            if linhas_texto:
+                partes.append(f"\n--- {sheet_name} ---\n" + "\n".join(linhas_texto))
+        texto = "\n\n".join(partes)
+        if not texto.strip():
+            return {"status": "erro", "mensagem": "Nenhum conteúdo extraído da planilha."}
+        import time
+        documento_id = f"xls_{int(time.time())}"
+        chunks = chunk_texto(texto)
+        total = salvar_chunks(
+            chunks,
+            documento_id=documento_id,
+            extra_metadata={"fonte": "planilha", "arquivo": nome_arquivo, "titulo": nome_arquivo},
+        )
+        return {
+            "status": "ok",
+            "total_chunks": total,
+            "total_caracteres": len(texto),
+            "titulo": nome_arquivo,
+        }
+    except ImportError:
+        return {"status": "erro", "mensagem": "openpyxl não instalado. Execute: pip install openpyxl"}
+    except Exception as e:
+        return {"status": "erro", "mensagem": str(e)}
+
+
 def processar_texto(texto: str, titulo: str = "") -> dict:
     try:
         if not texto.strip():
