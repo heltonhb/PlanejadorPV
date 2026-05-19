@@ -31,17 +31,35 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
     :root {
         --brand-blue: #005CAA;
+        --brand-blue-dark: #003F7A;
+        --brand-blue-light: #E8F0FE;
         --brand-green: #00A859;
+        --brand-green-light: #E6F9F0;
         --brand-yellow: #F7B731;
+        --brand-yellow-light: #FEF7E6;
         --brand-red: #E84C3D;
+        --brand-red-light: #FDEDEC;
+        --gray-50: #F8F9FA;
+        --gray-100: #F1F3F5;
+        --gray-200: #E9ECEF;
+        --gray-300: #DEE2E6;
+        --gray-600: #6C757D;
+        --gray-800: #343A40;
+        --gray-900: #212529;
         --pwa-bar-height: env(safe-area-inset-top, 0px);
     }
+
+    * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+
     div[data-testid="stMetricValue"] { color: var(--brand-blue); font-weight: 700; }
-    div[data-testid="stMetricLabel"] { font-size: 0.85rem; }
+    div[data-testid="stMetricLabel"] { font-size: 0.85rem; color: var(--gray-600); }
+
     .app-header {
-        background: linear-gradient(135deg, var(--brand-blue), #003F7A);
+        background: linear-gradient(135deg, var(--brand-blue), var(--brand-blue-dark));
         padding: 1rem 2rem;
         border-radius: 0.5rem;
         margin-bottom: 1.5rem;
@@ -51,15 +69,78 @@ st.markdown("""
     .app-logo { font-size: 2rem; line-height: 1; }
     .app-title { font-size: 1.5rem; font-weight: 700; }
     .app-subtitle { font-size: 0.875rem; opacity: 0.9; }
+
+    .app-card {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .app-card h1, .app-card h2, .app-card h3 { color: var(--brand-blue); margin-top: 1rem; }
+    .app-card h1:first-child, .app-card h2:first-child, .app-card h3:first-child { margin-top: 0; }
+    .app-card ul, .app-card ol { padding-left: 1.25rem; }
+    .app-card li { margin-bottom: 0.35rem; }
+    .app-card hr { border: none; border-top: 2px solid var(--gray-200); margin: 1rem 0; }
+    .app-card strong { color: var(--brand-blue-dark); }
+
+    .app-card-empty {
+        background: var(--gray-50);
+        border: 2px dashed var(--gray-300);
+        border-radius: 0.75rem;
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        color: var(--gray-600);
+        margin: 1rem 0;
+    }
+
+    .stAlert { border-left-color: var(--brand-blue) !important; }
+    div[data-testid="stAlert"] { border-radius: 0.5rem; }
+
+    div.stButton > button[kind="primary"] {
+        background: var(--brand-blue);
+        border: none;
+        font-weight: 600;
+        transition: all 0.15s ease;
+    }
+    div.stButton > button[kind="primary"]:hover:not(:disabled) {
+        background: var(--brand-blue-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,92,170,0.3);
+    }
+
+    .suggestion-btn div.stButton > button {
+        height: 100%;
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border-radius: 0.5rem;
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        color: var(--gray-800);
+        transition: all 0.15s ease;
+    }
+    .suggestion-btn div.stButton > button:hover {
+        background: var(--brand-blue-light);
+        border-color: var(--brand-blue);
+        color: var(--brand-blue);
+    }
+
+    .success-msg div[data-testid="stAlert"] { border-left-color: var(--brand-green) !important; }
+    .success-msg div[data-testid="stAlert"] svg { fill: var(--brand-green); }
+
     .app-footer {
         text-align: center;
-        color: #666;
+        color: var(--gray-600);
         font-size: 0.8rem;
         padding: 2rem 0 1rem;
-        border-top: 1px solid #e0e0e0;
+        border-top: 1px solid var(--gray-200);
         margin-top: 2rem;
     }
-    .stAlert { border-left-color: var(--brand-blue) !important; }
+
     @media (max-width: 640px) {
         .stMainBlockContainer { padding: 1rem 0.75rem !important; }
         .stColumn > div { min-width: 100% !important; }
@@ -69,6 +150,7 @@ st.markdown("""
         button[kind="primary"] { width: 100% !important; }
         .app-header { padding: 0.75rem 1rem; }
         .app-title { font-size: 1.25rem; }
+        .app-card { padding: 1rem; }
     }
 </style>
 <meta name="theme-color" content="#005CAA">
@@ -121,6 +203,12 @@ if "documentos" not in st.session_state:
     st.session_state.documentos = []
 if "processing" not in st.session_state:
     st.session_state.processing = False
+if "sugestoes_usadas" not in st.session_state:
+    st.session_state.sugestoes_usadas = False
+if "calendarios_gerados" not in st.session_state:
+    st.session_state.calendarios_gerados = 0
+if "campanhas_geradas" not in st.session_state:
+    st.session_state.campanhas_geradas = 0
 
 
 def exibir_fontes(fontes: list[dict]):
@@ -150,16 +238,18 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         pdf_bytes = uploaded_file.read()
                         resultado = processar_documento(pdf_bytes, nome_arquivo=nome)
                     if resultado["status"] == "ok":
-                        container.success(
-                            f"PDF: {nome} — {resultado['total_chunks']} chunks, "
-                            f"{resultado['total_caracteres']} caracteres "
-                            f"({resultado['paginas']} páginas, {resultado['metodo']})"
+                        container.markdown(
+                            f'<div class="success-msg">✅ **PDF processado:** {nome} — '
+                            f'{resultado["total_chunks"]} trechos, '
+                            f'{resultado["total_caracteres"]} caracteres '
+                            f'({resultado["paginas"]} páginas)</div>',
+                            unsafe_allow_html=True,
                         )
                         st.session_state.documentos.append(nome)
                     else:
                         container.error(f"{resultado['mensagem']}")
                 except Exception as e:
-                    container.error(f"Erro ao processar {nome}: {e}")
+                    container.error(f"Não foi possível processar **{nome}**. Verifique se o arquivo é um PDF válido e tente novamente.")
 
     elif aba == "URL":
         url = container.text_input(
@@ -177,7 +267,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                     )
                     st.session_state.documentos.append(url)
                 else:
-                    container.error(resultado["mensagem"])
+                    container.error(f"Não foi possível acessar a URL. Verifique se o link está correto e tente novamente.")
             else:
                 container.info("URL já processada.")
 
@@ -199,9 +289,11 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         )
                         st.session_state.documentos.append(nome)
                     else:
-                        container.error(resultado["mensagem"])
+                        container.error(f"{resultado['mensagem']}")
                 except Exception as e:
-                    container.error(f"Erro ao processar {nome}: {e}")
+                    container.error(f"Não foi possível processar **{nome}**. Verifique se o HTML é válido e tente novamente.")
+                    if len(str(e)) > 200:
+                        container.exception(e)
 
     elif aba == "Instagram":
         perfil = container.text_input(
@@ -220,7 +312,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                     )
                     st.session_state.documentos.append(chave)
                 else:
-                    container.error(resultado["mensagem"])
+                    container.error(f"Não foi possível acessar o perfil @{perfil}. Verifique o nome e tente novamente.")
             else:
                 container.info("Perfil já processado.")
 
@@ -250,6 +342,9 @@ def sidebar_upload():
                     pass
                 st.session_state.documentos = []
                 st.session_state.mensagens = []
+                st.session_state.sugestoes_usadas = False
+                st.session_state.calendarios_gerados = 0
+                st.session_state.campanhas_geradas = 0
                 st.rerun()
     else:
         st.sidebar.markdown("*Nenhuma fonte carregada.*")
@@ -271,17 +366,30 @@ with tab_dash:
     except Exception:
         total_chunks = 0
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Fontes carregadas", len(st.session_state.documentos))
-    col2.metric("Documentos na base", total_chunks)
-    col3.metric("Perguntas feitas", len([m for m in st.session_state.mensagens if m["role"] == "user"]))
+    total_perguntas = len([m for m in st.session_state.mensagens if m["role"] == "user"])
+    total_calendarios = st.session_state.get("calendarios_gerados", 0)
+    total_campanhas = st.session_state.get("campanhas_geradas", 0)
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("📁 Fontes carregadas", len(st.session_state.documentos))
+    col2.metric("📄 Documentos na base", total_chunks)
+    col3.metric("💬 Perguntas feitas", total_perguntas)
+    col4.metric("📊 Conteúdos gerados", total_calendarios + total_campanhas)
 
     if st.session_state.documentos:
-        st.markdown("#### Fontes")
-        for doc in st.session_state.documentos:
-            st.markdown(f"- {doc}")
+        st.markdown("#### Fontes carregadas")
+        cols = st.columns(2)
+        for i, doc in enumerate(st.session_state.documentos):
+            icon = "📄" if doc.endswith(".pdf") else "🔗" if doc.startswith("http") else "📷"
+            cols[i % 2].markdown(f"- {icon} {doc}")
     else:
-        st.info("Nenhuma fonte carregada ainda. Use a barra lateral para adicionar PDFs, URLs, HTML ou Instagram.")
+        st.markdown(
+            '<div class="app-card-empty">'
+            '📂 <strong>Nenhuma fonte carregada</strong><br>'
+            'Use a barra lateral para adicionar PDFs, URLs, HTML ou Instagram.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
     st.divider()
     with st.expander("📂 Adicionar fonte (dispositivos móveis)", expanded=False):
@@ -304,7 +412,7 @@ with tab_assistente:
         "Carregue informações na barra lateral e faça perguntas sobre o conteúdo."
     )
 
-    if not st.session_state.mensagens:
+    if not st.session_state.mensagens and not st.session_state.sugestoes_usadas:
         st.markdown("### Sugestões de perguntas")
         st.markdown("Clique em uma pergunta abaixo para começar:")
 
@@ -312,24 +420,28 @@ with tab_assistente:
             st.markdown(f"**{grupo['categoria']}**")
             cols = st.columns(3)
             for i, pergunta in enumerate(grupo["perguntas"]):
-                if cols[i % 3].button(
-                    pergunta, key=f"sugestao_{grupo['categoria']}_{i}",
-                    use_container_width=True,
-                ):
-                    st.session_state.mensagens.append({"role": "user", "content": pergunta})
-                    with st.chat_message("user"):
-                        st.markdown(pergunta)
-                    with st.chat_message("assistant"):
-                        with st.spinner("Consultando fontes..."):
-                            resultado = perguntar(pergunta)
-                        st.markdown(resultado["resposta"])
-                        if resultado["fontes"]:
-                            exibir_fontes(resultado["fontes"])
-                    st.session_state.mensagens.append({
-                        "role": "assistant", "content": resultado["resposta"],
-                        "fontes": resultado["fontes"],
-                    })
-                    st.rerun()
+                with cols[i % 3]:
+                    st.markdown('<div class="suggestion-btn">', unsafe_allow_html=True)
+                    if st.button(
+                        pergunta, key=f"sugestao_{grupo['categoria']}_{i}",
+                        use_container_width=True,
+                    ):
+                        st.session_state.sugestoes_usadas = True
+                        st.session_state.mensagens.append({"role": "user", "content": pergunta})
+                        with st.chat_message("user"):
+                            st.markdown(pergunta)
+                        with st.chat_message("assistant"):
+                            with st.spinner("Consultando fontes..."):
+                                resultado = perguntar(pergunta)
+                            st.markdown(resultado["resposta"])
+                            if resultado["fontes"]:
+                                exibir_fontes(resultado["fontes"])
+                        st.session_state.mensagens.append({
+                            "role": "assistant", "content": resultado["resposta"],
+                            "fontes": resultado["fontes"],
+                        })
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
 
     for msg in st.session_state.mensagens:
         with st.chat_message(msg["role"]):
@@ -370,16 +482,21 @@ with tab_calendario:
 
     if st.button("Gerar Calendário", type="primary", use_container_width=True, disabled=st.session_state.processing):
         st.session_state.processing = True
-        with st.spinner(f"Gerando calendário de {mes_selecionado}..."):
-            resultado = gerar_calendario(mes_selecionado, ano_selecionado)
+        progress = st.progress(0, text="Iniciando geração do calendário...")
+        progress.progress(30, text="Consultando fontes...")
+        resultado = gerar_calendario(mes_selecionado, ano_selecionado)
+        progress.progress(80, text="Estruturando resultado...")
+        progress.progress(100, text="Concluído!")
+        progress.empty()
         if resultado["status"] == "ok":
             if resultado.get("contexto_usado"):
-                st.info("Calendário gerado com base nas fontes carregadas.")
+                st.success("✅ Calendário gerado com base nas suas fontes carregadas.")
             else:
-                st.info("Nenhuma fonte carregada — usei conhecimento geral do calendário escolar.")
-            st.markdown(resultado["conteudo"])
+                st.info("📚 Nenhuma fonte carregada — usei conhecimento geral do calendário escolar.")
+            st.markdown(f'<div class="app-card">{resultado["conteudo"]}</div>', unsafe_allow_html=True)
+            st.session_state.calendarios_gerados += 1
         else:
-            st.error(resultado["mensagem"])
+            st.error(f"❌ Não foi possível gerar o calendário: {resultado['mensagem']}")
         st.session_state.processing = False
 
 with tab_campanhas:
@@ -394,16 +511,21 @@ with tab_campanhas:
 
     if st.button("Gerar Campanha", type="primary", use_container_width=True, disabled=st.session_state.processing):
         st.session_state.processing = True
-        with st.spinner("Criando campanha..."):
-            resultado = gerar_campanha(objetivo, publico, servico)
+        progress = st.progress(0, text="Iniciando criação da campanha...")
+        progress.progress(25, text="Analisando objetivos...")
+        resultado = gerar_campanha(objetivo, publico, servico)
+        progress.progress(75, text="Montando estrutura da campanha...")
+        progress.progress(100, text="Concluído!")
+        progress.empty()
         if resultado["status"] == "ok":
             if resultado.get("contexto_usado"):
-                st.info("Campanha personalizada com base nas fontes carregadas.")
+                st.success("✅ Campanha personalizada com base nas suas fontes carregadas.")
             else:
-                st.info("Nenhuma fonte carregada — campanha baseada em conhecimento geral.")
-            st.markdown(resultado["conteudo"])
+                st.info("📚 Nenhuma fonte carregada — campanha baseada em conhecimento geral.")
+            st.markdown(f'<div class="app-card">{resultado["conteudo"]}</div>', unsafe_allow_html=True)
+            st.session_state.campanhas_geradas += 1
         else:
-            st.error(resultado["mensagem"])
+            st.error(f"❌ Não foi possível gerar a campanha: {resultado['mensagem']}")
         st.session_state.processing = False
 
 st.markdown("""
