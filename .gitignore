@@ -8,3 +8,4 @@ vector_store/
 .pi/
 .streamlit/secrets.toml
 planejadorpvem-firebase-adminsdk-fbsvc-6a72618c78.json
+logs-*.txt
