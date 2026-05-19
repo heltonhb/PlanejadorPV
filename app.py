@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from markdown_it import MarkdownIt
 
 from utils.documentos import processar_documento, _get_collection as _get_docs_collection
-from utils.ingestao import processar_url, processar_html, processar_instagram
+from utils.ingestao import processar_url, processar_html, processar_instagram, processar_texto
 from utils.ia_engine import perguntar
 from utils.perguntas_sugeridas import PERGUNTAS_SUGERIDAS
 from utils.calendario import gerar_calendario, MESES
@@ -321,10 +321,37 @@ def _render_upload_tab(container, aba, key_prefix=""):
             else:
                 container.info("Perfil já processado.")
 
+    elif aba == "Texto":
+        texto = container.text_area(
+            "Cole o texto aqui",
+            placeholder="Cole um artigo, e-mail, briefing ou qualquer conteúdo de texto...",
+            height=200, key=f"{key_prefix}texto",
+        )
+        titulo_input = container.text_input(
+            "Título (opcional)", placeholder="Ex: Briefing campanha maio",
+            key=f"{key_prefix}txt_titulo",
+        )
+        if texto and container.button("Processar Texto", key=f"{key_prefix}txt_btn"):
+            chave = f"txt_{texto[:30]}"
+            if chave not in st.session_state.documentos:
+                with container.status(f"Processando texto..."):
+                    resultado = processar_texto(texto, titulo=titulo_input)
+                if resultado["status"] == "ok":
+                    container.success(
+                        f"Texto: {resultado['titulo']} — "
+                        f"{resultado['total_chunks']} chunks, "
+                        f"{resultado['total_caracteres']} caracteres"
+                    )
+                    st.session_state.documentos.append(chave)
+                else:
+                    container.error(f"Não foi possível processar o texto. {resultado['mensagem']}")
+            else:
+                container.info("Texto já processado.")
+
 
 def sidebar_upload():
     st.sidebar.title("Fontes de informação")
-    aba = st.sidebar.radio("Tipo de fonte", ["PDF", "URL", "HTML", "Instagram"], key="sidebar_aba")
+    aba = st.sidebar.radio("Tipo de fonte", ["PDF", "URL", "HTML", "Instagram", "Texto"], key="sidebar_aba")
     _render_upload_tab(st.sidebar, aba, key_prefix="side_")
 
     st.sidebar.divider()
@@ -385,13 +412,13 @@ with tab_dash:
         st.markdown("#### Fontes carregadas")
         cols = st.columns(2)
         for i, doc in enumerate(st.session_state.documentos):
-            icon = "📄" if doc.endswith(".pdf") else "🔗" if doc.startswith("http") else "📷"
+            icon = "📄" if doc.endswith(".pdf") else "🔗" if doc.startswith("http") else "📷" if doc.startswith("ig_") else "📝"
             cols[i % 2].markdown(f"- {icon} {doc}")
     else:
         st.markdown(
             '<div class="app-card-empty">'
             '📂 <strong>Nenhuma fonte carregada</strong><br>'
-            'Use a barra lateral para adicionar PDFs, URLs, HTML ou Instagram.'
+            'Use a barra lateral para adicionar PDFs, URLs, HTML, Instagram ou texto.'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -401,7 +428,7 @@ with tab_dash:
         st.markdown(
             "*No computador, use a barra lateral. Aqui você também pode adicionar fontes.*"
         )
-        aba_mobile = st.radio("Tipo", ["PDF", "URL", "HTML", "Instagram"], key="mobile_aba")
+        aba_mobile = st.radio("Tipo", ["PDF", "URL", "HTML", "Instagram", "Texto"], key="mobile_aba")
         _render_upload_tab(st, aba_mobile, key_prefix="mob_")
 
     st.divider()

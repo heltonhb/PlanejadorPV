@@ -135,3 +135,26 @@ def processar_instagram(perfil: str, max_posts: int = 10) -> dict:
         return {"status": "erro", "mensagem": "instaloader não instalado. Execute: pip install instaloader"}
     except Exception as e:
         return {"status": "erro", "mensagem": str(e)}
+
+
+def processar_texto(texto: str, titulo: str = "") -> dict:
+    try:
+        if not texto.strip():
+            return {"status": "erro", "mensagem": "Nenhum texto informado."}
+        titulo = titulo.strip() or "Texto colado"
+        import time
+        documento_id = f"texto_{int(time.time())}"
+        chunks = chunk_texto(texto)
+        total = salvar_chunks(
+            chunks,
+            documento_id=documento_id,
+            extra_metadata={"fonte": "texto", "arquivo": titulo, "titulo": titulo},
+        )
+        return {
+            "status": "ok",
+            "total_chunks": total,
+            "total_caracteres": len(texto),
+            "titulo": titulo,
+        }
+    except Exception as e:
+        return {"status": "erro", "mensagem": str(e)}
