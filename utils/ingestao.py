@@ -66,7 +66,18 @@ def processar_html(html_bytes: bytes, nome_arquivo: str = "") -> dict:
 def processar_instagram(perfil: str, max_posts: int = 10) -> dict:
     try:
         import instaloader
-        L = instaloader.Instaloader()
+        L = instaloader.Instaloader(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            max_connection_attempts=1,
+        )
+        try:
+            import streamlit as st
+            ig_user = st.secrets.get("INSTAGRAM_USER")
+            ig_pass = st.secrets.get("INSTAGRAM_PASS")
+            if ig_user and ig_pass:
+                L.login(ig_user, ig_pass)
+        except Exception:
+            pass
         profile = instaloader.Profile.from_username(L.context, perfil)
 
         partes = [
