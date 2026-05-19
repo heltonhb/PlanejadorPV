@@ -9,6 +9,5 @@ tesserocr==2.10.0
 Pillow==10.4.0
 requests==2.32.3
 beautifulsoup4==4.12.3
-lxml==5.3.0
 instaloader==4.11
 firebase-admin==6.5.0
