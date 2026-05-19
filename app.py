@@ -31,6 +31,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+    :root { --pwa-bar-height: env(safe-area-inset-top, 0px); }
     /* mobile: stacked columns, readable text */
     @media (max-width: 640px) {
         .stMainBlockContainer { padding: 1rem 0.75rem !important; }
@@ -41,6 +42,37 @@ st.markdown("""
         button[kind="primary"] { width: 100% !important; }
     }
 </style>
+<!-- PWA meta tags -->
+<meta name="theme-color" content="#FF4B4B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mkt Planner">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%23FF4B4B'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' fill='white'%3E📊%3C/text%3E%3C/svg%3E">
+<script>
+(function(){
+    var m = {
+        name: "PlanejadorPV — Marketing Planner",
+        short_name: "Mkt Planner",
+        description: "Planejamento de marketing para franquias",
+        start_url: ".",
+        display: "standalone",
+        background_color: "#0E1117",
+        theme_color: "#FF4B4B",
+        orientation: "portrait-primary",
+        categories: ["business","marketing"],
+        icons: [{
+            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%23FF4B4B'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' fill='white'%3E📊%3C/text%3E%3C/svg%3E",
+            sizes: "512x512",
+            type: "image/svg+xml",
+            purpose: "any maskable"
+        }]
+    };
+    var b = new Blob([JSON.stringify(m)], {type:"application/json"});
+    var l = document.createElement("link");
+    l.rel = "manifest"; l.href = URL.createObjectURL(b);
+    document.head.appendChild(l);
+})();
+</script>
 """, unsafe_allow_html=True)
 
 if "mensagens" not in st.session_state:
