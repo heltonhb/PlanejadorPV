@@ -26,7 +26,22 @@ st.set_page_config(
     page_title="Marketing Planner",
     page_icon="📊",
     layout="wide",
+    initial_sidebar_state="auto",
 )
+
+st.markdown("""
+<style>
+    /* mobile: stacked columns, readable text */
+    @media (max-width: 640px) {
+        .stMainBlockContainer { padding: 1rem 0.75rem !important; }
+        .stColumn > div { min-width: 100% !important; }
+        div[data-testid="column"] { width: 100% !important; flex: 0 0 100% !important; }
+        .stChatMessage { font-size: 0.95rem; }
+        section[data-testid="stSidebar"] .stSidebarContent { padding: 0.75rem; }
+        button[kind="primary"] { width: 100% !important; }
+    }
+</style>
+""", unsafe_allow_html=True)
 
 if "mensagens" not in st.session_state:
     st.session_state.mensagens = []
@@ -48,92 +63,98 @@ def exibir_fontes(fontes: list[dict]):
             st.markdown(item)
 
 
-def sidebar_upload():
-    st.sidebar.title("Fontes de informação")
-    aba = st.sidebar.radio("Tipo de fonte", ["PDF", "URL", "HTML", "Instagram"])
+def _render_upload_tab(container, aba, key_prefix=""):
     if aba == "PDF":
-        uploaded_file = st.sidebar.file_uploader(
-            "Upload PDF", type=["pdf"], accept_multiple_files=False,
+        uploaded_file = container.file_uploader(
+            "Upload PDF", type=["pdf"], accept_multiple_files=False, key=f"{key_prefix}pdf",
         )
         if uploaded_file:
             nome = uploaded_file.name
             if nome not in st.session_state.documentos:
                 try:
-                    with st.sidebar.status(f"Processando {nome}..."):
+                    with container.status(f"Processando {nome}..."):
                         pdf_bytes = uploaded_file.read()
                         resultado = processar_documento(pdf_bytes, nome_arquivo=nome)
                     if resultado["status"] == "ok":
-                        st.sidebar.success(
+                        container.success(
                             f"PDF: {nome} — {resultado['total_chunks']} chunks, "
                             f"{resultado['total_caracteres']} caracteres "
                             f"({resultado['paginas']} páginas, {resultado['metodo']})"
                         )
                         st.session_state.documentos.append(nome)
                     else:
-                        st.sidebar.error(f"{resultado['mensagem']}")
+                        container.error(f"{resultado['mensagem']}")
                 except Exception as e:
-                    st.sidebar.error(f"Erro ao processar {nome}: {e}")
+                    container.error(f"Erro ao processar {nome}: {e}")
 
     elif aba == "URL":
-        url = st.sidebar.text_input("URL do site", placeholder="https://exemplo.com/artigo")
-        if url and st.sidebar.button("Processar URL"):
+        url = container.text_input(
+            "URL do site", placeholder="https://exemplo.com/artigo", key=f"{key_prefix}url",
+        )
+        if url and container.button("Processar URL", key=f"{key_prefix}url_btn"):
             if url not in st.session_state.documentos:
-                with st.sidebar.status(f"Acessando {url}..."):
+                with container.status(f"Acessando {url}..."):
                     resultado = processar_url(url)
                 if resultado["status"] == "ok":
-                    st.sidebar.success(
+                    container.success(
                         f"URL: {resultado['titulo']} — "
                         f"{resultado['total_chunks']} chunks, "
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(url)
                 else:
-                    st.sidebar.error(resultado["mensagem"])
+                    container.error(resultado["mensagem"])
             else:
-                st.sidebar.info("URL já processada.")
+                container.info("URL já processada.")
 
     elif aba == "HTML":
-        uploaded_html = st.sidebar.file_uploader(
-            "Upload HTML", type=["html", "htm"], accept_multiple_files=False,
+        uploaded_html = container.file_uploader(
+            "Upload HTML", type=["html", "htm"], accept_multiple_files=False, key=f"{key_prefix}html",
         )
         if uploaded_html:
             nome = uploaded_html.name
             if nome not in st.session_state.documentos:
                 try:
-                    with st.sidebar.status(f"Processando {nome}..."):
+                    with container.status(f"Processando {nome}..."):
                         resultado = processar_html(uploaded_html.read(), nome_arquivo=nome)
                     if resultado["status"] == "ok":
-                        st.sidebar.success(
+                        container.success(
                             f"HTML: {resultado['titulo']} — "
                             f"{resultado['total_chunks']} chunks, "
                             f"{resultado['total_caracteres']} caracteres"
                         )
                         st.session_state.documentos.append(nome)
                     else:
-                        st.sidebar.error(resultado["mensagem"])
+                        container.error(resultado["mensagem"])
                 except Exception as e:
-                    st.sidebar.error(f"Erro ao processar {nome}: {e}")
+                    container.error(f"Erro ao processar {nome}: {e}")
 
     elif aba == "Instagram":
-        perfil = st.sidebar.text_input(
-            "Perfil do Instagram", placeholder="exemplo_perfil",
+        perfil = container.text_input(
+            "Perfil do Instagram", placeholder="exemplo_perfil", key=f"{key_prefix}ig",
         )
-        if perfil and st.sidebar.button("Processar Perfil"):
+        if perfil and container.button("Processar Perfil", key=f"{key_prefix}ig_btn"):
             chave = f"ig_{perfil}"
             if chave not in st.session_state.documentos:
-                with st.sidebar.status(f"Buscando @{perfil}..."):
+                with container.status(f"Buscando @{perfil}..."):
                     resultado = processar_instagram(perfil)
                 if resultado["status"] == "ok":
-                    st.sidebar.success(
+                    container.success(
                         f"Instagram @{perfil} — {resultado['total_chunks']} chunks, "
                         f"{resultado['total_caracteres']} caracteres "
                         f"({resultado['posts']} posts)"
                     )
                     st.session_state.documentos.append(chave)
                 else:
-                    st.sidebar.error(resultado["mensagem"])
+                    container.error(resultado["mensagem"])
             else:
-                st.sidebar.info("Perfil já processado.")
+                container.info("Perfil já processado.")
+
+
+def sidebar_upload():
+    st.sidebar.title("Fontes de informação")
+    aba = st.sidebar.radio("Tipo de fonte", ["PDF", "URL", "HTML", "Instagram"], key="sidebar_aba")
+    _render_upload_tab(st.sidebar, aba, key_prefix="side_")
 
     st.sidebar.divider()
     st.sidebar.markdown("### Fontes carregadas")
@@ -185,6 +206,14 @@ with tab_dash:
             st.markdown(f"- {doc}")
     else:
         st.info("Nenhuma fonte carregada ainda. Use a barra lateral para adicionar PDFs, URLs, HTML ou Instagram.")
+
+    st.divider()
+    with st.expander("📂 Adicionar fonte (dispositivos móveis)", expanded=False):
+        st.markdown(
+            "*No computador, use a barra lateral. Aqui você também pode adicionar fontes.*"
+        )
+        aba_mobile = st.radio("Tipo", ["PDF", "URL", "HTML", "Instagram"], key="mobile_aba")
+        _render_upload_tab(st, aba_mobile, key_prefix="mob_")
 
     st.divider()
     st.markdown(

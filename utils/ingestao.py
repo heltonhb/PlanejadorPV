@@ -128,9 +128,9 @@ def processar_instagram(perfil: str, max_posts: int = 10) -> dict:
             "posts": min(max_posts, i + 1),
         }
     except instaloader.exceptions.ProfileNotExistsException:
-        return {"status": "erro", "mensagem": f"Perfil @{perfil} não encontrado."}
+        return {"status": "erro", "mensagem": f"Perfil @{perfil} não encontrado ou Instagram bloqueou a requisição. Tente adicionar INSTAGRAM_USER e INSTAGRAM_PASS nos Secrets do Streamlit Cloud."}
     except instaloader.exceptions.ConnectionException as e:
-        return {"status": "erro", "mensagem": f"Erro de conexão com Instagram: {e}"}
+        return {"status": "erro", "mensagem": f"Erro de conexão com Instagram: {e}. Se estiver no Streamlit Cloud, o IP pode estar bloqueado — tente adicionar INSTAGRAM_USER e INSTAGRAM_PASS nos Secrets."}
     except ImportError:
         return {"status": "erro", "mensagem": "instaloader não instalado. Execute: pip install instaloader"}
     except Exception as e:
