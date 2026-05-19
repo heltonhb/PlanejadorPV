@@ -50,8 +50,19 @@ def _buscar_contexto_campanha(top_k: int = 8) -> str:
     return ""
 
 
+def _get_gemini_key() -> str | None:
+    key = os.getenv("GEMINI_API_KEY")
+    if key:
+        return key
+    try:
+        import streamlit as st
+        return st.secrets.get("GEMINI_API_KEY")
+    except Exception:
+        return None
+
+
 def gerar_campanha(objetivo: str, publico: str, servico: str) -> dict:
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = _get_gemini_key()
     if not api_key:
         return {"status": "erro", "mensagem": "GEMINI_API_KEY não configurada.", "conteudo": ""}
 
