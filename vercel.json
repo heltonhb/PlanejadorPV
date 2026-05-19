@@ -1,0 +1,5 @@
+{
+  "build": {
+    "command": "echo 'Streamlit app - deploy via Streamlit Community Cloud'"
+  }
+}

@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+vector_store/
+.planning/
+.pi/
+.streamlit/secrets.toml
+planejadorpvem-firebase-adminsdk-fbsvc-6a72618c78.json
