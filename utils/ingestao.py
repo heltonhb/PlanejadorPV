@@ -11,7 +11,7 @@ def processar_url(url: str) -> dict:
             headers={"User-Agent": "Mozilla/5.0"},
         )
         resp.raise_for_status()
-        soup = BeautifulSoup(resp.text, "lxml")
+        soup = BeautifulSoup(resp.text, "html.parser")
         titulo = soup.title.string.strip() if soup.title else url
         for tag in soup(["script", "style", "nav", "footer", "header", "aside"]):
             tag.decompose()
@@ -39,7 +39,7 @@ def processar_url(url: str) -> dict:
 
 def processar_html(html_bytes: bytes, nome_arquivo: str = "") -> dict:
     try:
-        soup = BeautifulSoup(html_bytes, "lxml")
+        soup = BeautifulSoup(html_bytes, "html.parser")
         titulo = soup.title.string.strip() if soup.title else nome_arquivo
         for tag in soup(["script", "style", "nav", "footer", "header", "aside"]):
             tag.decompose()
