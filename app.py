@@ -31,8 +31,35 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    :root { --pwa-bar-height: env(safe-area-inset-top, 0px); }
-    /* mobile: stacked columns, readable text */
+    :root {
+        --brand-blue: #005CAA;
+        --brand-green: #00A859;
+        --brand-yellow: #F7B731;
+        --brand-red: #E84C3D;
+        --pwa-bar-height: env(safe-area-inset-top, 0px);
+    }
+    div[data-testid="stMetricValue"] { color: var(--brand-blue); font-weight: 700; }
+    div[data-testid="stMetricLabel"] { font-size: 0.85rem; }
+    .app-header {
+        background: linear-gradient(135deg, var(--brand-blue), #003F7A);
+        padding: 1rem 2rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        color: white;
+    }
+    .app-header-content { display: flex; align-items: center; gap: 1rem; }
+    .app-logo { font-size: 2rem; line-height: 1; }
+    .app-title { font-size: 1.5rem; font-weight: 700; }
+    .app-subtitle { font-size: 0.875rem; opacity: 0.9; }
+    .app-footer {
+        text-align: center;
+        color: #666;
+        font-size: 0.8rem;
+        padding: 2rem 0 1rem;
+        border-top: 1px solid #e0e0e0;
+        margin-top: 2rem;
+    }
+    .stAlert { border-left-color: var(--brand-blue) !important; }
     @media (max-width: 640px) {
         .stMainBlockContainer { padding: 1rem 0.75rem !important; }
         .stColumn > div { min-width: 100% !important; }
@@ -40,14 +67,15 @@ st.markdown("""
         .stChatMessage { font-size: 0.95rem; }
         section[data-testid="stSidebar"] .stSidebarContent { padding: 0.75rem; }
         button[kind="primary"] { width: 100% !important; }
+        .app-header { padding: 0.75rem 1rem; }
+        .app-title { font-size: 1.25rem; }
     }
 </style>
-<!-- PWA meta tags -->
-<meta name="theme-color" content="#FF4B4B">
+<meta name="theme-color" content="#005CAA">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mkt Planner">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%23FF4B4B'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' fill='white'%3E📊%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%23005CAA'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' fill='white'%3E📊%3C/text%3E%3C/svg%3E">
 <script>
 (function(){
     var m = {
@@ -57,11 +85,11 @@ st.markdown("""
         start_url: ".",
         display: "standalone",
         background_color: "#0E1117",
-        theme_color: "#FF4B4B",
+        theme_color: "#005CAA",
         orientation: "portrait-primary",
         categories: ["business","marketing"],
         icons: [{
-            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%23FF4B4B'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' fill='white'%3E📊%3C/text%3E%3C/svg%3E",
+            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%23005CAA'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' fill='white'%3E📊%3C/text%3E%3C/svg%3E",
             sizes: "512x512",
             type: "image/svg+xml",
             purpose: "any maskable"
@@ -75,10 +103,24 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<div class="app-header">
+    <div class="app-header-content">
+        <div class="app-logo">📊</div>
+        <div>
+            <div class="app-title">PlanejadorPV</div>
+            <div class="app-subtitle">Marketing Planner — Ensina Mais Turma da Mônica · Unidade Tatuapé</div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 if "mensagens" not in st.session_state:
     st.session_state.mensagens = []
 if "documentos" not in st.session_state:
     st.session_state.documentos = []
+if "processing" not in st.session_state:
+    st.session_state.processing = False
 
 
 def exibir_fontes(fontes: list[dict]):
@@ -193,20 +235,22 @@ def sidebar_upload():
     if st.session_state.documentos:
         for doc in st.session_state.documentos:
             st.sidebar.markdown(f"- {doc}")
-        if st.sidebar.button("Limpar tudo"):
-            from utils.documentos import _get_collection
-            try:
-                _get_collection().delete(where={})
-            except Exception:
-                pass
-            try:
-                from utils.firebase_store import limpar_firestore
-                limpar_firestore()
-            except Exception:
-                pass
-            st.session_state.documentos = []
-            st.session_state.mensagens = []
-            st.rerun()
+        with st.sidebar.popover("Limpar tudo", use_container_width=True):
+            st.warning("Isso vai apagar **todas as fontes** e o **histórico de conversa**. Não é possível desfazer.")
+            if st.button("Sim, apagar tudo", type="primary", use_container_width=True):
+                from utils.documentos import _get_collection
+                try:
+                    _get_collection().delete(where={})
+                except Exception:
+                    pass
+                try:
+                    from utils.firebase_store import limpar_firestore
+                    limpar_firestore()
+                except Exception:
+                    pass
+                st.session_state.documentos = []
+                st.session_state.mensagens = []
+                st.rerun()
     else:
         st.sidebar.markdown("*Nenhuma fonte carregada.*")
 
@@ -229,7 +273,7 @@ with tab_dash:
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Fontes carregadas", len(st.session_state.documentos))
-    col2.metric("Chunks na base vetorial", total_chunks)
+    col2.metric("Documentos na base", total_chunks)
     col3.metric("Perguntas feitas", len([m for m in st.session_state.mensagens if m["role"] == "user"]))
 
     if st.session_state.documentos:
@@ -255,7 +299,7 @@ with tab_dash:
     )
 
 with tab_assistente:
-    st.title("Assistente RAG — Marketing para Franquias")
+    st.title("💬 Assistente — Marketing para Franquias")
     st.markdown(
         "Carregue informações na barra lateral e faça perguntas sobre o conteúdo."
     )
@@ -324,7 +368,8 @@ with tab_calendario:
     with col_ano:
         ano_selecionado = st.number_input("Ano", value=hoje.year, min_value=2024, max_value=2030)
 
-    if st.button("Gerar Calendário", type="primary", use_container_width=True):
+    if st.button("Gerar Calendário", type="primary", use_container_width=True, disabled=st.session_state.processing):
+        st.session_state.processing = True
         with st.spinner(f"Gerando calendário de {mes_selecionado}..."):
             resultado = gerar_calendario(mes_selecionado, ano_selecionado)
         if resultado["status"] == "ok":
@@ -335,6 +380,7 @@ with tab_calendario:
             st.markdown(resultado["conteudo"])
         else:
             st.error(resultado["mensagem"])
+        st.session_state.processing = False
 
 with tab_campanhas:
     st.title("📢 Gerador de Campanhas")
@@ -346,7 +392,8 @@ with tab_campanhas:
     publico = st.selectbox("Público-alvo", PUBLICOS)
     servico = st.selectbox("Serviço", SERVICOS)
 
-    if st.button("Gerar Campanha", type="primary", use_container_width=True):
+    if st.button("Gerar Campanha", type="primary", use_container_width=True, disabled=st.session_state.processing):
+        st.session_state.processing = True
         with st.spinner("Criando campanha..."):
             resultado = gerar_campanha(objetivo, publico, servico)
         if resultado["status"] == "ok":
@@ -357,3 +404,10 @@ with tab_campanhas:
             st.markdown(resultado["conteudo"])
         else:
             st.error(resultado["mensagem"])
+        st.session_state.processing = False
+
+st.markdown("""
+<div class="app-footer">
+    PlanejadorPV © 2025 — Ensina Mais Turma da Mônica · Unidade Tatuapé
+</div>
+""", unsafe_allow_html=True)
