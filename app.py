@@ -4,6 +4,7 @@ from pathlib import Path
 
 import streamlit as st
 from dotenv import load_dotenv
+from markdown_it import MarkdownIt
 
 from utils.documentos import processar_documento, _get_collection as _get_docs_collection
 from utils.ingestao import processar_url, processar_html, processar_instagram
@@ -13,6 +14,8 @@ from utils.calendario import gerar_calendario, MESES
 from utils.campanhas import gerar_campanha, OBJETIVOS, PUBLICOS, SERVICOS
 
 load_dotenv()
+
+_md = MarkdownIt()
 
 try:
     collection = _get_docs_collection()
@@ -493,7 +496,8 @@ with tab_calendario:
                 st.success("✅ Calendário gerado com base nas suas fontes carregadas.")
             else:
                 st.info("📚 Nenhuma fonte carregada — usei conhecimento geral do calendário escolar.")
-            st.markdown(f'<div class="app-card">{resultado["conteudo"]}</div>', unsafe_allow_html=True)
+            html_content = _md.render(resultado["conteudo"])
+            st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
             st.session_state.calendarios_gerados += 1
         else:
             st.error(f"❌ Não foi possível gerar o calendário: {resultado['mensagem']}")
@@ -522,7 +526,8 @@ with tab_campanhas:
                 st.success("✅ Campanha personalizada com base nas suas fontes carregadas.")
             else:
                 st.info("📚 Nenhuma fonte carregada — campanha baseada em conhecimento geral.")
-            st.markdown(f'<div class="app-card">{resultado["conteudo"]}</div>', unsafe_allow_html=True)
+            html_content = _md.render(resultado["conteudo"])
+            st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
             st.session_state.campanhas_geradas += 1
         else:
             st.error(f"❌ Não foi possível gerar a campanha: {resultado['mensagem']}")
