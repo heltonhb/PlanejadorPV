@@ -123,8 +123,12 @@ def gerar_campanha(objetivo: str, publico: str, servico: str) -> dict:
             msg = f"Erro ao comunicar com o Gemini: {erro[:200]}"
         return {"status": "erro", "mensagem": msg, "conteudo": ""}
 
+    conteudo = resposta.text or ""
+    if not conteudo:
+        return {"status": "erro", "mensagem": "Gemini retornou uma resposta vazia. Tente novamente.", "conteudo": ""}
+
     return {
         "status": "ok",
-        "conteudo": resposta.text,
+        "conteudo": conteudo,
         "contexto_usado": bool(contexto),
     }
