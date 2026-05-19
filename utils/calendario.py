@@ -89,7 +89,21 @@ def gerar_calendario(mes: str, ano: int) -> dict:
     )
 
     client = genai.Client(api_key=api_key)
-    resposta = client.models.generate_content(model=MODELO, contents=prompt)
+    try:
+        resposta = client.models.generate_content(model=MODELO, contents=prompt)
+    except Exception as e:
+        erro = str(e)
+        if "API_KEY" in erro.upper() or "not found" in erro.lower():
+            msg = "Chave da API Gemini inválida ou não encontrada."
+        elif "quota" in erro.lower() or "rate" in erro.lower() or "429" in erro:
+            msg = "Limite de requisições excedido. Aguarde alguns minutos e tente novamente."
+        elif "500" in erro or "503" in erro or "server" in erro.lower():
+            msg = "Servidor do Gemini temporariamente indisponível. Tente novamente em alguns instantes."
+        elif "safety" in erro.lower() or "blocked" in erro.lower():
+            msg = "O conteúdo foi bloqueado pelos filtros de segurança do Gemini. Tente reformular a solicitação."
+        else:
+            msg = f"Erro ao comunicar com o Gemini: {erro[:200]}"
+        return {"status": "erro", "mensagem": msg, "conteudo": ""}
 
     return {
         "status": "ok",
