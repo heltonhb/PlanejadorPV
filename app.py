@@ -80,11 +80,13 @@ st.markdown("""
         padding: 1.5rem;
         margin: 1rem 0;
         box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        color: var(--gray-900);
     }
     .app-card h1, .app-card h2, .app-card h3 { color: var(--brand-blue); margin-top: 1rem; }
     .app-card h1:first-child, .app-card h2:first-child, .app-card h3:first-child { margin-top: 0; }
-    .app-card ul, .app-card ol { padding-left: 1.25rem; }
-    .app-card li { margin-bottom: 0.35rem; }
+    .app-card p { color: var(--gray-800); line-height: 1.6; margin-bottom: 0.75rem; }
+    .app-card ul, .app-card ol { padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .app-card li { margin-bottom: 0.35rem; color: var(--gray-800); }
     .app-card hr { border: none; border-top: 2px solid var(--gray-200); margin: 1rem 0; }
     .app-card strong { color: var(--brand-blue-dark); }
 
