@@ -715,6 +715,10 @@ with tab_relatorio:
 
         for item in relatorio["fontes_detalhadas"]:
             documento_id = item.get("documento_id")
+            preview = item.get("preview", "")
+            resumo_text = ""
+            if preview:
+                resumo_text = f'<br><span style="color: var(--gray-500); font-size: 0.8rem; font-style: italic;">{preview}...</span>'
 
             c1, c2 = st.columns([5, 1])
             with c1:
@@ -724,6 +728,7 @@ with tab_relatorio:
                     f'<span style="color: var(--gray-600); font-size: 0.85rem;">'
                     f'{item["chunks"]} chunks · {item["caracteres"]:,} caracteres'
                     f"</span>"
+                    f"{resumo_text}"
                     f"</div>",
                     unsafe_allow_html=True,
                 )
