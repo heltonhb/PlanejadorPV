@@ -406,8 +406,8 @@ def sidebar_upload():
 
 sidebar_upload()
 
-tab_dash, tab_assistente, tab_calendario, tab_campanhas = st.tabs(
-    ["📊 Dashboard", "💬 Assistente", "📅 Calendário Editorial", "📢 Gerador de Campanhas"],
+tab_dash, tab_assistente, tab_calendario, tab_campanhas, tab_relatorio = st.tabs(
+    ["📊 Dashboard", "💬 Assistente", "📅 Calendário Editorial", "📢 Gerador de Campanhas", "📋 Relatório de Conteúdo"],
 )
 
 with tab_dash:
@@ -583,6 +583,54 @@ with tab_campanhas:
         else:
             st.error(f"❌ Não foi possível gerar a campanha: {resultado['mensagem']}")
         st.session_state.processing = False
+
+with tab_relatorio:
+    st.title("📋 Relatório de Conteúdo Ingerido")
+    st.markdown("Visão detalhada de todo o conteúdo carregado no sistema.")
+
+    from utils.relatorios import resumo_conteudo
+    relatorio = resumo_conteudo()
+
+    if relatorio["total_chunks"] == 0:
+        st.markdown(
+            '<div class="app-card-empty">'
+            "📂 <strong>Nenhum conteúdo ingerido</strong><br>"
+            "Carregue fontes pela barra lateral ou pelo Dashboard."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        col1, col2, col3 = st.columns(3)
+        col1.metric("📄 Total de chunks", relatorio["total_chunks"])
+        col2.metric("📏 Total de caracteres", f"{relatorio['total_caracteres']:,}".replace(",", "."))
+        col3.metric("🗂️ Tipos de fonte", len(relatorio["por_fonte"]))
+
+        st.divider()
+        st.markdown("### Distribuição por tipo de fonte")
+
+        por_fonte_items = sorted(relatorio["por_fonte"].items())
+        cols_fonte = st.columns(len(por_fonte_items))
+        icones_f = {"pdf": "📄", "url": "🔗", "html": "🌐", "instagram": "📷", "texto": "📝", "planilha": "📊"}
+        nomes_f = {"pdf": "PDF", "url": "URL", "html": "HTML", "instagram": "Instagram", "texto": "Texto", "planilha": "Planilha"}
+        for idx, (fonte, dados) in enumerate(por_fonte_items):
+            with cols_fonte[idx]:
+                icone = icones_f.get(fonte, "📄")
+                nome = nomes_f.get(fonte, fonte.capitalize())
+                st.metric(f"{icone} {nome}", dados["chunks"], f"{dados['caracteres']:,} caracteres".replace(",", "."))
+
+        st.divider()
+        st.markdown("### Detalhamento por documento")
+
+        for item in relatorio["fontes_detalhadas"]:
+            st.markdown(
+                f'<div class="app-card" style="padding: 0.75rem 1rem;">'
+                f'<span style="font-size: 1.1rem; font-weight: 600;">{item["icone"]} {item["titulo"]}</span><br>'
+                f'<span style="color: var(--gray-600); font-size: 0.85rem;">'
+                f'{item["chunks"]} chunks · {item["caracteres"]:,} caracteres'
+                f"</span>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
 
 st.markdown("""
 <div class="app-footer">
