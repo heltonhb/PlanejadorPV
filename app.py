@@ -14,6 +14,7 @@ from utils.calendario import gerar_calendario, MESES
 from utils.campanhas import gerar_campanha, OBJETIVOS, PUBLICOS, SERVICOS
 from utils.legendas_instagram import gerar_legenda, TOM_ESTILO
 from utils.resumos import gerar_resumo
+from utils.exportacao import exportar_relatorio_csv, exportar_markdown_docx
 
 load_dotenv()
 
@@ -220,6 +221,10 @@ if "legendas_geradas" not in st.session_state:
     st.session_state.legendas_geradas = []
 if "documentos_meta" not in st.session_state:
     st.session_state.documentos_meta = {}
+if "ultimo_calendario" not in st.session_state:
+    st.session_state.ultimo_calendario = None
+if "ultima_campanha" not in st.session_state:
+    st.session_state.ultima_campanha = None
 
 
 def exibir_fontes(fontes: list[dict]):
@@ -661,6 +666,15 @@ with tab_calendario:
             html_content = _md.render(resultado["conteudo"])
             st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
             st.session_state.calendarios_gerados += 1
+            st.session_state.ultimo_calendario = resultado["conteudo"]
+            docx_bytes = exportar_markdown_docx(resultado["conteudo"])
+            st.download_button(
+                "📥 Baixar como DOCX",
+                data=docx_bytes,
+                file_name=f"calendario_{mes_selecionado}_{ano_selecionado}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+            )
         else:
             st.error(f"❌ Não foi possível gerar o calendário: {resultado['mensagem']}")
         st.session_state.processing = False
@@ -691,6 +705,15 @@ with tab_campanhas:
             html_content = _md.render(resultado["conteudo"])
             st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
             st.session_state.campanhas_geradas += 1
+            st.session_state.ultima_campanha = resultado["conteudo"]
+            docx_bytes = exportar_markdown_docx(resultado["conteudo"])
+            st.download_button(
+                "📥 Baixar como DOCX",
+                data=docx_bytes,
+                file_name=f"campanha_{objetivo}_{publico}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+            )
         else:
             st.error(f"❌ Não foi possível gerar a campanha: {resultado['mensagem']}")
         st.session_state.processing = False
@@ -764,6 +787,17 @@ with tab_relatorio:
                             st.session_state.documentos_meta.pop(chv, None)
                             break
                     st.rerun()
+
+        st.divider()
+        st.markdown("### Exportar relatório")
+        csv_data = exportar_relatorio_csv(relatorio)
+        st.download_button(
+            "📥 Exportar CSV",
+            data=csv_data,
+            file_name="relatorio_conteudo.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
 
 with tab_legendas:
     st.title("📸 Legendas para Instagram")

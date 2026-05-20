@@ -12,3 +12,4 @@ beautifulsoup4>=4.12.3
 instaloader>=4.11
 firebase-admin>=6.5.0
 openpyxl>=3.1.5
+python-docx>=1.1.0
