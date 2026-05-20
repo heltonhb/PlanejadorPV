@@ -613,11 +613,34 @@ with tab_assistente:
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
 
-    for msg in st.session_state.mensagens:
+    for i, msg in enumerate(st.session_state.mensagens):
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
             if msg["role"] == "assistant" and msg.get("fontes"):
                 exibir_fontes(msg["fontes"])
+            if msg["role"] == "assistant" and i == len(st.session_state.mensagens) - 1:
+                col_exp, col_base = st.columns(2)
+                with col_exp:
+                    docx_bytes = exportar_markdown_docx(msg["content"])
+                    st.download_button(
+                        "📥 Baixar como DOCX",
+                        data=docx_bytes,
+                        file_name="resposta_assistente.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True,
+                        key=f"exp_msg_{i}",
+                    )
+                with col_base:
+                    if st.button("📚 Incluir na base", key=f"inc_msg_{i}", use_container_width=True):
+                        with st.spinner("Adicionando à base de conhecimento..."):
+                            proc = processar_texto(
+                                msg["content"],
+                                titulo=f"Resposta do assistente #{i}",
+                            )
+                        if proc["status"] == "ok":
+                            st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
+                        else:
+                            st.error(f"❌ {proc['mensagem']}")
 
     if prompt := st.chat_input("Faça uma pergunta sobre os documentos..."):
         st.session_state.mensagens.append({"role": "user", "content": prompt})
