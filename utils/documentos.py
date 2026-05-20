@@ -176,6 +176,25 @@ def salvar_chunks(chunks: list[dict], documento_id: str = None, extra_metadata: 
     return len(chunks)
 
 
+def salvar_resumo_documento(documento_id: str, resumo: str):
+    """Atualiza o campo 'resumo' em todos os chunks de um documento no ChromaDB."""
+    collection = _get_collection()
+    try:
+        resultados = collection.get(where={"documento_id": sanitizar_id(documento_id)})
+        if not resultados or not resultados["ids"]:
+            return
+        novos_metadatas = []
+        for md in resultados["metadatas"]:
+            md["resumo"] = resumo
+            novos_metadatas.append(md)
+        collection.update(
+            ids=resultados["ids"],
+            metadatas=novos_metadatas,
+        )
+    except Exception as e:
+        logger.debug(f"Erro ao salvar resumo no ChromaDB: {e}")
+
+
 def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
     resultado_extracao = extrair_texto(pdf_bytes)
     texto = resultado_extracao["texto"]
@@ -201,4 +220,5 @@ def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
         "total_caracteres": len(texto),
         "paginas": paginas,
         "metodo": metodo,
+        "texto_completo": texto,
     }

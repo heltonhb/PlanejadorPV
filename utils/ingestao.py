@@ -30,6 +30,7 @@ def processar_url(url: str) -> dict:
             "total_caracteres": len(texto),
             "titulo": titulo,
             "url": url,
+            "texto_completo": texto,
         }
     except requests.RequestException as e:
         return {"status": "erro", "mensagem": f"Erro ao acessar URL: {e}"}
@@ -58,6 +59,7 @@ def processar_html(html_bytes: bytes, nome_arquivo: str = "") -> dict:
             "total_caracteres": len(texto),
             "titulo": titulo,
             "arquivo": nome_arquivo,
+            "texto_completo": texto,
         }
     except Exception as e:
         return {"status": "erro", "mensagem": str(e)}
@@ -126,6 +128,7 @@ def processar_instagram(perfil: str, max_posts: int = 10) -> dict:
             "total_caracteres": len(texto),
             "perfil": perfil,
             "posts": min(max_posts, i + 1),
+            "texto_completo": texto,
         }
     except instaloader.exceptions.ProfileNotExistsException:
         return {"status": "erro", "mensagem": f"Perfil @{perfil} não encontrado ou Instagram bloqueou a requisição. Tente adicionar INSTAGRAM_USER e INSTAGRAM_PASS nos Secrets do Streamlit Cloud."}
@@ -169,6 +172,7 @@ def processar_planilha(arquivo_bytes: bytes, nome_arquivo: str = "planilha.xlsx"
             "total_caracteres": len(texto),
             "titulo": nome_arquivo,
             "documento_id": documento_id,
+            "texto_completo": texto,
         }
     except ImportError:
         return {"status": "erro", "mensagem": "openpyxl não instalado. Execute: pip install openpyxl"}
@@ -195,6 +199,7 @@ def processar_texto(texto: str, titulo: str = "") -> dict:
             "total_caracteres": len(texto),
             "titulo": titulo,
             "documento_id": documento_id,
+            "texto_completo": texto,
         }
     except Exception as e:
         return {"status": "erro", "mensagem": str(e)}

@@ -6,13 +6,14 @@ import streamlit as st
 from dotenv import load_dotenv
 from markdown_it import MarkdownIt
 
-from utils.documentos import processar_documento, _get_collection as _get_docs_collection, sanitizar_id
+from utils.documentos import processar_documento, _get_collection as _get_docs_collection, sanitizar_id, salvar_resumo_documento
 from utils.ingestao import processar_url, processar_html, processar_instagram, processar_texto, processar_planilha
 from utils.ia_engine import perguntar
 from utils.perguntas_sugeridas import PERGUNTAS_SUGERIDAS
 from utils.calendario import gerar_calendario, MESES
 from utils.campanhas import gerar_campanha, OBJETIVOS, PUBLICOS, SERVICOS
 from utils.legendas_instagram import gerar_legenda, TOM_ESTILO
+from utils.resumos import gerar_resumo
 
 load_dotenv()
 
@@ -256,6 +257,8 @@ def _render_upload_tab(container, aba, key_prefix=""):
                             unsafe_allow_html=True,
                         )
                         st.session_state.documentos.append(nome)
+                        resumo = gerar_resumo(resultado.get("texto_completo", ""), "pdf")
+                        salvar_resumo_documento(sanitizar_id(nome), resumo)
                         st.session_state.documentos_meta[nome] = {
                             "fonte": "pdf",
                             "nome": nome,
@@ -263,6 +266,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                             "caracteres": resultado["total_caracteres"],
                             "paginas": resultado["paginas"],
                             "documento_id": sanitizar_id(nome),
+                            "resumo": resumo,
                         }
                     else:
                         container.error(f"{resultado['mensagem']}")
@@ -284,6 +288,8 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(url)
+                    resumo = gerar_resumo(resultado.get("texto_completo", ""), "url")
+                    salvar_resumo_documento(sanitizar_id(f"url_{url}"), resumo)
                     st.session_state.documentos_meta[url] = {
                         "fonte": "url",
                         "nome": resultado.get("titulo", url),
@@ -291,6 +297,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         "caracteres": resultado["total_caracteres"],
                         "url": url,
                         "documento_id": sanitizar_id(f"url_{url}"),
+                        "resumo": resumo,
                     }
                 else:
                     container.error(f"Não foi possível acessar a URL. Verifique se o link está correto e tente novamente.")
@@ -314,6 +321,8 @@ def _render_upload_tab(container, aba, key_prefix=""):
                             f"{resultado['total_caracteres']} caracteres"
                         )
                         st.session_state.documentos.append(nome)
+                        resumo = gerar_resumo(resultado.get("texto_completo", ""), "html")
+                        salvar_resumo_documento(sanitizar_id(nome), resumo)
                         st.session_state.documentos_meta[nome] = {
                             "fonte": "html",
                             "nome": resultado.get("titulo", nome),
@@ -321,6 +330,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                             "caracteres": resultado["total_caracteres"],
                             "arquivo": nome,
                             "documento_id": sanitizar_id(nome),
+                            "resumo": resumo,
                         }
                     else:
                         container.error(f"{resultado['mensagem']}")
@@ -345,6 +355,8 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         f"({resultado['posts']} posts)"
                     )
                     st.session_state.documentos.append(chave)
+                    resumo = gerar_resumo(resultado.get("texto_completo", ""), "instagram")
+                    salvar_resumo_documento(sanitizar_id(chave), resumo)
                     st.session_state.documentos_meta[chave] = {
                         "fonte": "instagram",
                         "nome": perfil,
@@ -352,6 +364,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         "caracteres": resultado["total_caracteres"],
                         "posts": resultado["posts"],
                         "documento_id": sanitizar_id(chave),
+                        "resumo": resumo,
                     }
                 else:
                     container.error(f"Não foi possível acessar o perfil @{perfil}. Verifique o nome e tente novamente.")
@@ -380,12 +393,15 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(chave)
+                    resumo = gerar_resumo(resultado.get("texto_completo", ""), "texto")
+                    salvar_resumo_documento(resultado["documento_id"], resumo)
                     st.session_state.documentos_meta[chave] = {
                         "fonte": "texto",
                         "nome": resultado.get("titulo", "Texto"),
                         "chunks": resultado["total_chunks"],
                         "caracteres": resultado["total_caracteres"],
                         "documento_id": resultado["documento_id"],
+                        "resumo": resumo,
                     }
                 else:
                     container.error(f"Não foi possível processar o texto. {resultado['mensagem']}")
@@ -409,12 +425,15 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(chave)
+                    resumo = gerar_resumo(resultado.get("texto_completo", ""), "planilha")
+                    salvar_resumo_documento(resultado["documento_id"], resumo)
                     st.session_state.documentos_meta[chave] = {
                         "fonte": "planilha",
                         "nome": resultado.get("titulo", planilha_file.name),
                         "chunks": resultado["total_chunks"],
                         "caracteres": resultado["total_caracteres"],
                         "documento_id": resultado["documento_id"],
+                        "resumo": resumo,
                     }
                 else:
                     container.error(f"Não foi possível processar a planilha. {resultado['mensagem']}")
@@ -715,10 +734,10 @@ with tab_relatorio:
 
         for item in relatorio["fontes_detalhadas"]:
             documento_id = item.get("documento_id")
-            preview = item.get("preview", "")
-            resumo_text = ""
-            if preview:
-                resumo_text = f'<br><span style="color: var(--gray-500); font-size: 0.8rem; font-style: italic;">{preview}...</span>'
+            resumo = item.get("resumo", "")
+            resumo_html = ""
+            if resumo:
+                resumo_html = f'<br><span style="color: var(--gray-500); font-size: 0.82rem; font-style: italic;">{resumo}</span>'
 
             c1, c2 = st.columns([5, 1])
             with c1:
@@ -728,7 +747,7 @@ with tab_relatorio:
                     f'<span style="color: var(--gray-600); font-size: 0.85rem;">'
                     f'{item["chunks"]} chunks · {item["caracteres"]:,} caracteres'
                     f"</span>"
-                    f"{resumo_text}"
+                    f"{resumo_html}"
                     f"</div>",
                     unsafe_allow_html=True,
                 )
