@@ -6,7 +6,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from markdown_it import MarkdownIt
 
-from utils.documentos import processar_documento, _get_collection as _get_docs_collection
+from utils.documentos import processar_documento, _get_collection as _get_docs_collection, sanitizar_id
 from utils.ingestao import processar_url, processar_html, processar_instagram, processar_texto, processar_planilha
 from utils.ia_engine import perguntar
 from utils.perguntas_sugeridas import PERGUNTAS_SUGERIDAS
@@ -217,6 +217,8 @@ if "campanhas_geradas" not in st.session_state:
     st.session_state.campanhas_geradas = 0
 if "legendas_geradas" not in st.session_state:
     st.session_state.legendas_geradas = []
+if "documentos_meta" not in st.session_state:
+    st.session_state.documentos_meta = {}
 
 
 def exibir_fontes(fontes: list[dict]):
@@ -254,6 +256,14 @@ def _render_upload_tab(container, aba, key_prefix=""):
                             unsafe_allow_html=True,
                         )
                         st.session_state.documentos.append(nome)
+                        st.session_state.documentos_meta[nome] = {
+                            "fonte": "pdf",
+                            "nome": nome,
+                            "chunks": resultado["total_chunks"],
+                            "caracteres": resultado["total_caracteres"],
+                            "paginas": resultado["paginas"],
+                            "documento_id": sanitizar_id(nome),
+                        }
                     else:
                         container.error(f"{resultado['mensagem']}")
                 except Exception as e:
@@ -274,6 +284,14 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(url)
+                    st.session_state.documentos_meta[url] = {
+                        "fonte": "url",
+                        "nome": resultado.get("titulo", url),
+                        "chunks": resultado["total_chunks"],
+                        "caracteres": resultado["total_caracteres"],
+                        "url": url,
+                        "documento_id": sanitizar_id(f"url_{url}"),
+                    }
                 else:
                     container.error(f"Não foi possível acessar a URL. Verifique se o link está correto e tente novamente.")
             else:
@@ -296,6 +314,14 @@ def _render_upload_tab(container, aba, key_prefix=""):
                             f"{resultado['total_caracteres']} caracteres"
                         )
                         st.session_state.documentos.append(nome)
+                        st.session_state.documentos_meta[nome] = {
+                            "fonte": "html",
+                            "nome": resultado.get("titulo", nome),
+                            "chunks": resultado["total_chunks"],
+                            "caracteres": resultado["total_caracteres"],
+                            "arquivo": nome,
+                            "documento_id": sanitizar_id(nome),
+                        }
                     else:
                         container.error(f"{resultado['mensagem']}")
                 except Exception as e:
@@ -319,6 +345,14 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         f"({resultado['posts']} posts)"
                     )
                     st.session_state.documentos.append(chave)
+                    st.session_state.documentos_meta[chave] = {
+                        "fonte": "instagram",
+                        "nome": perfil,
+                        "chunks": resultado["total_chunks"],
+                        "caracteres": resultado["total_caracteres"],
+                        "posts": resultado["posts"],
+                        "documento_id": sanitizar_id(chave),
+                    }
                 else:
                     container.error(f"Não foi possível acessar o perfil @{perfil}. Verifique o nome e tente novamente.")
             else:
@@ -346,6 +380,13 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(chave)
+                    st.session_state.documentos_meta[chave] = {
+                        "fonte": "texto",
+                        "nome": resultado.get("titulo", "Texto"),
+                        "chunks": resultado["total_chunks"],
+                        "caracteres": resultado["total_caracteres"],
+                        "documento_id": resultado["documento_id"],
+                    }
                 else:
                     container.error(f"Não foi possível processar o texto. {resultado['mensagem']}")
             else:
@@ -368,6 +409,13 @@ def _render_upload_tab(container, aba, key_prefix=""):
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(chave)
+                    st.session_state.documentos_meta[chave] = {
+                        "fonte": "planilha",
+                        "nome": resultado.get("titulo", planilha_file.name),
+                        "chunks": resultado["total_chunks"],
+                        "caracteres": resultado["total_caracteres"],
+                        "documento_id": resultado["documento_id"],
+                    }
                 else:
                     container.error(f"Não foi possível processar a planilha. {resultado['mensagem']}")
             else:
@@ -382,14 +430,35 @@ def sidebar_upload():
     st.sidebar.divider()
     st.sidebar.markdown("### Fontes carregadas")
     if st.session_state.documentos:
-        for doc in st.session_state.documentos:
-            st.sidebar.markdown(f"- {doc}")
+        icones = {"pdf": "📄", "url": "🔗", "html": "🌐", "instagram": "📷", "texto": "📝", "planilha": "📊"}
+        for chave in list(st.session_state.documentos):
+            meta = st.session_state.documentos_meta.get(chave)
+            if meta is None:
+                st.sidebar.markdown(f"- {chave}")
+                continue
+            fonte = meta["fonte"]
+            nome = meta.get("nome", chave)
+            chunks = meta.get("chunks", "?")
+            icone = icones.get(fonte, "📄")
+            col1, col2 = st.sidebar.columns([5, 1])
+            with col1:
+                st.markdown(f"**{icone} {nome}**")
+                st.caption(f"{chunks} chunks")
+            with col2:
+                if st.button("🗑️", key=f"del_{chave}", help="Remover esta fonte"):
+                    colecao = _get_docs_collection()
+                    try:
+                        colecao.delete(where={"documento_id": meta["documento_id"]})
+                    except Exception:
+                        pass
+                    st.session_state.documentos.remove(chave)
+                    st.session_state.documentos_meta.pop(chave, None)
+                    st.rerun()
         with st.sidebar.popover("Limpar tudo", use_container_width=True):
             st.warning("Isso vai apagar **todas as fontes** e o **histórico de conversa**. Não é possível desfazer.")
             if st.button("Sim, apagar tudo", type="primary", use_container_width=True):
-                from utils.documentos import _get_collection
                 try:
-                    _get_collection().delete(where={})
+                    _get_docs_collection().delete(where={})
                 except Exception:
                     pass
                 try:
@@ -398,6 +467,7 @@ def sidebar_upload():
                 except Exception:
                     pass
                 st.session_state.documentos = []
+                st.session_state.documentos_meta = {}
                 st.session_state.mensagens = []
                 st.session_state.sugestoes_usadas = False
                 st.session_state.calendarios_gerados = 0
@@ -436,9 +506,27 @@ with tab_dash:
     if st.session_state.documentos:
         st.markdown("#### Fontes carregadas")
         cols = st.columns(2)
-        for i, doc in enumerate(st.session_state.documentos):
-            icon = "📄" if doc.endswith(".pdf") else "🔗" if doc.startswith("http") else "📷" if doc.startswith("ig_") else "📝" if doc.startswith("txt_") else "📊"
-            cols[i % 2].markdown(f"- {icon} {doc}")
+        icones = {"pdf": "📄", "url": "🔗", "html": "🌐", "instagram": "📷", "texto": "📝", "planilha": "📊"}
+        for i, chave in enumerate(st.session_state.documentos):
+            meta = st.session_state.documentos_meta.get(chave)
+            if meta:
+                fonte = meta["fonte"]
+                nome = meta.get("nome", chave)
+                icone = icones.get(fonte, "📄")
+                extra = ""
+                if "paginas" in meta:
+                    extra = f" · {meta['paginas']} páginas"
+                elif "posts" in meta:
+                    extra = f" · {meta['posts']} posts"
+                elif "url" in meta:
+                    extra = f" · url"
+                cols[i % 2].markdown(
+                    f"**{icone} {nome}**<br>"
+                    f"<small>{meta.get('chunks', '?')} chunks · {meta.get('caracteres', 0):,} caracteres{extra}</small>",
+                    unsafe_allow_html=True,
+                )
+            else:
+                cols[i % 2].markdown(f"- {chave}")
     else:
         st.markdown(
             '<div class="app-card-empty">'

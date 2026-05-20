@@ -162,6 +162,7 @@ def salvar_chunks(chunks: list[dict], documento_id: str = None, extra_metadata: 
         md = {**chunk["metadata"], "chunk_id": chunk_id}
         if extra_metadata:
             md.update(extra_metadata)
+        md["documento_id"] = doc_id
         metadatas.append(md)
 
     collection.upsert(documents=textos, metadatas=metadatas, ids=ids)

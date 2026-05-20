@@ -168,6 +168,7 @@ def processar_planilha(arquivo_bytes: bytes, nome_arquivo: str = "planilha.xlsx"
             "total_chunks": total,
             "total_caracteres": len(texto),
             "titulo": nome_arquivo,
+            "documento_id": documento_id,
         }
     except ImportError:
         return {"status": "erro", "mensagem": "openpyxl não instalado. Execute: pip install openpyxl"}
@@ -193,6 +194,7 @@ def processar_texto(texto: str, titulo: str = "") -> dict:
             "total_chunks": total,
             "total_caracteres": len(texto),
             "titulo": titulo,
+            "documento_id": documento_id,
         }
     except Exception as e:
         return {"status": "erro", "mensagem": str(e)}
