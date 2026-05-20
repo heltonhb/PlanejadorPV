@@ -44,12 +44,14 @@ def resumo_conteudo() -> dict:
             or md.get("titulo")
             or "desconhecido"
         )
+        documento_id = md.get("documento_id")
         unique_key = f"{fonte}::{titulo}"
         if unique_key not in agrupado[fonte]:
             agrupado[fonte][unique_key] = {
                 "titulo": titulo,
                 "filhos": 0,
                 "caracteres": 0,
+                "documento_id": documento_id,
             }
         agrupado[fonte][unique_key]["filhos"] += 1
         agrupado[fonte][unique_key]["caracteres"] += doc_len
@@ -63,6 +65,7 @@ def resumo_conteudo() -> dict:
                 "titulo": info["titulo"],
                 "chunks": info["filhos"],
                 "caracteres": info["caracteres"],
+                "documento_id": info["documento_id"],
             })
 
     return {

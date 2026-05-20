@@ -713,44 +713,32 @@ with tab_relatorio:
         st.divider()
         st.markdown("### Detalhamento por documento")
 
-        icones = {"pdf": "📄", "url": "🔗", "html": "🌐", "instagram": "📷", "texto": "📝", "planilha": "📊"}
-        for chave in list(st.session_state.documentos):
-            meta = st.session_state.documentos_meta.get(chave)
-            if not meta:
-                continue
-            fonte = meta["fonte"]
-            nome = meta.get("nome", chave)
-            icone = icones.get(fonte, "📄")
-            chunks = meta.get("chunks", "?")
-            caracteres = meta.get("caracteres", 0)
-            extra = ""
-            if "paginas" in meta:
-                extra = f" · {meta['paginas']} páginas"
-            elif "posts" in meta:
-                extra = f" · {meta['posts']} posts"
-            elif "url" in meta:
-                extra = f" · {meta['url']}"
+        for item in relatorio["fontes_detalhadas"]:
+            documento_id = item.get("documento_id")
 
             c1, c2 = st.columns([5, 1])
             with c1:
                 st.markdown(
                     f'<div class="app-card" style="padding: 0.75rem 1rem;">'
-                    f'<span style="font-size: 1.1rem; font-weight: 600;">{icone} {nome}</span><br>'
+                    f'<span style="font-size: 1.1rem; font-weight: 600;">{item["icone"]} {item["titulo"]}</span><br>'
                     f'<span style="color: var(--gray-600); font-size: 0.85rem;">'
-                    f'{chunks} chunks · {caracteres:,} caracteres{extra}'
+                    f'{item["chunks"]} chunks · {item["caracteres"]:,} caracteres'
                     f"</span>"
                     f"</div>",
                     unsafe_allow_html=True,
                 )
             with c2:
-                if st.button("🗑️ Excluir", key=f"del_rel_{chave}", help="Remover esta fonte"):
+                if documento_id and st.button("🗑️ Excluir", key=f"del_rel_{documento_id}", help="Remover esta fonte"):
                     colecao = _get_docs_collection()
                     try:
-                        colecao.delete(where={"documento_id": meta["documento_id"]})
+                        colecao.delete(where={"documento_id": documento_id})
                     except Exception:
                         pass
-                    st.session_state.documentos.remove(chave)
-                    st.session_state.documentos_meta.pop(chave, None)
+                    for chv, meta in list(st.session_state.documentos_meta.items()):
+                        if meta.get("documento_id") == documento_id:
+                            st.session_state.documentos.remove(chv)
+                            st.session_state.documentos_meta.pop(chv, None)
+                            break
                     st.rerun()
 
 with tab_legendas:
