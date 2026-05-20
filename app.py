@@ -12,6 +12,7 @@ from utils.ia_engine import perguntar
 from utils.perguntas_sugeridas import PERGUNTAS_SUGERIDAS
 from utils.calendario import gerar_calendario, MESES
 from utils.campanhas import gerar_campanha, OBJETIVOS, PUBLICOS, SERVICOS
+from utils.legendas_instagram import gerar_legenda, TOM_ESTILO
 
 load_dotenv()
 
@@ -214,6 +215,8 @@ if "calendarios_gerados" not in st.session_state:
     st.session_state.calendarios_gerados = 0
 if "campanhas_geradas" not in st.session_state:
     st.session_state.campanhas_geradas = 0
+if "legendas_geradas" not in st.session_state:
+    st.session_state.legendas_geradas = []
 
 
 def exibir_fontes(fontes: list[dict]):
@@ -406,8 +409,8 @@ def sidebar_upload():
 
 sidebar_upload()
 
-tab_dash, tab_assistente, tab_calendario, tab_campanhas, tab_relatorio = st.tabs(
-    ["📊 Dashboard", "💬 Assistente", "📅 Calendário Editorial", "📢 Gerador de Campanhas", "📋 Relatório de Conteúdo"],
+tab_dash, tab_assistente, tab_calendario, tab_campanhas, tab_relatorio, tab_legendas = st.tabs(
+    ["📊 Dashboard", "💬 Assistente", "📅 Calendário Editorial", "📢 Gerador de Campanhas", "📋 Relatório de Conteúdo", "📸 Legendas Instagram"],
 )
 
 with tab_dash:
@@ -428,7 +431,7 @@ with tab_dash:
     col1.metric("📁 Fontes carregadas", len(st.session_state.documentos))
     col2.metric("📄 Documentos na base", total_chunks)
     col3.metric("💬 Perguntas feitas", total_perguntas)
-    col4.metric("📊 Conteúdos gerados", total_calendarios + total_campanhas)
+    col4.metric("📊 Conteúdos gerados", total_calendarios + total_campanhas + len(st.session_state.legendas_geradas))
 
     if st.session_state.documentos:
         st.markdown("#### Fontes carregadas")
@@ -457,7 +460,8 @@ with tab_dash:
     st.markdown(
         "Use as abas **💬 Assistente** para conversar com seus documentos, "
         "**📅 Calendário Editorial** para gerar um plano mensal de marketing, "
-        "ou **📢 Gerador de Campanhas** para campanhas completas."
+        "**📢 Gerador de Campanhas** para campanhas completas, "
+        "ou **📸 Legendas Instagram** para criar legendas a partir de imagens."
     )
 
 with tab_assistente:
@@ -631,6 +635,76 @@ with tab_relatorio:
                 f"</div>",
                 unsafe_allow_html=True,
             )
+
+with tab_legendas:
+    st.title("📸 Legendas para Instagram")
+    st.markdown(
+        "Faça upload de uma imagem e gere legendas prontas para o Instagram "
+        "com o tom e estilo ideais para a franquia."
+    )
+
+    col_img, col_config = st.columns([2, 1])
+
+    with col_img:
+        uploaded_image = st.file_uploader(
+            "Escolha uma imagem",
+            type=["jpg", "jpeg", "png", "webp"],
+            key="legendas_img",
+        )
+        if uploaded_image:
+            from PIL import Image
+            img = Image.open(uploaded_image)
+            st.image(img, caption="Imagem selecionada", use_container_width=True)
+
+    with col_config:
+        tom = st.selectbox(
+            "Tom da legenda",
+            options=list(TOM_ESTILO.keys()),
+            index=0,
+            key="legendas_tom",
+        )
+        tema = st.text_input(
+            "Tema (opcional)",
+            placeholder="Ex: Dia das Mães, matrículas, dica de estudo...",
+            key="legendas_tema",
+        )
+
+        if st.button(
+            "✨ Gerar Legendas",
+            type="primary",
+            use_container_width=True,
+            disabled="legendas_img" not in st.session_state or not uploaded_image,
+        ):
+            if not uploaded_image:
+                st.warning("Faça upload de uma imagem primeiro.")
+            else:
+                from PIL import Image as PILImage
+                img_pil = PILImage.open(uploaded_image)
+                with st.spinner("Analisando imagem e gerando legendas..."):
+                    resultado = gerar_legenda(
+                        image=img_pil,
+                        tom=tom,
+                        tema=tema,
+                    )
+                if resultado["status"] == "ok":
+                    st.session_state.legendas_geradas.append(resultado["conteudo"])
+                    st.balloons()
+                else:
+                    st.error(resultado.get("mensagem", "Erro ao gerar legendas."))
+
+    if st.session_state.legendas_geradas:
+        st.divider()
+        st.markdown("### Legendas geradas")
+        for i, legenda in enumerate(reversed(st.session_state.legendas_geradas), 1):
+            with st.container():
+                st.markdown(
+                    f'<div class="app-card">'
+                    f'<strong>Geração #{len(st.session_state.legendas_geradas) - i + 1}</strong>',
+                    unsafe_allow_html=True,
+                )
+                st.markdown(legenda)
+                st.markdown("</div>", unsafe_allow_html=True)
+                st.divider()
 
 st.markdown("""
 <div class="app-footer">
