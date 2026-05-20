@@ -667,14 +667,27 @@ with tab_calendario:
             st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
             st.session_state.calendarios_gerados += 1
             st.session_state.ultimo_calendario = resultado["conteudo"]
-            docx_bytes = exportar_markdown_docx(resultado["conteudo"])
-            st.download_button(
-                "📥 Baixar como DOCX",
-                data=docx_bytes,
-                file_name=f"calendario_{mes_selecionado}_{ano_selecionado}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True,
-            )
+            col_exp, col_base = st.columns(2)
+            with col_exp:
+                docx_bytes = exportar_markdown_docx(resultado["conteudo"])
+                st.download_button(
+                    "📥 Baixar como DOCX",
+                    data=docx_bytes,
+                    file_name=f"calendario_{mes_selecionado}_{ano_selecionado}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True,
+                )
+            with col_base:
+                if st.button("📚 Incluir na base", key="inc_cal", use_container_width=True):
+                    with st.spinner("Adicionando à base de conhecimento..."):
+                        proc = processar_texto(
+                            resultado["conteudo"],
+                            titulo=f"Calendário {mes_selecionado} {ano_selecionado}",
+                        )
+                    if proc["status"] == "ok":
+                        st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
+                    else:
+                        st.error(f"❌ {proc['mensagem']}")
         else:
             st.error(f"❌ Não foi possível gerar o calendário: {resultado['mensagem']}")
         st.session_state.processing = False
@@ -706,14 +719,27 @@ with tab_campanhas:
             st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
             st.session_state.campanhas_geradas += 1
             st.session_state.ultima_campanha = resultado["conteudo"]
-            docx_bytes = exportar_markdown_docx(resultado["conteudo"])
-            st.download_button(
-                "📥 Baixar como DOCX",
-                data=docx_bytes,
-                file_name=f"campanha_{objetivo}_{publico}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True,
-            )
+            col_exp, col_base = st.columns(2)
+            with col_exp:
+                docx_bytes = exportar_markdown_docx(resultado["conteudo"])
+                st.download_button(
+                    "📥 Baixar como DOCX",
+                    data=docx_bytes,
+                    file_name=f"campanha_{objetivo}_{publico}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True,
+                )
+            with col_base:
+                if st.button("📚 Incluir na base", key="inc_camp", use_container_width=True):
+                    with st.spinner("Adicionando à base de conhecimento..."):
+                        proc = processar_texto(
+                            resultado["conteudo"],
+                            titulo=f"Campanha {objetivo} / {publico}",
+                        )
+                    if proc["status"] == "ok":
+                        st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
+                    else:
+                        st.error(f"❌ {proc['mensagem']}")
         else:
             st.error(f"❌ Não foi possível gerar a campanha: {resultado['mensagem']}")
         st.session_state.processing = False
