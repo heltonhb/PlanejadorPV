@@ -179,7 +179,7 @@ st.markdown("""
         orientation: "portrait-primary",
         categories: ["business","marketing"],
         icons: [{
-            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%23005CAA'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' fill='white'%3E📊%3C/text%3E%3C/svg%3E",
+            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23005CAA'/%3E%3Cstop offset='100%25' stop-color='%23003F7A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='60' cy='60' r='58' fill='none' stroke='url(%23g)' stroke-width='2'/%3E%3Cpath d='M60 60 L60 10 A50 50 0 0 1 108 38 Z' fill='%2300A859'/%3E%3Cpath d='M60 60 L108 38 A50 50 0 0 1 86 104 Z' fill='%23F7B731'/%3E%3Cpath d='M60 60 L86 104 A50 50 0 0 1 60 110 Z' fill='%23005CAA'/%3E%3Cpath d='M60 60 L60 110 A50 50 0 0 1 12 60 Z' fill='%23E84C3D'/%3E%3Cpath d='M60 60 L12 60 A50 50 0 0 1 60 10 Z' fill='%23E8F0FE'/%3E%3Ccircle cx='60' cy='60' r='8' fill='white' stroke='url(%23g)' stroke-width='2'/%3E%3Cpolyline points='32,84 48,68 58,74 74,54' fill='none' stroke='%2300A859' stroke-width='3.5'/%3E%3Cpolygon points='74,54 66,50 76,50' fill='%2300A859'/%3E%3C/svg%3E",
             sizes: "512x512",
             type: "image/svg+xml",
             purpose: "any maskable"
@@ -193,10 +193,13 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
-st.markdown("""
+with open("assets/logo.svg") as f:
+    logo_svg = f.read()
+
+st.markdown(f"""
 <div class="app-header">
     <div class="app-header-content">
-        <div class="app-logo">📊</div>
+        <div style="flex-shrink:0;">{logo_svg}</div>
         <div>
             <div class="app-title">PlanejadorPV</div>
             <div class="app-subtitle">Marketing Planner — Ensina Mais Turma da Mônica · Unidade Tatuapé</div>

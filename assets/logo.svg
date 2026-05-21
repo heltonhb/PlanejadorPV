@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="400" height="120">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#005CAA"/>
+      <stop offset="100%" stop-color="#003F7A"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00A859"/>
+      <stop offset="100%" stop-color="#007A40"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ícone: gráfico de pizza + seta de crescimento -->
+  <g transform="translate(10, 10)">
+    <!-- Círculo base -->
+    <circle cx="50" cy="50" r="48" fill="url(#bg)" opacity="0.1"/>
+    <circle cx="50" cy="50" r="48" fill="none" stroke="url(#bg)" stroke-width="2"/>
+
+    <!-- Pizza chart (setores) -->
+    <path d="M50 50 L50 8 A42 42 0 0 1 90 30 Z" fill="#00A859" opacity="0.9"/>
+    <path d="M50 50 L90 30 A42 42 0 0 1 72 88 Z" fill="#F7B731" opacity="0.8"/>
+    <path d="M50 50 L72 88 A42 42 0 0 1 50 92 Z" fill="#005CAA" opacity="0.85"/>
+    <path d="M50 50 L50 92 A42 42 0 0 1 8 50 Z" fill="#E84C3D" opacity="0.7"/>
+    <path d="M50 50 L8 50 A42 42 0 0 1 50 8 Z" fill="#E8F0FE" opacity="0.6"/>
+
+    <!-- Ponto central -->
+    <circle cx="50" cy="50" r="6" fill="white" stroke="url(#bg)" stroke-width="1.5"/>
+
+    <!-- Seta de crescimento -->
+    <polyline points="24,72 38,58 48,64 62,46" fill="none" stroke="url(#accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polygon points="62,46 56,42 64,42" fill="url(#accent)"/>
+  </g>
+
+  <!-- Texto PlanejadorPV -->
+  <text x="130" y="52" font-family="'Inter', 'Segoe UI', -apple-system, sans-serif" font-size="30" font-weight="800" fill="#003F7A">
+    Planejador<tspan fill="#005CAA">PV</tspan>
+  </text>
+
+  <!-- Subtítulo -->
+  <text x="130" y="82" font-family="'Inter', 'Segoe UI', -apple-system, sans-serif" font-size="14" font-weight="500" fill="#6C757D" letter-spacing="1">
+    MARKETING PLANNER
+  </text>
+
+  <!-- Linha decorativa -->
+  <line x1="130" y1="95" x2="320" y2="95" stroke="url(#accent)" stroke-width="2" stroke-linecap="round"/>
+</svg>
