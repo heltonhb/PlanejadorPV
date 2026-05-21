@@ -759,19 +759,6 @@ if "ultima_campanha" not in st.session_state:
     st.session_state.ultima_campanha = None
 
 
-MOCK_CONTEUDOS = [
-    {"data": "2026-05-20", "titulo": "Post: Dicas de Concentração Infantil", "tipo": "Post Instagram", "status": "Publicado", "engajamento": "4.2% (128 likes)", "link": "https://instagram.com/p/1"},
-    {"data": "2026-05-18", "titulo": "Reels: Alunos Programando Robôs", "tipo": "Reels", "status": "Publicado", "engajamento": "5.8% (342 views)", "link": "https://instagram.com/p/2"},
-    {"data": "2026-05-15", "titulo": "WhatsApp: Campanha de Matrículas Ativas", "tipo": "WhatsApp", "status": "Publicado", "engajamento": "12% cliques (24 pais)", "link": "#"},
-    {"data": "2026-05-12", "titulo": "Post: Homenagem às Mães (Turma da Mônica)", "tipo": "Post Instagram", "status": "Publicado", "engajamento": "3.5% (94 likes)", "link": "https://instagram.com/p/3"},
-    {"data": "2026-05-22", "titulo": "Reels: Desafio Lógico da Mônica", "tipo": "Reels", "status": "Agendado", "engajamento": "-", "link": "#"},
-    {"data": "2026-05-24", "titulo": "WhatsApp: Convite Workshop Minecraft", "tipo": "WhatsApp", "status": "Agendado", "engajamento": "-", "link": "#"},
-    {"data": "2026-05-26", "titulo": "Post: Apoio em Leitura e Interpretação", "tipo": "Post Instagram", "status": "Agendado", "engajamento": "-", "link": "#"},
-    {"data": "2026-05-28", "titulo": "Blog: Tecnologia na Infância", "tipo": "Blog/Site", "status": "Rascunho", "engajamento": "-", "link": "#"},
-    {"data": "2026-05-30", "titulo": "Post: Como Vencer a Prova de Matemática", "tipo": "Post Instagram", "status": "Rascunho", "engajamento": "-", "link": "#"},
-    {"data": "2026-06-01", "titulo": "WhatsApp: Lançamento Turma de Robótica", "tipo": "WhatsApp", "status": "Rascunho", "engajamento": "-", "link": "#"}
-]
-
 def get_calendar_events(mes_nome, ano):
     events = {}
     events[2] = [{"title": "Reunião Alinhamento Tatuapé", "category": "reuniao", "time": "09:30", "description": "Alinhamento das campanhas locais e metas pedagógicas para o mês de " + mes_nome}]
@@ -1674,130 +1661,6 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
     """
     return html
 
-def render_report_table(filtered_conteudos):
-    rows_html = ""
-    for idx, item in enumerate(filtered_conteudos):
-        status_lower = item["status"].lower()
-        if status_lower == "publicado":
-            status_class = "badge-status-publicado"
-            row_class = "row-publicado"
-            icon = "✅"
-        elif status_lower == "agendado":
-            status_class = "badge-status-agendado"
-            row_class = "row-agendado"
-            icon = "⏳"
-        else:
-            status_class = "badge-status-rascunho"
-            row_class = "row-rascunho"
-            icon = "📝"
-            
-        link_html = f'<a href="{item["link"]}" target="_blank" style="color: var(--info) !important; font-weight: 600 !important; text-decoration: none !important;">Ver Link</a>' if item["link"] != "#" else '<span style="color: var(--on-surface-variant) !important;">Indisponível</span>'
-        
-        rows_html += f"""
-        <tr class="{row_class}">
-            <td style="font-weight: 600 !important;">{item['data']}</td>
-            <td style="text-align: left !important;">{item['titulo']}</td>
-            <td style="text-align: left !important;">{item['tipo']}</td>
-            <td><span class="badge-status {status_class}">{icon} {item['status']}</span></td>
-            <td style="text-align: left !important;">{item['engajamento']}</td>
-            <td>{link_html}</td>
-        </tr>
-        """
-        
-    styles = """
-    <style>
-        .report-table-container {
-            width: 100% !important;
-            margin-top: 1.5rem !important;
-            margin-bottom: 1.5rem !important;
-            border-radius: 12px !important;
-            overflow: hidden !important;
-            border: 1px solid var(--outline-variant) !important;
-            box-shadow: var(--ambient-shadow) !important;
-        }
-        .report-table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            margin: 0 !important;
-            border: none !important;
-        }
-        .report-table th {
-            background-color: var(--primary) !important;
-            color: white !important;
-            font-weight: 700 !important;
-            padding: 12px 16px !important;
-            text-align: left !important;
-            font-size: 0.85rem !important;
-        }
-        .report-table td {
-            padding: 12px 16px !important;
-            border-bottom: 1px solid var(--outline-variant) !important;
-            font-size: 0.85rem !important;
-            color: var(--on-surface) !important;
-        }
-        .row-publicado {
-            background-color: rgba(0, 168, 89, 0.05) !important;
-        }
-        .row-publicado:hover {
-            background-color: rgba(0, 168, 89, 0.08) !important;
-        }
-        .row-agendado {
-            background-color: rgba(247, 183, 49, 0.05) !important;
-        }
-        .row-agendado:hover {
-            background-color: rgba(247, 183, 49, 0.08) !important;
-        }
-        .row-rascunho {
-            background-color: rgba(232, 76, 61, 0.05) !important;
-        }
-        .row-rascunho:hover {
-            background-color: rgba(232, 76, 61, 0.08) !important;
-        }
-        .badge-status {
-            padding: 3px 8px !important;
-            border-radius: 12px !important;
-            font-size: 0.72rem !important;
-            font-weight: 700 !important;
-            display: inline-block !important;
-        }
-        .badge-status-publicado {
-            background-color: #00A859 !important;
-            color: white !important;
-        }
-        .badge-status-agendado {
-            background-color: #F7B731 !important;
-            color: #343A40 !important;
-        }
-        .badge-status-rascunho {
-            background-color: #E84C3D !important;
-            color: white !important;
-        }
-    </style>
-    """
-    
-    html = f"""
-    {styles}
-    <div class="report-table-container">
-        <table class="report-table">
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Título</th>
-                    <th>Tipo</th>
-                    <th>Status</th>
-                    <th>Engajamento</th>
-                    <th>Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows_html if rows_html else '<tr><td colspan="6" style="text-align: center; color: var(--on-surface-variant); font-style: italic;">Nenhum conteúdo encontrado para os filtros selecionados.</td></tr>'}
-            </tbody>
-        </table>
-    </div>
-    """
-    return "\n".join([line.strip() for line in html.splitlines() if line.strip()])
-
-
 def exibir_fontes(fontes: list[dict]):
     seen = set()
     chips_html = []
@@ -2581,64 +2444,7 @@ with tab_relatorio:
         unsafe_allow_html=True,
     )
 
-    # 1. Mock Contents filters and summary cards at the top
-    st.markdown("### 🔍 Filtrar Conteúdos Gerados")
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        tipos_disponiveis = ["Todos"] + sorted(list(set(item["tipo"] for item in MOCK_CONTEUDOS)))
-        tipo_filtro = st.selectbox("Tipo de Conteúdo", tipos_disponiveis, index=0)
-    with col_f2:
-        status_disponiveis = ["Todos", "Publicado", "Agendado", "Rascunho"]
-        status_filtro = st.selectbox("Status", status_disponiveis, index=0)
-
-    # Filter MOCK_CONTEUDOS
-    filtered_conteudos = MOCK_CONTEUDOS
-    if tipo_filtro != "Todos":
-        filtered_conteudos = [item for item in filtered_conteudos if item["tipo"] == tipo_filtro]
-    if status_filtro != "Todos":
-        filtered_conteudos = [item for item in filtered_conteudos if item["status"] == status_filtro]
-
-    # Summary cards
-    tot_total = len(MOCK_CONTEUDOS)
-    tot_pub = len([item for item in MOCK_CONTEUDOS if item["status"].lower() == "publicado"])
-    tot_agd = len([item for item in MOCK_CONTEUDOS if item["status"].lower() == "agendado"])
-    tot_ras = len([item for item in MOCK_CONTEUDOS if item["status"].lower() == "rascunho"])
-
-    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-    col_m1.markdown(
-        f'<div class="metric-card metric-blue">'
-        f'<div class="metric-card-val">{tot_total}</div>'
-        f'<div class="metric-card-label">Total de Conteúdos</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-    col_m2.markdown(
-        f'<div class="metric-card metric-green">'
-        f'<div class="metric-card-val">{tot_pub}</div>'
-        f'<div class="metric-card-label">✨ Publicados</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-    col_m3.markdown(
-        f'<div class="metric-card metric-yellow">'
-        f'<div class="metric-card-val">{tot_agd}</div>'
-        f'<div class="metric-card-label">⏳ Agendados</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-    col_m4.markdown(
-        f'<div class="metric-card metric-red">'
-        f'<div class="metric-card-val">{tot_ras}</div>'
-        f'<div class="metric-card-label">📝 Rascunhos</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # Render report table
-    table_html = render_report_table(filtered_conteudos)
-    st.markdown(table_html, unsafe_allow_html=True)
-
-    # 2. Database RAG status section below divider
+    # Database RAG status section
     st.divider()
     st.markdown(
         '<div class="app-card">'
