@@ -1,0 +1,86 @@
+PROMPT PARA GOOGLE STITCH — PLANEJADORPV
+
+---
+
+Crie um design system completo em HTML/CSS para um web app chamado "PlanejadorPV — Marketing Planner", da franquia "Ensina Mais Turma da Mônica · Unidade Tatuapé". O tom deve ser lúdico e amigável (inspirado na Turma da Mônica), mas funcional para uso profissional por gestores de marketing.
+
+CORES (Ensina Mais):
+- Verde (#00A859) — primária, gradientes verde escuro (#007A40)
+- Vermelho (#E84C3D) — destaque/alertas, gradientes (#C0392B)
+- Amarelo (#F7B731) — warning/destaques, gradientes (#E09E1A)
+- Azul (#005CAA) — informação/links, gradientes (#003F7A)
+- Fundo: branco (#FFFFFF) e cinza claro (#F8F9FA)
+- Texto: #343A40 (primário), #6C757D (secundário)
+
+TIPOGRAFIA:
+- Títulos: Inter ou Poppins, bold
+- Corpo: Inter, regular 14px
+- Tom lúdico: elementos arredondados, cards com sombra suave, ícones expressivos
+
+---
+
+TELA 1 — DASHBOARD (📊)
+Visão geral do sistema com:
+- Header com logo (texto "PlanejadorPV") e saudação ("Olá, [usuário]! 👋")
+- 4 métricas em cards coloridos (cada um com gradiente diferente):
+  · 📁 Fontes carregadas (ex: 12)
+  · 📄 Documentos na base (ex: 347)
+  · 💬 Perguntas feitas (ex: 89)
+  · 📊 Conteúdos gerados (ex: 156)
+- Seção "Fontes carregadas" com lista de itens (PDF, URL, Instagram, HTML, Texto, Planilha) cada um com ícone, nome, quantidade de chunks e caracteres
+- Gráfico de barras horizontal mockado mostrando "Conteúdos por categoria" (Calendários, Campanhas, Legendas, Análises) com cores verde/amarelo/azul/vermelho
+- Estado vazio: quando não há fontes, mostrar ilustração amigável e texto "Nenhuma fonte carregada — use a barra lateral para adicionar PDFs, URLs e mais"
+- Sidebar à esquerda com links para as 6 telas, cada um com ícone e cor diferente
+
+TELA 2 — ASSISTENTE (💬)
+Chat interface com:
+- Header "Assistente — Marketing para Franquias"
+- Bolhas de sugestões de perguntas organizadas por categoria (cards clicáveis em grid 3 colunas)
+- Área de chat com bolhas do usuário (verde, alinhada à direita) e do assistente (branca/cinza, alinhada à esquerda)
+- Input de texto na parte inferior com botão de envio verde
+- Fontes citadas exibidas como chips/tags abaixo da resposta
+
+TELA 3 — CALENDÁRIO EDITORIAL (📅)
+Visão mensal com:
+- Header "Calendário Editorial" com seletor de mês/ano
+- Grid estilo calendário com dias do mês
+- Cards de conteúdo dentro dos dias com cores por categoria (verde=pauta, azul=publicação, amarelo=reunião, vermelho=deadline)
+- Botão "Gerar Calendário" verde em destaque
+- Legenda de cores no topo
+- Modal/overlay para detalhes ao clicar em um dia
+
+TELA 4 — GERADOR DE CAMPANHAS (📢)
+Formulário + resultado com:
+- Header "Gerador de Campanhas"
+- Formulário com campos: Nome da campanha, Objetivo (select), Público-alvo, Canais (checkboxes: Instagram, Facebook, Email, SMS, Google Ads), Orçamento, Datas
+- Botão "Gerar Campanha" com gradiente verde
+- Área de resultado com card da campanha gerada: nome, objetivos, cronograma em timeline visual, canais como tags coloridas, métricas esperadas
+
+TELA 5 — RELATÓRIO DE CONTEÚDO (📋)
+Relatório com:
+- Header "Relatório de Conteúdo"
+- Filtros por período e tipo de conteúdo (select/date inputs)
+- Tabela com colunas: Data, Título, Tipo, Status (✅ Publicado, ⏳ Agendado, 📝 Rascunho), Engajamento, Ações
+- Cards de resumo acima da tabela (Total, Publicados, Agendados, Rascunhos)
+- Cada linha da tabela com cor de status
+
+TELA 6 — LEGENDAS INSTAGRAM (📸)
+Gerador de legendas com:
+- Header "Legendas Instagram"
+- Upload de imagem (área com dashed border e ícone de upload)
+- Campo de texto para contexto/instruções
+- Botão "Gerar Legenda" com gradiente verde
+- Resultado em card estilo Instagram: preview da imagem (mock), legender gerada em texto, hashtags como tags, botão "Copiar"
+
+---
+
+REGRAS GERAIS DE DESIGN:
+- Todos os cards com border-radius: 12px e box-shadow sutil
+- Transitions suaves em hovers (0.2s ease)
+- Grid/Flexbox responsivo
+- Ícones expressivos e coloridos (uso de emojis como ícones)
+- Gradientes seguindo a paleta Ensina Mais
+- Fonte Inter (carregar do Google Fonts)
+- Espaçamento generoso (padding 16-24px)
+- Layout: sidebar fixa à esquerda (220px), conteúdo à direita
+- Sidebar com fundo escuro (gradiente verde escuro #003F20 a #007A40) e links em branco com ícones

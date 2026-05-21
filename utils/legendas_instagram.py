@@ -51,6 +51,7 @@ def gerar_legenda(
     image,
     tom: str = "Educativo",
     tema: str = "",
+    instrucoes: str = "",
     top_k: int = TOP_K,
 ) -> dict:
     api_key = _get_gemini_key()
@@ -72,6 +73,8 @@ def gerar_legenda(
     )
     if tema:
         prompt += f"\nTEMA SUGERIDO: {tema}\n"
+    if instrucoes:
+        prompt += f"\nINSTRUÇÕES ADICIONAIS: {instrucoes}\n"
     if contexto:
         prompt += (
             f"\nUse as informações abaixo sobre a unidade para personalizar:\n"

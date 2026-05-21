@@ -40,132 +40,645 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     :root {
-        --brand-blue: #005CAA;
-        --brand-blue-dark: #003F7A;
-        --brand-blue-light: #E8F0FE;
-        --brand-green: #00A859;
-        --brand-green-light: #E6F9F0;
-        --brand-yellow: #F7B731;
-        --brand-yellow-light: #FEF7E6;
-        --brand-red: #E84C3D;
-        --brand-red-light: #FDEDEC;
-        --gray-50: #F8F9FA;
-        --gray-100: #F1F3F5;
-        --gray-200: #E9ECEF;
-        --gray-300: #DEE2E6;
-        --gray-600: #6C757D;
-        --gray-800: #343A40;
-        --gray-900: #212529;
+        --primary: #00A859;
+        --primary-dark: #007A40;
+        --primary-container: #00A859;
+        --primary-fixed: #E8F5E9;
+        --primary-fixed-dim: #C8E6C9;
+        --on-primary: #ffffff;
+        --on-primary-container: #00210d;
+        --on-primary-fixed: #00210d;
+        --on-primary-fixed-variant: #005228;
+        --secondary: #E84C3D;
+        --secondary-dark: #C0392B;
+        --secondary-container: #FFEBEE;
+        --secondary-fixed: #FFCDD2;
+        --secondary-fixed-dim: #EF9A9A;
+        --on-secondary: #ffffff;
+        --on-secondary-container: #610002;
+        --on-secondary-fixed: #410001;
+        --on-secondary-fixed-variant: #910707;
+        --tertiary: #F7B731;
+        --tertiary-dark: #E09E1A;
+        --tertiary-container: #FFFDE7;
+        --tertiary-fixed: #FFF59D;
+        --tertiary-fixed-dim: #FFE082;
+        --on-tertiary: #ffffff;
+        --on-tertiary-container: #3b2700;
+        --on-tertiary-fixed: #271900;
+        --on-tertiary-fixed-variant: #5e4200;
+        --info: #005CAA;
+        --info-dark: #003F7A;
+        --background: #ffffff;
+        --on-background: #343A40;
+        --surface: #ffffff;
+        --surface-container: #F8F9FA;
+        --surface-container-low: #F8F9FA;
+        --surface-container-lowest: #ffffff;
+        --surface-container-high: #E9EEF6;
+        --surface-container-highest: #DDE3EB;
+        --surface-variant: #DDE3EB;
+        --surface-dim: #d5dae2;
+        --on-surface: #343A40;
+        --on-surface-variant: #6C757D;
+        --outline: #6d7b6e;
+        --outline-variant: #bccabc;
+        --error: #E84C3D;
+        --error-container: #ffdad6;
+        --on-error: #ffffff;
+        --on-error-container: #93000a;
+        --inverse-primary: #59df89;
+        --inverse-surface: #2b3137;
+        --inverse-on-surface: #ecf1f9;
         --pwa-bar-height: env(safe-area-inset-top, 0px);
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+        --shadow-md: 0px 4px 12px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0px 8px 24px rgba(0, 0, 0, 0.12);
+        --ambient-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+        --radius-sm: 4px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --radius-xl: 12px;
     }
 
     * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    body, [data-testid="stAppViewContainer"] h1, [data-testid="stAppViewContainer"] h2,
+    [data-testid="stAppViewContainer"] h3, [data-testid="stAppViewContainer"] h4,
+    [data-testid="stAppViewContainer"] h5, [data-testid="stAppViewContainer"] h6,
+    [data-testid="stMarkdownContainer"], .stTabs [role="tab"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-    div[data-testid="stMetricValue"] { color: var(--brand-blue); font-weight: 700; }
-    div[data-testid="stMetricLabel"] { font-size: 0.85rem; color: var(--gray-600); }
+    /* ── Layout ── */
+    .stMainBlockContainer { padding-top: 1rem !important; }
+    .block-container { padding-top: 1rem !important; }
 
+    /* ── Stitch Utilities ── */
+    .ambient-shadow { box-shadow: var(--ambient-shadow); }
+    .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .hover-lift:hover { transform: translateY(-2px); box-shadow: 0px 8px 16px rgba(52, 58, 64, 0.12); }
+    
+    .metric-card {
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        color: white;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15);
+    }
+    .metric-card-val {
+        font-size: 2.3rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 0.25rem;
+    }
+    .metric-card-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        opacity: 0.9;
+    }
+    .metric-green {
+        background: linear-gradient(135deg, #00A859 0%, #007A40 100%);
+    }
+    .metric-blue {
+        background: linear-gradient(135deg, #005CAA 0%, #003F7A 100%);
+    }
+    .metric-yellow {
+        background: linear-gradient(135deg, #F7B731 0%, #E09E1A 100%);
+        color: #343A40 !important;
+    }
+    .metric-yellow .metric-card-val {
+        color: #343A40 !important;
+    }
+    .metric-yellow .metric-card-label {
+        color: #343A40 !important;
+    }
+    .metric-red {
+        background: linear-gradient(135deg, #E84C3D 0%, #C0392B 100%);
+    }
+
+    /* ── Header ── */
     .app-header {
-        background: linear-gradient(135deg, var(--brand-blue), var(--brand-blue-dark));
-        padding: 1rem 2rem;
-        border-radius: 0.5rem;
+        background: linear-gradient(135deg, var(--primary), #007A40, #003F20);
+        padding: 1.25rem 2rem;
+        border-radius: var(--radius-lg);
         margin-bottom: 1.5rem;
         color: white;
+        box-shadow: 0 4px 20px rgba(0,168,89,0.2);
+        position: relative;
+        overflow: hidden;
     }
-    .app-header-content { display: flex; align-items: center; gap: 1rem; }
-    .app-logo { font-size: 2rem; line-height: 1; }
-    .app-title { font-size: 1.5rem; font-weight: 700; }
-    .app-subtitle { font-size: 0.875rem; opacity: 0.9; }
-
-    .app-card {
-        background: white;
-        border: 1px solid var(--gray-200);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-        color: var(--gray-900);
+    .app-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+        border-radius: 50%;
     }
-    .app-card h1, .app-card h2, .app-card h3 { color: var(--brand-blue); margin-top: 1rem; }
-    .app-card h1:first-child, .app-card h2:first-child, .app-card h3:first-child { margin-top: 0; }
-    .app-card p { color: var(--gray-800); line-height: 1.6; margin-bottom: 0.75rem; }
-    .app-card ul, .app-card ol { padding-left: 1.25rem; margin-bottom: 0.75rem; }
-    .app-card li { margin-bottom: 0.35rem; color: var(--gray-800); }
-    .app-card hr { border: none; border-top: 2px solid var(--gray-200); margin: 1rem 0; }
-    .app-card strong { color: var(--brand-blue-dark); }
-
-    .app-card-empty {
-        background: var(--gray-50);
-        border: 2px dashed var(--gray-300);
-        border-radius: 0.75rem;
-        padding: 2.5rem 1.5rem;
-        text-align: center;
-        color: var(--gray-600);
-        margin: 1rem 0;
+    .app-header::after {
+        content: '';
+        position: absolute;
+        bottom: -60%;
+        left: 40%;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(0,168,89,0.1) 0%, transparent 70%);
+        border-radius: 50%;
     }
+    .app-header-content { display: flex; align-items: center; gap: 1.25rem; position: relative; z-index: 1; }
+    .app-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+    .app-subtitle { font-size: 0.85rem; opacity: 0.85; font-weight: 400; }
 
-    .stAlert { border-left-color: var(--brand-blue) !important; }
-    div[data-testid="stAlert"] { border-radius: 0.5rem; }
-
-    div.stButton > button[kind="primary"] {
-        background: var(--brand-blue);
-        border: none;
+    /* ── Sidebar ── */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #003F20, #007A40);
+    }
+    section[data-testid="stSidebar"] .stSidebarContent {
+        padding: 1.25rem;
+    }
+    section[data-testid="stSidebar"] h2 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--on-primary);
+        margin-top: 1.25rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid rgba(255,255,255,0.2);
+    }
+    section[data-testid="stSidebar"] h2:first-child {
+        margin-top: 0;
+    }
+    section[data-testid="stSidebar"] h1 {
+        color: white;
+    }
+    section[data-testid="stSidebar"] h3 {
+        font-size: 0.85rem;
         font-weight: 600;
+        color: rgba(255,255,255,0.7);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] .stRadio div[data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] span {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.85);
+    }
+    section[data-testid="stSidebar"] .stRadio [role="radiogroup"] {
+        gap: 0.35rem;
+    }
+    section[data-testid="stSidebar"] .stRadio label {
+        padding: 0.5rem 0.85rem !important;
+        border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.8) !important;
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+        margin-left: -1rem;
+    }
+    section[data-testid="stSidebar"] .stRadio label:hover {
+        background: rgba(255,255,255,0.05) !important;
+        color: white !important;
+        opacity: 1;
+    }
+    section[data-testid="stSidebar"] .stRadio label:has(input:checked) {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-left: 4px solid #F7B731 !important;
+        color: white !important;
+        font-weight: 700 !important;
+        opacity: 1;
+    }
+    section[data-testid="stSidebar"] .stRadio label:has(input:checked) p {
+        color: white !important;
+        font-weight: 700 !important;
+    }
+    section[data-testid="stSidebar"] .stTextInput input {
+        border-radius: var(--radius-lg);
+        font-size: 0.85rem;
+    }
+    section[data-testid="stSidebar"] .stButton button {
+        font-size: 0.85rem;
+        border-radius: var(--radius-lg);
+    }
+    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 2px dashed rgba(255, 255, 255, 0.2) !important;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] * {
+        color: white !important;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] button {
+        background: var(--warning) !important;
+        color: var(--on-tertiary-fixed) !important;
+        border: none !important;
+        font-weight: 600 !important;
+    }
+    section[data-testid="stSidebar"] .stButton button,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] button {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+        border-radius: var(--radius-lg) !important;
+    }
+    section[data-testid="stSidebar"] .stButton button:hover,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+    }
+    section[data-testid="stSidebar"] .stRadio label > div:first-child {
+        display: none !important;
+    }
+
+    /* ── Tabs ── */
+    .stTabs [role="tablist"] {
+        gap: 0.25rem;
+        background: var(--surface-container);
+        padding: 0.35rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.25rem;
+    }
+    .stTabs [role="tab"] {
+        border-radius: var(--radius-sm);
+        padding: 0.35rem 0.85rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--on-surface-variant);
         transition: all 0.15s ease;
     }
-    div.stButton > button[kind="primary"]:hover:not(:disabled) {
-        background: var(--brand-blue-dark);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,92,170,0.3);
+    .stTabs [role="tab"]:hover {
+        color: var(--primary);
+        background: color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+    .stTabs [role="tab"][aria-selected="true"] {
+        background: white;
+        color: var(--primary);
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
     }
 
-    .suggestion-btn div.stButton > button {
+    /* ── Cards ── */
+    .app-card {
+        background: var(--surface-container-lowest);
+        border: 1px solid var(--outline-variant);
+        border-radius: var(--radius-xl);
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: var(--ambient-shadow);
+        color: var(--on-surface);
+        transition: box-shadow 0.2s ease;
+    }
+    .app-card:hover { box-shadow: var(--shadow-lg); }
+    div[data-testid="stVerticalBlockBorderWrapper"]:not(section[data-testid="stSidebar"] *) {
+        background: var(--surface-container-lowest) !important;
+        border: 1px solid var(--outline-variant) !important;
+        border-radius: var(--radius-xl) !important;
+        padding: 1.5rem !important;
+        box-shadow: var(--ambient-shadow) !important;
+        transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+        box-shadow: var(--shadow-lg) !important;
+    }
+    .app-card h1, .app-card h2, .app-card h3 { color: var(--primary); margin-top: 1rem; }
+    .app-card h1:first-child, .app-card h2:first-child, .app-card h3:first-child { margin-top: 0; }
+    .app-card p { color: var(--on-surface); line-height: 1.7; margin-bottom: 0.75rem; }
+    .app-card ul, .app-card ol { padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .app-card li { margin-bottom: 0.35rem; color: var(--on-surface); }
+    .app-card hr { border: none; border-top: 2px solid var(--outline-variant); margin: 1rem 0; }
+    .app-card strong { color: var(--on-primary-fixed-variant); }
+
+    .app-card-empty {
+        background: var(--surface-container-low);
+        border: 2px dashed var(--outline-variant);
+        border-radius: var(--radius-xl);
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        color: var(--on-surface-variant);
+        margin: 1rem 0;
+        transition: border-color 0.2s ease;
+    }
+    .app-card-empty:hover { border-color: var(--outline); }
+
+    /* ── Metrics ── */
+    div[data-testid="stMetric"] {
+        background: var(--surface-container-lowest);
+        border: 1px solid var(--outline-variant);
+        border-radius: var(--radius-xl);
+        padding: 1rem 1.25rem;
+        box-shadow: var(--ambient-shadow);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    div[data-testid="stMetric"]:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+    div[data-testid="stMetricLabel"] {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--on-surface-variant);
+    }
+    div[data-testid="stMetricValue"] {
+        color: var(--primary);
+        font-weight: 700;
+        font-size: 1.6rem !important;
+    }
+    div[data-testid="stMetricDelta"] {
+        font-size: 0.75rem;
+    }
+    .stColumns div[data-testid="column"] > div:has(> div[data-testid="stMetric"]) {
+        padding: 0.35rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        div[data-testid="stMetric"] {
+            background: #1E1E1E;
+            border-color: #333;
+        }
+        div[data-testid="stMetricLabel"] {
+            color: #B0B0B0;
+        }
+        div[data-testid="stMetricValue"] {
+            color: #4ADE80;
+        }
+    }
+
+    /* ── Alerts ── */
+    .stAlert { border-left-color: var(--primary) !important; }
+    div[data-testid="stAlert"] {
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+    div[data-testid="stAlert"] svg { width: 1rem; height: 1rem; }
+
+    .success-msg div[data-testid="stAlert"] { border-left-color: var(--primary-container) !important; }
+    .success-msg div[data-testid="stAlert"] svg { fill: var(--primary-container); }
+
+    /* ── Buttons ── */
+    div.stButton > button {
+        border-radius: var(--radius-lg);
+        font-weight: 500;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        border: 1px solid var(--outline-variant);
+    }
+    div.stButton > button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-lg);
+    }
+    div.stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border: none;
+        font-weight: 600;
+        color: white;
+    }
+    div.stButton > button[kind="primary"]:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,168,89,0.3);
+        filter: brightness(0.95);
+    }
+    div.stButton > button:not([kind="primary"]) {
+        border: 1px solid var(--info);
+        color: var(--info);
+        background: transparent;
+    }
+    div.stButton > button:not([kind="primary"]):hover:not(:disabled) {
+        background: rgba(0, 92, 170, 0.05);
+        border-color: var(--info-dark);
+        color: var(--info-dark);
+    }
+
+    div[class*="st-key-sugestao_"] button {
         height: 100%;
         white-space: normal;
         word-break: break-word;
         text-align: left;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.85rem;
-        border-radius: 0.5rem;
-        background: var(--gray-50);
-        border: 1px solid var(--gray-200);
-        color: var(--gray-800);
+        padding: 0.6rem 0.85rem;
+        font-size: 0.82rem;
+        border-radius: var(--radius-sm);
+        background: var(--surface-container-lowest) !important;
+        border: 1px solid var(--outline-variant) !important;
+        color: var(--on-surface-variant) !important;
         transition: all 0.15s ease;
     }
-    .suggestion-btn div.stButton > button:hover {
-        background: var(--brand-blue-light);
-        border-color: var(--brand-blue);
-        color: var(--brand-blue);
+    div[class*="st-key-sugestao_"] button:hover {
+        background: var(--primary-fixed) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
     }
 
-    .success-msg div[data-testid="stAlert"] { border-left-color: var(--brand-green) !important; }
-    .success-msg div[data-testid="stAlert"] svg { fill: var(--brand-green); }
+    /* ── Chat bubbles ── */
+    div[data-testid="stChatMessage"][aria-label="user"],
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatar"][aria-label="user"]),
+    div[data-testid="stChatMessage"]:has(svg[aria-label="user"]) {
+        background-color: #00A859 !important;
+        border-color: #007A40 !important;
+        border-radius: 12px 12px 0 12px !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
+        width: fit-content !important;
+        max-width: 80% !important;
+        color: white !important;
+        box-shadow: var(--shadow-sm);
+    }
+    div[data-testid="stChatMessage"][aria-label="user"] *,
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatar"][aria-label="user"]) *,
+    div[data-testid="stChatMessage"]:has(svg[aria-label="user"]) * {
+        color: white !important;
+    }
 
+    div[data-testid="stChatMessage"][aria-label="assistant"],
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatar"][aria-label="assistant"]),
+    div[data-testid="stChatMessage"]:has(svg[aria-label="assistant"]) {
+        background-color: #F8F9FA !important;
+        border-color: #E9EEF6 !important;
+        border-radius: 12px 12px 12px 0 !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+        width: fit-content !important;
+        max-width: 80% !important;
+        color: #343A40 !important;
+        box-shadow: var(--shadow-sm);
+    }
+    div[data-testid="stChatMessage"][aria-label="assistant"] *,
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatar"][aria-label="assistant"]) *,
+    div[data-testid="stChatMessage"]:has(svg[aria-label="assistant"]) * {
+        color: #343A40 !important;
+    }
+
+    div[data-testid="stChatInput"] textarea {
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--outline-variant);
+        font-size: 0.9rem;
+    }
+    div[data-testid="stChatInput"] textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(0, 168, 89, 0.25);
+    }
+    div[data-testid="stChatInputButton"] button {
+        background: var(--primary);
+    }
+
+    /* ── Selectbox / Inputs ── */
+    div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="textarea"] > div {
+        border-radius: var(--radius-lg);
+        border-color: var(--outline-variant);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    div[data-baseweb="select"] > div:focus-within, div[data-baseweb="input"] > div:focus-within {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px rgba(0, 168, 89, 0.25) !important;
+    }
+
+    /* ── Tables ── */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin: 1rem 0 !important;
+        font-size: 0.9rem !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        border: 1px solid #E9EEF6 !important;
+    }
+    th {
+        background-color: var(--primary) !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 12px 14px !important;
+        text-align: left !important;
+    }
+    td {
+        padding: 10px 14px !important;
+        border-bottom: 1px solid #E9EEF6 !important;
+        color: var(--on-surface) !important;
+    }
+    tr:last-child td {
+        border-bottom: none !important;
+    }
+    tr:hover {
+        background-color: rgba(0, 168, 89, 0.04) !important;
+    }
+
+    /* ── Expander ── */
+    div[data-testid="stExpander"] {
+        border: 1px solid var(--outline-variant);
+        border-radius: var(--radius-lg);
+        background: var(--surface-container-lowest);
+        box-shadow: var(--ambient-shadow);
+        margin: 0.5rem 0;
+    }
+    div[data-testid="stExpander"] summary {
+        font-weight: 500;
+        color: var(--on-surface-variant);
+    }
+
+    /* ── Progress ── */
+    div[data-testid="stProgress"] > div {
+        background: var(--surface-container-high);
+        border-radius: 999px;
+    }
+    div[data-testid="stProgress"] > div > div {
+        background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+        border-radius: 999px;
+        transition: width 0.3s ease;
+    }
+
+    /* ── Divider ── */
+    hr.stAppDivider {
+        border-color: var(--outline-variant);
+        margin: 1.25rem 0;
+    }
+
+    /* ── Popover ── */
+    div[data-testid="stPopover"] button {
+        font-size: 0.85rem;
+        border-radius: var(--radius-sm);
+    }
+    div[data-testid="stPopoverBody"] {
+        border-radius: var(--radius-lg);
+    }
+
+    /* ── Footer ── */
     .app-footer {
         text-align: center;
-        color: var(--gray-600);
-        font-size: 0.8rem;
+        color: var(--on-surface-variant);
+        font-size: 0.75rem;
         padding: 2rem 0 1rem;
-        border-top: 1px solid var(--gray-200);
+        border-top: 1px solid var(--outline-variant);
         margin-top: 2rem;
     }
 
+    /* ── Spinner ── */
+    .stSpinner > div > div {
+        border-color: var(--primary) transparent transparent transparent !important;
+    }
+
+    /* ── File Uploader ── */
+    div[data-testid="stFileUploader"] {
+        border: 2px dashed var(--outline-variant);
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+        background: var(--surface-container-low);
+        transition: all 0.2s ease;
+    }
+    div[data-testid="stFileUploader"]:hover {
+        border-color: var(--primary);
+        background: var(--primary-fixed);
+    }
+    div[data-testid="stFileUploader"] section { padding: 0; }
+    div[data-testid="stFileUploader"] button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        font-weight: 500;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+    }
+
+    /* ── MultiSelect / remaining selects ── */
+    div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p, div[data-testid="stNumberInput"] label p {
+        font-weight: 500;
+        font-size: 0.85rem;
+        color: var(--on-surface-variant);
+    }
+
+    /* ── Status / Spinner messages ── */
+    div[data-testid="stStatusWidget"] {
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--outline-variant);
+    }
+
+    .stMainBlockContainer {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0.5rem 1rem;
+    }
+
     @media (max-width: 640px) {
-        .stMainBlockContainer { padding: 1rem 0.75rem !important; }
+        .stMainBlockContainer { padding: 0.75rem 0.5rem !important; }
         .stColumn > div { min-width: 100% !important; }
         div[data-testid="column"] { width: 100% !important; flex: 0 0 100% !important; }
-        .stChatMessage { font-size: 0.95rem; }
+        .stChatMessage { font-size: 0.9rem; }
         section[data-testid="stSidebar"] .stSidebarContent { padding: 0.75rem; }
         button[kind="primary"] { width: 100% !important; }
         .app-header { padding: 0.75rem 1rem; }
-        .app-title { font-size: 1.25rem; }
+        .app-title { font-size: 1.2rem; }
         .app-card { padding: 1rem; }
+        div[data-testid="stMetric"] { padding: 0.75rem 1rem; }
+        .stTabs [role="tablist"] { gap: 0; padding: 0.25rem; }
+        .stTabs [role="tab"] { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
     }
 </style>
-<meta name="theme-color" content="#005CAA">
+<meta name="theme-color" content="#006D38">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Mkt Planner">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%23005CAA'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' fill='white'%3E📊%3C/text%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-title" content="PV Planner">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%23006D38'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' fill='white'%3E📊%3C/text%3E%3C/svg%3E">
 <script>
 (function(){
     var m = {
@@ -175,11 +688,11 @@ st.markdown("""
         start_url: ".",
         display: "standalone",
         background_color: "#0E1117",
-        theme_color: "#005CAA",
+        theme_color: "#006D38",
         orientation: "portrait-primary",
         categories: ["business","marketing"],
         icons: [{
-            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23005CAA'/%3E%3Cstop offset='100%25' stop-color='%23003F7A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='60' cy='60' r='58' fill='none' stroke='url(%23g)' stroke-width='2'/%3E%3Cpath d='M60 60 L60 10 A50 50 0 0 1 108 38 Z' fill='%2300A859'/%3E%3Cpath d='M60 60 L108 38 A50 50 0 0 1 86 104 Z' fill='%23F7B731'/%3E%3Cpath d='M60 60 L86 104 A50 50 0 0 1 60 110 Z' fill='%23005CAA'/%3E%3Cpath d='M60 60 L60 110 A50 50 0 0 1 12 60 Z' fill='%23E84C3D'/%3E%3Cpath d='M60 60 L12 60 A50 50 0 0 1 60 10 Z' fill='%23E8F0FE'/%3E%3Ccircle cx='60' cy='60' r='8' fill='white' stroke='url(%23g)' stroke-width='2'/%3E%3Cpolyline points='32,84 48,68 58,74 74,54' fill='none' stroke='%2300A859' stroke-width='3.5'/%3E%3Cpolygon points='74,54 66,50 76,50' fill='%2300A859'/%3E%3C/svg%3E",
+            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23006D38'/%3E%3Cstop offset='100%25' stop-color='%23004A25'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='60' cy='60' r='58' fill='none' stroke='url(%23g)' stroke-width='2'/%3E%3Cpath d='M60 60 L60 10 A50 50 0 0 1 108 38 Z' fill='%2300A859'/%3E%3Cpath d='M60 60 L108 38 A50 50 0 0 1 86 104 Z' fill='%23F7B731'/%3E%3Cpath d='M60 60 L86 104 A50 50 0 0 1 60 110 Z' fill='%23006D38'/%3E%3Cpath d='M60 60 L60 110 A50 50 0 0 1 12 60 Z' fill='%23E84C3D'/%3E%3Cpath d='M60 60 L12 60 A50 50 0 0 1 60 10 Z' fill='%23E8F0FE'/%3E%3Ccircle cx='60' cy='60' r='8' fill='white' stroke='url(%23g)' stroke-width='2'/%3E%3Cpolyline points='32,84 48,68 58,74 74,54' fill='none' stroke='%2300A859' stroke-width='3.5'/%3E%3Cpolygon points='74,54 66,50 76,50' fill='%2300A859'/%3E%3C/svg%3E",
             sizes: "512x512",
             type: "image/svg+xml",
             purpose: "any maskable"
@@ -193,16 +706,30 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
-with open("assets/logo.svg") as f:
-    logo_svg = f.read()
+import base64
+
+def _load_svg_as_base64(path):
+    try:
+        with open(path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+            return f"data:image/svg+xml;base64,{b64}"
+    except Exception:
+        return ""
+
+logo_img = f'<img src="{_load_svg_as_base64("assets/logo.svg")}" alt="PlanejadorPV" style="height:80px;width:auto;max-width:380px;display:block;" />'
 
 st.markdown(f"""
 <div class="app-header">
-    <div class="app-header-content">
-        <div style="flex-shrink:0;">{logo_svg}</div>
-        <div>
-            <div class="app-title">PlanejadorPV</div>
-            <div class="app-subtitle">Marketing Planner — Ensina Mais Turma da Mônica · Unidade Tatuapé</div>
+    <div class="app-header-content" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 1.25rem;">
+            <div style="flex-shrink:0;">{logo_img}</div>
+            <div>
+                <div class="app-title" style="font-weight: 800; font-size: 1.6rem; color: white;">PlanejadorPV</div>
+                <div class="app-subtitle" style="font-size: 0.85rem; opacity: 0.9; color: white;">Marketing Planner — Ensina Mais Turma da Mônica · Unidade Tatuapé</div>
+            </div>
+        </div>
+        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+            Olá, Gestor! 👋
         </div>
     </div>
 </div>
@@ -222,6 +749,8 @@ if "campanhas_geradas" not in st.session_state:
     st.session_state.campanhas_geradas = 0
 if "legendas_geradas" not in st.session_state:
     st.session_state.legendas_geradas = []
+if "legendas_imagens_b64" not in st.session_state:
+    st.session_state.legendas_imagens_b64 = []
 if "documentos_meta" not in st.session_state:
     st.session_state.documentos_meta = {}
 if "ultimo_calendario" not in st.session_state:
@@ -230,18 +759,1080 @@ if "ultima_campanha" not in st.session_state:
     st.session_state.ultima_campanha = None
 
 
+MOCK_CONTEUDOS = [
+    {"data": "2026-05-20", "titulo": "Post: Dicas de Concentração Infantil", "tipo": "Post Instagram", "status": "Publicado", "engajamento": "4.2% (128 likes)", "link": "https://instagram.com/p/1"},
+    {"data": "2026-05-18", "titulo": "Reels: Alunos Programando Robôs", "tipo": "Reels", "status": "Publicado", "engajamento": "5.8% (342 views)", "link": "https://instagram.com/p/2"},
+    {"data": "2026-05-15", "titulo": "WhatsApp: Campanha de Matrículas Ativas", "tipo": "WhatsApp", "status": "Publicado", "engajamento": "12% cliques (24 pais)", "link": "#"},
+    {"data": "2026-05-12", "titulo": "Post: Homenagem às Mães (Turma da Mônica)", "tipo": "Post Instagram", "status": "Publicado", "engajamento": "3.5% (94 likes)", "link": "https://instagram.com/p/3"},
+    {"data": "2026-05-22", "titulo": "Reels: Desafio Lógico da Mônica", "tipo": "Reels", "status": "Agendado", "engajamento": "-", "link": "#"},
+    {"data": "2026-05-24", "titulo": "WhatsApp: Convite Workshop Minecraft", "tipo": "WhatsApp", "status": "Agendado", "engajamento": "-", "link": "#"},
+    {"data": "2026-05-26", "titulo": "Post: Apoio em Leitura e Interpretação", "tipo": "Post Instagram", "status": "Agendado", "engajamento": "-", "link": "#"},
+    {"data": "2026-05-28", "titulo": "Blog: Tecnologia na Infância", "tipo": "Blog/Site", "status": "Rascunho", "engajamento": "-", "link": "#"},
+    {"data": "2026-05-30", "titulo": "Post: Como Vencer a Prova de Matemática", "tipo": "Post Instagram", "status": "Rascunho", "engajamento": "-", "link": "#"},
+    {"data": "2026-06-01", "titulo": "WhatsApp: Lançamento Turma de Robótica", "tipo": "WhatsApp", "status": "Rascunho", "engajamento": "-", "link": "#"}
+]
+
+def get_calendar_events(mes_nome, ano):
+    events = {}
+    events[2] = [{"title": "Reunião Alinhamento Tatuapé", "category": "reuniao", "time": "09:30", "description": "Alinhamento das campanhas locais e metas pedagógicas para o mês de " + mes_nome}]
+    events[5] = [{"title": "Pauta: Dicas de Estudo", "category": "pauta", "time": "14:00", "description": "Roteirização de vídeos com dicas de rotina de estudos para crianças."}]
+    events[10] = [{"title": "Deadline: Aprovação de Artes", "category": "deadline", "time": "17:00", "description": "Entrega e validação do cronograma visual da quinzena."}]
+    events[15] = [{"title": "Reunião com Franqueador", "category": "reuniao", "time": "14:00", "description": "Alinhamento nacional de campanhas da Turma da Mônica."}]
+    events[25] = [{"title": "Deadline: Relatório Mensal", "category": "deadline", "time": "18:00", "description": "Envio dos resultados de captação e engajamento da unidade Tatuapé."}]
+    
+    mes_lower = mes_nome.lower()
+    if "janeiro" in mes_lower or "fevereiro" in mes_lower:
+        events[7] = [{"title": "Post: Volta às Aulas", "category": "publicacao", "time": "10:00", "description": "Post motivacional de preparação para o início das aulas na Ensina Mais Tatuapé."}]
+        events[12] = [{"title": "Pauta: Matrículas Abertas", "category": "pauta", "time": "11:00", "description": "Desenvolvimento de criativos de campanha para matrículas e novas turmas."}]
+        events[18] = [{"title": "Post: Campanha de Matrículas", "category": "publicacao", "time": "12:00", "description": "Anúncio de condições especiais para novas matrículas."}]
+        events[22] = [{"title": "Post: Robótica de Férias", "category": "publicacao", "time": "15:00", "description": "Destaque para oficinas rápidas de robótica e programação de férias."}]
+    elif "maio" in mes_lower:
+        events[8] = [{"title": "Post: Especial Dia das Mães", "category": "publicacao", "time": "09:00", "description": "Homenagem especial para as mães da Ensina Mais Tatuapé."}]
+        events[12] = [{"title": "Pauta: Depoimento de Mães", "category": "pauta", "time": "10:00", "description": "Criação de vídeo rápido com depoimento de mães de alunos."}]
+        events[18] = [{"title": "Post: Depoimento Especial", "category": "publicacao", "time": "14:00", "description": "Publicação do vídeo de depoimento sobre evolução do aluno."}]
+        events[22] = [{"title": "Post: Desafio Matemático", "category": "publicacao", "time": "11:00", "description": "Quiz interativo para engajar pais e alunos nos Stories."}]
+    elif "junho" in mes_lower or "julho" in mes_lower:
+        events[8] = [{"title": "Post: Arraiá Ensina Mais", "category": "publicacao", "time": "10:00", "description": "Divulgação de atividades temáticas juninas com a Turma da Mônica."}]
+        events[12] = [{"title": "Pauta: Colônia de Férias", "category": "pauta", "time": "11:30", "description": "Planejamento da colônia de férias com oficinas de jogos e lógica."}]
+        events[18] = [{"title": "Post: Oficinas Gratuitas", "category": "publicacao", "time": "13:00", "description": "Divulgação das oficinas de férias abertas à comunidade."}]
+        events[22] = [{"title": "Post: Desafio de Férias", "category": "publicacao", "time": "16:00", "description": "Passatempos e dinâmicas interativas de lógica para as férias."}]
+    elif "outubro" in mes_lower:
+        events[8] = [{"title": "Pauta: Dia das Crianças", "category": "pauta", "time": "09:00", "description": "Roteiros para semana das crianças com personagens da Turma da Mônica."}]
+        events[12] = [{"title": "Post: Dia das Crianças", "category": "publicacao", "time": "09:00", "description": "Homenagem e divulgação do evento especial na unidade Tatuapé."}]
+        events[18] = [{"title": "Post: Importância do Brincar", "category": "publicacao", "time": "14:00", "description": "Post pedagógico sobre aprendizado lúdico através de jogos."}]
+        events[22] = [{"title": "Post: Oficina Minecraft", "category": "publicacao", "time": "15:30", "description": "Divulgação de workshop gratuito de programação usando Minecraft."}]
+    else:
+        events[8] = [{"title": "Post: Apoio em Português", "category": "publicacao", "time": "10:00", "description": "Importância da leitura e interpretação de texto na infância."}]
+        events[12] = [{"title": "Pauta: Benefícios da Programação", "category": "pauta", "time": "11:00", "description": "Desenho de infográfico sobre raciocínio lógico e programação."}]
+        events[18] = [{"title": "Post: Benefícios da Robótica", "category": "publicacao", "time": "13:00", "description": "Publicação do infográfico sobre habilidades do futuro."}]
+        events[22] = [{"title": "Post: Dica Pedagógica", "category": "publicacao", "time": "16:00", "description": "Como ajudar seu filho a se concentrar nas tarefas de casa."}]
+    return events
+
+def render_html_calendar_grid(mes_nome, ano):
+    import json
+    import urllib.parse
+    import calendar
+    
+    events = get_calendar_events(mes_nome, ano)
+    mes_num = MESES.index(mes_nome) + 1
+    
+    calendar.setfirstweekday(calendar.SUNDAY)
+    weeks = calendar.monthcalendar(ano, mes_num)
+    
+    styles = """
+    <style>
+        .calendar-container {
+            width: 100% !important;
+            margin-top: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
+            background: #ffffff !important;
+            border-radius: 12px !important;
+            border: 1px solid var(--outline-variant) !important;
+            overflow: hidden !important;
+            box-shadow: var(--ambient-shadow) !important;
+        }
+        .calendar-legend {
+            display: flex !important;
+            justify-content: center !important;
+            gap: 1.5rem !important;
+            padding: 1rem !important;
+            background: var(--surface-container) !important;
+            border-bottom: 1px solid var(--outline-variant) !important;
+            flex-wrap: wrap !important;
+        }
+        .legend-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+        }
+        .legend-color {
+            width: 12px !important;
+            height: 12px !important;
+            border-radius: 3px !important;
+        }
+        .calendar-grid {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            margin: 0 !important;
+            border: none !important;
+        }
+        .calendar-grid th {
+            background: var(--primary) !important;
+            color: white !important;
+            text-align: center !important;
+            font-weight: 700 !important;
+            padding: 10px !important;
+            font-size: 0.85rem !important;
+            text-transform: uppercase !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+        }
+        .calendar-grid td {
+            height: 110px !important;
+            vertical-align: top !important;
+            padding: 6px !important;
+            border: 1px solid var(--outline-variant) !important;
+            background: #ffffff !important;
+            position: relative !important;
+            cursor: pointer !important;
+            transition: background-color 0.2s ease !important;
+        }
+        .calendar-grid td:hover {
+            background-color: var(--surface-container-low) !important;
+        }
+        .calendar-grid td.other-month {
+            background-color: var(--surface-container-low) !important;
+            cursor: default !important;
+            opacity: 0.5 !important;
+        }
+        .day-number {
+            font-weight: 700 !important;
+            font-size: 0.9rem !important;
+            color: var(--text-primary) !important;
+            margin-bottom: 4px !important;
+        }
+        .calendar-events-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            max-height: 80px !important;
+            overflow-y: auto !important;
+        }
+        .calendar-event-badge {
+            font-size: 0.72rem !important;
+            font-weight: 600 !important;
+            padding: 3px 6px !important;
+            border-radius: 4px !important;
+            color: white !important;
+            cursor: pointer !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            transition: transform 0.1s ease !important;
+            line-height: 1.2 !important;
+        }
+        .calendar-event-badge:hover {
+            transform: scale(1.02) !important;
+        }
+        .badge-pauta { background-color: #00A859 !important; color: white !important; }
+        .badge-publicacao { background-color: #005CAA !important; color: white !important; }
+        .badge-reuniao { background-color: #F7B731 !important; color: #343A40 !important; }
+        .badge-deadline { background-color: #E84C3D !important; color: white !important; }
+
+        .cal-modal-overlay {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+            background: rgba(0,0,0,0.5) !important;
+            display: none !important;
+            justify-content: center !important;
+            align-items: center !important;
+            z-index: 99999 !important;
+            backdrop-filter: blur(4px) !important;
+        }
+        .cal-modal-content {
+            background: white !important;
+            padding: 24px !important;
+            border-radius: 16px !important;
+            max-width: 500px !important;
+            width: 90% !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important;
+            border: 1px solid var(--outline-variant) !important;
+            animation: modalFadeIn 0.3s ease !important;
+            color: #343A40 !important;
+            text-align: left !important;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .cal-modal-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            border-bottom: 2px solid var(--primary) !important;
+            padding-bottom: 10px !important;
+            margin-bottom: 16px !important;
+        }
+        .cal-modal-title {
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+            color: var(--primary) !important;
+            margin: 0 !important;
+        }
+        .cal-modal-close {
+            background: transparent !important;
+            border: none !important;
+            font-size: 1.5rem !important;
+            cursor: pointer !important;
+            color: var(--on-surface-variant) !important;
+        }
+        .cal-modal-close:hover {
+            color: var(--primary) !important;
+        }
+        .cal-modal-event-item {
+            margin-bottom: 12px !important;
+            padding: 10px !important;
+            border-radius: 8px !important;
+            border-left: 4px solid var(--primary) !important;
+            background: var(--surface-container) !important;
+            text-align: left !important;
+        }
+        .cal-modal-event-time {
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            margin-bottom: 4px !important;
+        }
+        .cal-modal-event-title {
+            font-weight: 700 !important;
+            font-size: 0.95rem !important;
+            margin-bottom: 4px !important;
+            color: #343A40 !important;
+        }
+        .cal-modal-event-desc {
+            font-size: 0.85rem !important;
+            color: var(--on-surface-variant) !important;
+            line-height: 1.4 !important;
+        }
+    </style>
+    """
+    
+    legend_html = """
+    <div class="calendar-legend">
+        <div class="legend-item">
+            <div class="legend-color badge-pauta"></div>
+            <span>Pauta / Criação</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color badge-publicacao"></div>
+            <span>Publicação / No ar</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color badge-reuniao"></div>
+            <span>Reunião / Alinhamento</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color badge-deadline"></div>
+            <span>Deadline / Entrega</span>
+        </div>
+    </div>
+    """
+    
+    grid_html = ""
+    for week in weeks:
+        grid_html += "<tr>"
+        for day in week:
+            if day == 0:
+                grid_html += '<td class="other-month"></td>'
+            else:
+                day_events = events.get(day, [])
+                events_json = urllib.parse.quote(json.dumps(day_events))
+                
+                badges_html = ""
+                for evt in day_events:
+                    badge_class = f"badge-{evt['category']}"
+                    badges_html += f'<div class="calendar-event-badge {badge_class}" onclick="showCalModal({day}, \'{mes_nome} de {ano}\', \'{events_json}\'); event.stopPropagation();">{evt["title"]}</div>'
+                
+                grid_html += f'''
+                <td onclick="showCalModal({day}, '{mes_nome} de {ano}', '{events_json}')">
+                    <div class="day-number">{day}</div>
+                    <div class="calendar-events-list">
+                        {badges_html}
+                    </div>
+                </td>
+                '''
+        grid_html += "</tr>"
+        
+    calendar_html = f"""
+    {styles}
+    <div class="calendar-container">
+        {legend_html}
+        <table class="calendar-grid">
+            <thead>
+                <tr>
+                    <th>Dom</th>
+                    <th>Seg</th>
+                    <th>Ter</th>
+                    <th>Qua</th>
+                    <th>Qui</th>
+                    <th>Sex</th>
+                    <th>Sáb</th>
+                </tr>
+            </thead>
+            <tbody>
+                {grid_html}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Modal HTML -->
+    <div id="calModalOverlay" class="cal-modal-overlay" onclick="closeCalModal()">
+        <div class="cal-modal-content" onclick="event.stopPropagation()">
+            <div class="cal-modal-header">
+                <h4 class="cal-modal-title" id="calModalTitle">Detalhes do Dia</h4>
+                <button class="cal-modal-close" onclick="closeCalModal()">&times;</button>
+            </div>
+            <div id="calModalBody"></div>
+        </div>
+    </div>
+    
+    <script>
+    if (typeof showCalModal !== 'function') {{
+        window.showCalModal = function(day, monthYear, eventsJsonStr) {{
+            const events = JSON.parse(decodeURIComponent(eventsJsonStr));
+            document.getElementById('calModalTitle').innerText = 'Ações para ' + day + ' de ' + monthYear;
+            const body = document.getElementById('calModalBody');
+            body.innerHTML = '';
+            
+            if (events.length === 0) {{
+                body.innerHTML = '<p style="color: var(--on-surface-variant); font-style: italic;">Nenhuma ação agendada para este dia.</p>';
+            }} else {{
+                events.forEach(evt => {{
+                    let catColor = '#6C757D';
+                    let label = 'Ação';
+                    if (evt.category === 'pauta') {{ catColor = '#00A859'; label = 'Pauta/Criação'; }}
+                    else if (evt.category === 'publicacao') {{ catColor = '#005CAA'; label = 'Publicação/No Ar'; }}
+                    else if (evt.category === 'reuniao') {{ catColor = '#F7B731'; label = 'Reunião/Alinhamento'; }}
+                    else if (evt.category === 'deadline') {{ catColor = '#E84C3D'; label = 'Deadline/Entrega'; }}
+                    
+                    const div = document.createElement('div');
+                    div.className = 'cal-modal-event-item';
+                    div.style.borderLeftColor = catColor;
+                    
+                    div.innerHTML = `
+                        <div class="cal-modal-event-time" style="color: ${{catColor}}">${{evt.time || 'Sem horário'}} - ${{label}}</div>
+                        <div class="cal-modal-event-title" style="color: #343A40;">${{evt.title}}</div>
+                        <div class="cal-modal-event-desc">${{evt.description || ''}}</div>
+                    `;
+                    body.appendChild(div);
+                }});
+            }}
+            document.getElementById('calModalOverlay').style.display = 'flex';
+        }}
+        
+        window.closeCalModal = function() {{
+            document.getElementById('calModalOverlay').style.display = 'none';
+        }}
+    }}
+    </script>
+    """
+    return calendar_html
+
+def render_campaign_result_card(nome, objetivo, publico, servico, orcamento, canais, datas):
+    if not nome:
+        nome = f"Campanha: {objetivo}"
+    
+    budget_str = f"R$ {orcamento:,.2f}" if orcamento > 0 else "Não informado"
+    dates_str = datas if datas else "Não informada"
+    
+    channel_pills = []
+    if canais:
+        for c in canais:
+            c_clean = c.lower()
+            if "insta" in c_clean:
+                class_name = "channel-instagram"
+            elif "face" in c_clean:
+                class_name = "channel-facebook"
+            elif "email" in c_clean or "e-mail" in c_clean:
+                class_name = "channel-email"
+            elif "whats" in c_clean:
+                class_name = "channel-whatsapp"
+            elif "sms" in c_clean:
+                class_name = "channel-sms"
+            elif "ads" in c_clean:
+                class_name = "channel-ads"
+            else:
+                class_name = "channel-impresso"
+            channel_pills.append(f'<span class="channel-pill {class_name}">{c}</span>')
+    else:
+        channel_pills.append('<span class="channel-pill channel-whatsapp">WhatsApp</span>')
+        channel_pills.append('<span class="channel-pill channel-instagram">Instagram</span>')
+        channel_pills.append('<span class="channel-pill channel-impresso">Material Impresso</span>')
+    
+    channels_html = f'<div class="campaign-channel-pills">{"".join(channel_pills)}</div>'
+    
+    metrics_map = {
+        "Atrair novos alunos": "15+ novas matrículas",
+        "Reaquecer leads antigos": "50+ contatos retomados",
+        "Fidelizar alunos atuais": "95%+ taxa de renovação",
+        "Divulgar novo serviço ou curso": "30+ demonstrações agendadas",
+        "Promover matrículas (ação sazonal)": "25+ matrículas no período",
+        "Gerar indicação de alunos": "20+ indicações de pais"
+    }
+    expected_metric = metrics_map.get(objetivo, "15+ leads qualificados")
+    
+    timeline_steps = [
+        {"week": "Semana 1", "label": "Planejamento", "desc": "Criação dos criativos e disparos iniciais WhatsApp."},
+        {"week": "Semana 2", "label": "Captação", "desc": "Postagem regular, anúncios online e landing page ativa."},
+        {"week": "Semana 3", "label": "Vendas", "desc": "Contato telefônico com leads, agendamento de testes."},
+        {"week": "Semana 4", "label": "Matrículas", "desc": "Fechamento na unidade Tatuapé e acolhimento dos alunos."}
+    ]
+    
+    steps_html = ""
+    for idx, step in enumerate(timeline_steps):
+        steps_html += f"""
+        <div class="timeline-step">
+            <div class="timeline-icon">{idx+1}</div>
+            <div class="timeline-label">{step['week']} - {step['label']}</div>
+            <div class="timeline-desc">{step['desc']}</div>
+        </div>
+        """
+        
+    styles = """
+    <style>
+        .campaign-result-card {
+            background: #ffffff !important;
+            border: 1px solid var(--outline-variant) !important;
+            border-radius: 12px !important;
+            padding: 1.5rem !important;
+            margin-top: 1rem !important;
+            margin-bottom: 1.5rem !important;
+            box-shadow: var(--shadow-md) !important;
+            text-align: left !important;
+            color: #343A40 !important;
+        }
+        .campaign-result-title {
+            color: var(--primary) !important;
+            font-weight: 800 !important;
+            font-size: 1.4rem !important;
+            margin-top: 0 !important;
+            margin-bottom: 1rem !important;
+            text-align: left !important;
+        }
+        .campaign-meta-grid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+            gap: 1rem !important;
+            margin-bottom: 1.5rem !important;
+        }
+        .campaign-meta-item {
+            background: var(--surface-container) !important;
+            padding: 0.75rem !important;
+            border-radius: 8px !important;
+            border: 1px solid var(--outline-variant) !important;
+            text-align: left !important;
+        }
+        .campaign-meta-label {
+            font-size: 0.72rem !important;
+            color: var(--on-surface-variant) !important;
+            text-transform: uppercase !important;
+            font-weight: 600 !important;
+        }
+        .campaign-meta-value {
+            font-size: 0.9rem !important;
+            font-weight: 700 !important;
+            color: var(--text-primary) !important;
+            margin-top: 2px !important;
+        }
+        .campaign-channel-pills {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 6px !important;
+            margin-top: 6px !important;
+        }
+        .channel-pill {
+            font-size: 0.72rem !important;
+            font-weight: 700 !important;
+            padding: 4px 12px !important;
+            border-radius: 20px !important;
+            color: white !important;
+            display: inline-block !important;
+        }
+        .channel-instagram { background-color: #E84C3D !important; }
+        .channel-facebook { background-color: #005CAA !important; }
+        .channel-email { background-color: #F7B731 !important; color: #343A40 !important; }
+        .channel-whatsapp { background-color: #00A859 !important; }
+        .channel-sms { background-color: #6C757D !important; }
+        .channel-ads { background-color: #E09E1A !important; }
+        .channel-impresso { background-color: #8E44AD !important; }
+        
+        .timeline-container {
+            margin-top: 1.5rem !important;
+            border-top: 1px solid var(--outline-variant) !important;
+            padding-top: 1.5rem !important;
+            text-align: left !important;
+        }
+        .timeline-title {
+            font-size: 1rem !important;
+            font-weight: 700 !important;
+            color: var(--primary) !important;
+            margin-bottom: 1rem !important;
+            text-align: left !important;
+        }
+        .timeline-steps {
+            display: flex !important;
+            justify-content: space-between !important;
+            position: relative !important;
+            margin-bottom: 1rem !important;
+            flex-wrap: nowrap !important;
+        }
+        .timeline-steps::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 20px !important;
+            left: 12.5% !important;
+            right: 12.5% !important;
+            height: 4px !important;
+            background: var(--outline-variant) !important;
+            z-index: 1 !important;
+        }
+        .timeline-step {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            width: 25% !important;
+            position: relative !important;
+            z-index: 2 !important;
+        }
+        .timeline-icon {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 50% !important;
+            background: var(--primary) !important;
+            border: 3px solid white !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-weight: 800 !important;
+            font-size: 0.95rem !important;
+            color: white !important;
+            box-shadow: var(--shadow-sm) !important;
+        }
+        .timeline-label {
+            font-size: 0.8rem !important;
+            font-weight: 700 !important;
+            margin-top: 8px !important;
+            text-align: center !important;
+            color: var(--text-primary) !important;
+        }
+        .timeline-desc {
+            font-size: 0.72rem !important;
+            color: var(--on-surface-variant) !important;
+            text-align: center !important;
+            margin-top: 4px !important;
+            max-width: 90% !important;
+            line-height: 1.3 !important;
+        }
+        
+        @media (max-width: 640px) {
+            .timeline-steps { flex-wrap: wrap !important; gap: 1rem !important; }
+            .timeline-steps::before { display: none !important; }
+            .timeline-step { width: 100% !important; flex-direction: row !important; align-items: flex-start !important; text-align: left !important; }
+            .timeline-label { margin-top: 0 !important; margin-left: 10px !important; text-align: left !important; }
+            .timeline-desc { text-align: left !important; margin-top: 2px !important; margin-left: 10px !important; max-width: 100% !important; }
+        }
+    </style>
+    """
+    
+    card_html = f"""
+    {styles}
+    <div class="campaign-result-card">
+        <div class="campaign-result-title">📢 {nome}</div>
+        <div class="campaign-meta-grid">
+            <div class="campaign-meta-item">
+                <div class="campaign-meta-label">Objetivo Principal</div>
+                <div class="campaign-meta-value">{objetivo}</div>
+            </div>
+            <div class="campaign-meta-item">
+                <div class="campaign-meta-label">Público-Alvo</div>
+                <div class="campaign-meta-value">{publico}</div>
+            </div>
+            <div class="campaign-meta-item">
+                <div class="campaign-meta-label">Serviço em Foco</div>
+                <div class="campaign-meta-value">{servico}</div>
+            </div>
+            <div class="campaign-meta-item">
+                <div class="campaign-meta-label">Orçamento Estimado</div>
+                <div class="campaign-meta-value">{budget_str}</div>
+            </div>
+            <div class="campaign-meta-item">
+                <div class="campaign-meta-label">Período Planejado</div>
+                <div class="campaign-meta-value">{dates_str}</div>
+            </div>
+            <div class="campaign-meta-item">
+                <div class="campaign-meta-label">Métrica Estimada</div>
+                <div class="campaign-meta-value" style="color: var(--primary);">{expected_metric}</div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 1rem; text-align: left;">
+            <div class="campaign-meta-label">Canais de Divulgação</div>
+            {channels_html}
+        </div>
+        
+        <div class="timeline-container">
+            <div class="timeline-title">📍 Cronograma e Fluxo Visual</div>
+            <div class="timeline-steps">
+                {steps_html}
+            </div>
+        </div>
+    </div>
+    """
+    return card_html
+
+def parse_instagram_options(markdown_content):
+    import re
+    header_indices = [m.start() for m in re.finditer(r'##\s*(?:Opção|opcao)\s*\d+', markdown_content, re.IGNORECASE)]
+    
+    options = []
+    if len(header_indices) >= 2:
+        for idx in range(len(header_indices)):
+            start = header_indices[idx]
+            end = header_indices[idx+1] if idx + 1 < len(header_indices) else len(markdown_content)
+            options.append(markdown_content[start:end].strip())
+    else:
+        parts = markdown_content.split('---')
+        for p in parts:
+            p_clean = p.strip()
+            if p_clean:
+                options.append(p_clean)
+                
+    options = [o for o in options if o]
+    return options if options else [markdown_content]
+
+def render_instagram_mockup(index, title, content_markdown, img_base64_str):
+    lines = content_markdown.strip().split('\n')
+    body_lines = []
+    hashtags = ""
+    
+    for line in lines:
+        if line.strip().lower().startswith("##"):
+            continue
+        if "hashtags:" in line.lower() or "#" in line:
+            if "#" in line:
+                hashtags += " " + line.replace("**Hashtags:**", "").replace("Hashtags:", "").strip()
+        else:
+            body_lines.append(line)
+            
+    body_text = "\n".join(body_lines).strip()
+    
+    if not hashtags:
+        import re
+        all_tags = re.findall(r'#\w+', content_markdown)
+        if all_tags:
+            hashtags = " ".join(all_tags)
+            for tag in all_tags:
+                body_text = body_text.replace(tag, "")
+            body_text = body_text.strip()
+            
+    if not body_text:
+        body_text = content_markdown
+        
+    caption_id = f"insta-caption-{index}"
+    btn_id = f"insta-btn-{index}"
+    
+    if img_base64_str:
+        image_html = f'<img src="{img_base64_str}" class="instagram-image" />'
+    else:
+        image_html = f"""
+        <div style="width:100% !important; height:250px !important; background: linear-gradient(135deg, #00A859, #005CAA) !important; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; color:white !important; padding: 20px !important; text-align:center !important;">
+            <span style="font-size: 3rem !important;">📸</span>
+            <span style="font-size: 0.95rem !important; font-weight:700 !important; margin-top:10px !important; color: white !important;">Ensina Mais Turma da Mônica</span>
+            <span style="font-size: 0.8rem !important; opacity:0.8 !important; margin-top:4px !important; color: white !important;">Unidade Tatuapé</span>
+        </div>
+        """
+        
+    styles = """
+    <style>
+        .instagram-card {
+            background: #ffffff !important;
+            border: 1px solid #dbdbdb !important;
+            border-radius: 12px !important;
+            max-width: 470px !important;
+            margin: 1.5rem auto !important;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.05) !important;
+            overflow: hidden !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+            color: #262626 !important;
+            text-align: left !important;
+        }
+        .instagram-header {
+            display: flex !important;
+            align-items: center !important;
+            padding: 12px 16px !important;
+            border-bottom: 1px solid #efefef !important;
+        }
+        .instagram-avatar {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 50% !important;
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
+            padding: 2px !important;
+            margin-right: 10px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .instagram-avatar-inner {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 50% !important;
+            background: #00A859 !important;
+            color: white !important;
+            font-weight: bold !important;
+            font-size: 10px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: 2px solid white !important;
+        }
+        .instagram-userinfo {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        .instagram-username {
+            font-weight: 600 !important;
+            font-size: 13px !important;
+            color: #262626 !important;
+            line-height: 1.2 !important;
+        }
+        .instagram-location {
+            font-size: 11px !important;
+            color: #8e8e8e !important;
+        }
+        .instagram-image-container {
+            width: 100% !important;
+            max-height: 470px !important;
+            overflow: hidden !important;
+            background-color: #fafafa !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .instagram-image {
+            width: 100% !important;
+            height: auto !important;
+            display: block !important;
+            object-fit: cover !important;
+        }
+        .instagram-actions {
+            display: flex !important;
+            justify-content: space-between !important;
+            padding: 12px 16px 8px 16px !important;
+            font-size: 1.3rem !important;
+            cursor: pointer !important;
+        }
+        .instagram-actions-left {
+            display: flex !important;
+            gap: 16px !important;
+        }
+        .instagram-likes {
+            padding: 0 16px 8px 16px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            color: #262626 !important;
+        }
+        .instagram-caption-container {
+            padding: 0 16px 16px 16px !important;
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            color: #262626 !important;
+        }
+        .instagram-caption-text {
+            word-break: break-word !important;
+            white-space: pre-wrap !important;
+        }
+        .instagram-caption-text strong {
+            color: #262626 !important;
+            margin-right: 6px !important;
+        }
+        .instagram-hashtags {
+            color: #00376b !important;
+            margin-top: 8px !important;
+            font-weight: 500 !important;
+            word-break: break-word !important;
+        }
+        .instagram-copy-btn {
+            display: block !important;
+            width: 100% !important;
+            margin-top: 14px !important;
+            padding: 8px 12px !important;
+            background-color: var(--primary) !important;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            text-align: center !important;
+            box-shadow: 0px 2px 4px rgba(0, 168, 89, 0.1) !important;
+        }
+        .instagram-copy-btn:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #005a30) !important;
+            box-shadow: 0px 4px 8px rgba(0, 168, 89, 0.2) !important;
+            transform: translateY(-1px) !important;
+        }
+    </style>
+    """
+
+    script_html = """
+    <script>
+    if (typeof window.copyCaptionText !== 'function') {
+        window.copyCaptionText = function(captionId, btnId) {
+            const captionEl = document.getElementById(captionId);
+            if (!captionEl) return;
+            const bodyEl = captionEl.querySelector('.caption-body');
+            const tagsEl = captionEl.nextElementSibling;
+            
+            let textToCopy = '';
+            if (bodyEl) {
+                textToCopy += bodyEl.innerText.trim();
+            } else {
+                textToCopy += captionEl.innerText.replace('ensinamais.tatuape', '').trim();
+            }
+            
+            if (tagsEl && tagsEl.classList.contains('instagram-hashtags')) {
+                textToCopy += '\\n\\n' + tagsEl.innerText.trim();
+            }
+            
+            function showSuccess(bId) {
+                const btn = document.getElementById(bId);
+                if (!btn) return;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = "✅ Copiado!";
+                btn.style.backgroundColor = "#00A859";
+                btn.style.color = "white";
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.backgroundColor = "";
+                    btn.style.color = "";
+                }, 2000);
+            }
+            
+            function fallbackCopy(text, bId) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showSuccess(bId);
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                    alert('Não foi possível copiar a legenda automaticamente.');
+                }
+                document.body.removeChild(textArea);
+            }
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showSuccess(btnId);
+                }).catch(err => {
+                    fallbackCopy(textToCopy, btnId);
+                });
+            } else {
+                fallbackCopy(textToCopy, btnId);
+            }
+        };
+    }
+    </script>
+    """
+        
+    html = f"""
+    {styles}
+    {script_html}
+    <div class="instagram-card">
+        <div class="instagram-header">
+            <div class="instagram-avatar">
+                <div class="instagram-avatar-inner">EM</div>
+            </div>
+            <div class="instagram-userinfo">
+                <span class="instagram-username">ensinamais.tatuape</span>
+                <span class="instagram-location">Tatuapé, São Paulo</span>
+            </div>
+        </div>
+        <div class="instagram-image-container">
+            {image_html}
+        </div>
+        <div class="instagram-actions">
+            <div class="instagram-actions-left">
+                <span>❤️</span>
+                <span>💬</span>
+                <span>✈️</span>
+            </div>
+            <div>
+                <span>🔖</span>
+            </div>
+        </div>
+        <div class="instagram-likes">
+            Curtido por <strong>ensinamais.tatuape</strong> e outras pessoas
+        </div>
+        <div class="instagram-caption-container">
+            <div class="instagram-caption-text" id="{caption_id}"><strong>ensinamais.tatuape</strong> <span class="caption-body">{body_text}</span></div>
+            <div class="instagram-hashtags">{hashtags}</div>
+            <button class="instagram-copy-btn" id="{btn_id}" onclick="copyCaptionText('{caption_id}', '{btn_id}')">
+                📋 Copiar Legenda
+            </button>
+        </div>
+    </div>
+    """
+    return html
+
+def render_report_table(filtered_conteudos):
+    rows_html = ""
+    for idx, item in enumerate(filtered_conteudos):
+        status_lower = item["status"].lower()
+        if status_lower == "publicado":
+            status_class = "badge-status-publicado"
+            row_class = "row-publicado"
+            icon = "✅"
+        elif status_lower == "agendado":
+            status_class = "badge-status-agendado"
+            row_class = "row-agendado"
+            icon = "⏳"
+        else:
+            status_class = "badge-status-rascunho"
+            row_class = "row-rascunho"
+            icon = "📝"
+            
+        link_html = f'<a href="{item["link"]}" target="_blank" style="color: var(--info) !important; font-weight: 600 !important; text-decoration: none !important;">Ver Link</a>' if item["link"] != "#" else '<span style="color: var(--on-surface-variant) !important;">Indisponível</span>'
+        
+        rows_html += f"""
+        <tr class="{row_class}">
+            <td style="font-weight: 600 !important;">{item['data']}</td>
+            <td style="text-align: left !important;">{item['titulo']}</td>
+            <td style="text-align: left !important;">{item['tipo']}</td>
+            <td><span class="badge-status {status_class}">{icon} {item['status']}</span></td>
+            <td style="text-align: left !important;">{item['engajamento']}</td>
+            <td>{link_html}</td>
+        </tr>
+        """
+        
+    styles = """
+    <style>
+        .report-table-container {
+            width: 100% !important;
+            margin-top: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            border: 1px solid var(--outline-variant) !important;
+            box-shadow: var(--ambient-shadow) !important;
+        }
+        .report-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin: 0 !important;
+            border: none !important;
+        }
+        .report-table th {
+            background-color: var(--primary) !important;
+            color: white !important;
+            font-weight: 700 !important;
+            padding: 12px 16px !important;
+            text-align: left !important;
+            font-size: 0.85rem !important;
+        }
+        .report-table td {
+            padding: 12px 16px !important;
+            border-bottom: 1px solid var(--outline-variant) !important;
+            font-size: 0.85rem !important;
+            color: var(--on-surface) !important;
+        }
+        .row-publicado {
+            background-color: rgba(0, 168, 89, 0.05) !important;
+        }
+        .row-publicado:hover {
+            background-color: rgba(0, 168, 89, 0.08) !important;
+        }
+        .row-agendado {
+            background-color: rgba(247, 183, 49, 0.05) !important;
+        }
+        .row-agendado:hover {
+            background-color: rgba(247, 183, 49, 0.08) !important;
+        }
+        .row-rascunho {
+            background-color: rgba(232, 76, 61, 0.05) !important;
+        }
+        .row-rascunho:hover {
+            background-color: rgba(232, 76, 61, 0.08) !important;
+        }
+        .badge-status {
+            padding: 3px 8px !important;
+            border-radius: 12px !important;
+            font-size: 0.72rem !important;
+            font-weight: 700 !important;
+            display: inline-block !important;
+        }
+        .badge-status-publicado {
+            background-color: #00A859 !important;
+            color: white !important;
+        }
+        .badge-status-agendado {
+            background-color: #F7B731 !important;
+            color: #343A40 !important;
+        }
+        .badge-status-rascunho {
+            background-color: #E84C3D !important;
+            color: white !important;
+        }
+    </style>
+    """
+    
+    html = f"""
+    {styles}
+    <div class="report-table-container">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Título</th>
+                    <th>Tipo</th>
+                    <th>Status</th>
+                    <th>Engajamento</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows_html if rows_html else '<tr><td colspan="6" style="text-align: center; color: var(--on-surface-variant); font-style: italic;">Nenhum conteúdo encontrado para os filtros selecionados.</td></tr>'}
+            </tbody>
+        </table>
+    </div>
+    """
+    return "\n".join([line.strip() for line in html.splitlines() if line.strip()])
+
+
 def exibir_fontes(fontes: list[dict]):
     seen = set()
-    items = []
+    chips_html = []
     for f in fontes:
         label = f.get("arquivo") or f.get("url") or f.get("perfil") or f.get("fonte", "?")
+        if len(label) > 25:
+            label = label[:22] + "..."
         chave = (label, f["fonte"])
         if chave not in seen:
             seen.add(chave)
-            items.append(f"**{f['fonte'].upper()}**: {label}  · relevância {f['relevancia']}")
-    with st.expander("Fontes consultadas", expanded=False):
-        for item in items:
-            st.markdown(item)
+            colors = {
+                "pdf": ("#00A859", "#ffffff"),
+                "url": ("#005CAA", "#ffffff"),
+                "html": ("#005CAA", "#ffffff"),
+                "instagram": ("#E84C3D", "#ffffff"),
+                "texto": ("#F7B731", "#343A40"),
+                "planilha": ("#007A40", "#ffffff")
+            }
+            bg, text_color = colors.get(f["fonte"].lower(), ("#6C757D", "#ffffff"))
+            chips_html.append(
+                f'<span style="display: inline-block; padding: 4px 10px; border-radius: 20px; '
+                f'background-color: {bg}; color: {text_color}; font-size: 0.75rem; font-weight: 600; '
+                f'margin-right: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">'
+                f'{f["fonte"].upper()}: {label}'
+                f'</span>'
+            )
+            
+    if chips_html:
+        st.markdown(
+            f'<div style="margin-top: 8px; margin-bottom: 12px; display: flex; flex-wrap: wrap; align-items: center;">'
+            f'<span style="font-size: 0.8rem; color: #6C757D; margin-right: 8px; font-weight: 600;">Fontes citadas:</span>'
+            f'{"".join(chips_html)}'
+            f'</div>',
+            unsafe_allow_html=True
+        )
 
 
 def _render_upload_tab(container, aba, key_prefix=""):
@@ -511,8 +2102,14 @@ tab_dash, tab_assistente, tab_calendario, tab_campanhas, tab_relatorio, tab_lege
 )
 
 with tab_dash:
-    st.title("Dashboard — Marketing Planner")
-    st.markdown("### Visão geral das fontes carregadas")
+    st.markdown(
+        '<div class="app-card">'
+        '<h2>📊 Dashboard — Marketing Planner</h2>'
+        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        'Visão geral das fontes carregadas e conteúdos gerados.</p>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
     try:
         collection = _get_docs_collection()
@@ -523,15 +2120,97 @@ with tab_dash:
     total_perguntas = len([m for m in st.session_state.mensagens if m["role"] == "user"])
     total_calendarios = st.session_state.get("calendarios_gerados", 0)
     total_campanhas = st.session_state.get("campanhas_geradas", 0)
+    total_conteudos = total_calendarios + total_campanhas + len(st.session_state.legendas_geradas)
+    total_fontes = len(st.session_state.documentos)
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("📁 Fontes carregadas", len(st.session_state.documentos))
-    col2.metric("📄 Documentos na base", total_chunks)
-    col3.metric("💬 Perguntas feitas", total_perguntas)
-    col4.metric("📊 Conteúdos gerados", total_calendarios + total_campanhas + len(st.session_state.legendas_geradas))
+    col1.markdown(
+        f'<div class="metric-card metric-green">'
+        f'<div class="metric-card-val">{total_fontes}</div>'
+        f'<div class="metric-card-label">📁 Fontes carregadas</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    col2.markdown(
+        f'<div class="metric-card metric-blue">'
+        f'<div class="metric-card-val">{total_chunks}</div>'
+        f'<div class="metric-card-label">📄 Documentos na base</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    col3.markdown(
+        f'<div class="metric-card metric-yellow">'
+        f'<div class="metric-card-val">{total_perguntas}</div>'
+        f'<div class="metric-card-label">💬 Perguntas feitas</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    col4.markdown(
+        f'<div class="metric-card metric-red">'
+        f'<div class="metric-card-val">{total_conteudos}</div>'
+        f'<div class="metric-card-label">📊 Conteúdos gerados</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    col_chart1, col_chart2 = st.columns(2)
+    with col_chart1:
+        st.markdown(
+            f'<div class="app-card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;padding:1.5rem;margin:1rem 0;">'
+            f'<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: #343A40; width:100%; font-weight:700;">📊 Distribuição das Fontes</h3>'
+            f'<img src="{_load_svg_as_base64("assets/pizza_chart.svg")}" alt="Distribuição por categoria" style="max-width:100%;height:auto;max-height:220px;display:block;margin:auto;" />'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    with col_chart2:
+        st.markdown(
+            f'<div class="app-card" style="display:flex;flex-direction:column;justify-content:center;height:100%;padding:1.5rem;margin:1rem 0;">'
+            f'<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: #343A40; font-weight:700;">📈 Conteúdos por Categoria</h3>'
+            f'<div style="margin-bottom: 1rem;">'
+            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">'
+            f'<span>📅 Calendários</span>'
+            f'<span>42%</span>'
+            f'</div>'
+            f'<div style="background: #F8F9FA; border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
+            f'<div style="background: linear-gradient(90deg, #00A859, #007A40); width: 42%; height: 100%; border-radius: 6px;"></div>'
+            f'</div>'
+            f'</div>'
+            f'<div style="margin-bottom: 1rem;">'
+            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">'
+            f'<span>📢 Campanhas</span>'
+            f'<span>28%</span>'
+            f'</div>'
+            f'<div style="background: #F8F9FA; border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
+            f'<div style="background: linear-gradient(90deg, #005CAA, #003F7A); width: 28%; height: 100%; border-radius: 6px;"></div>'
+            f'</div>'
+            f'</div>'
+            f'<div style="margin-bottom: 1rem;">'
+            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">'
+            f'<span>📸 Legendas</span>'
+            f'<span>18%</span>'
+            f'</div>'
+            f'<div style="background: #F8F9FA; border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
+            f'<div style="background: linear-gradient(90deg, #F7B731, #E09E1A); width: 18%; height: 100%; border-radius: 6px;"></div>'
+            f'</div>'
+            f'</div>'
+            f'<div style="margin-bottom: 0.5rem;">'
+            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">'
+            f'<span>📋 Análises</span>'
+            f'<span>12%</span>'
+            f'</div>'
+            f'<div style="background: #F8F9FA; border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
+            f'<div style="background: linear-gradient(90deg, #E84C3D, #C0392B); width: 12%; height: 100%; border-radius: 6px;"></div>'
+            f'</div>'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
     if st.session_state.documentos:
-        st.markdown("#### Fontes carregadas")
+        st.markdown(
+            '<h3 style="margin-bottom:1rem;">📂 Fontes carregadas</h3>',
+            unsafe_allow_html=True,
+        )
         cols = st.columns(2)
         icones = {"pdf": "📄", "url": "🔗", "html": "🌐", "instagram": "📷", "texto": "📝", "planilha": "📊"}
         for i, chave in enumerate(st.session_state.documentos):
@@ -548,20 +2227,39 @@ with tab_dash:
                 elif "url" in meta:
                     extra = f" · url"
                 cols[i % 2].markdown(
-                    f"**{icone} {nome}**<br>"
-                    f"<small>{meta.get('chunks', '?')} chunks · {meta.get('caracteres', 0):,} caracteres{extra}</small>",
+                    f'<div class="app-card" style="padding:0.75rem 1rem;">'
+                    f'<strong>{icone} {nome}</strong><br>'
+                    f'<small style="color:var(--on-surface-variant);">'
+                    f'{meta.get("chunks", "?")} chunks · {meta.get("caracteres", 0):,} caracteres{extra}'
+                    f'</small></div>',
                     unsafe_allow_html=True,
                 )
             else:
                 cols[i % 2].markdown(f"- {chave}")
     else:
         st.markdown(
-            '<div class="app-card-empty">'
-            '📂 <strong>Nenhuma fonte carregada</strong><br>'
-            'Use a barra lateral para adicionar PDFs, URLs, HTML, Instagram, texto ou planilhas.'
+            '<div class="app-card-empty" style="padding: 3.5rem 1.5rem; text-align: center; border-radius: 12px; border: 2px dashed #00A859; background: #F8F9FA; margin: 1rem 0;">'
+            '<div style="font-size: 4rem; margin-bottom: 1rem; display: inline-block;">🎈📚✨</div>'
+            '<h3 style="color: #343A40; margin-top: 0.5rem; margin-bottom: 0.5rem; font-weight:700;">Nenhuma fonte carregada</h3>'
+            '<p style="color: #6C757D; font-size: 0.95rem; margin: 0;">'
+            'Nenhuma fonte carregada — use a barra lateral para adicionar PDFs, URLs e mais'
+            '</p>'
             '</div>',
             unsafe_allow_html=True,
         )
+
+    st.markdown(
+        '<div class="app-card" style="padding:1rem 1.25rem;">'
+        '<div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">'
+        '<span style="font-size:1.5rem;">💡</span>'
+        '<span style="font-size:0.9rem;color:var(--on-surface-variant);">'
+        'Use as abas <strong>💬 Assistente</strong> para conversar com seus documentos, '
+        '<strong>📅 Calendário Editorial</strong> para gerar um plano mensal, '
+        '<strong>📢 Gerador de Campanhas</strong> para campanhas completas, '
+        'ou <strong>📸 Legendas Instagram</strong> para criar legendas a partir de imagens.'
+        '</span></div></div>',
+        unsafe_allow_html=True,
+    )
 
     st.divider()
     with st.expander("📂 Adicionar fonte (dispositivos móveis)", expanded=False):
@@ -571,54 +2269,53 @@ with tab_dash:
         aba_mobile = st.radio("Tipo", ["PDF", "URL", "HTML", "Instagram", "Texto", "Planilha"], key="mobile_aba")
         _render_upload_tab(st, aba_mobile, key_prefix="mob_")
 
-    st.divider()
-    st.markdown(
-        "Use as abas **💬 Assistente** para conversar com seus documentos, "
-        "**📅 Calendário Editorial** para gerar um plano mensal de marketing, "
-        "**📢 Gerador de Campanhas** para campanhas completas, "
-        "ou **📸 Legendas Instagram** para criar legendas a partir de imagens."
-    )
-
 with tab_assistente:
-    st.title("💬 Assistente — Marketing para Franquias")
     st.markdown(
-        "Carregue informações na barra lateral e faça perguntas sobre o conteúdo."
+        '<div class="app-card">'
+        '<h2>💬 Assistente — Marketing para Franquias</h2>'
+        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        'Carregue informações na barra lateral e faça perguntas sobre o conteúdo.</p>'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
     if not st.session_state.mensagens and not st.session_state.sugestoes_usadas:
-        st.markdown("### Sugestões de perguntas")
-        st.markdown("Clique em uma pergunta abaixo para começar:")
+        with st.container(border=True):
+            st.markdown(
+                '<h3 style="margin-bottom:0.5rem;">💡 Sugestões de perguntas</h3>'
+                '<p style="color:var(--on-surface-variant);margin:0 0 1rem 0;">'
+                'Clique em uma pergunta abaixo para começar:</p>',
+                unsafe_allow_html=True,
+            )
 
-        for grupo in PERGUNTAS_SUGERIDAS:
-            st.markdown(f"**{grupo['categoria']}**")
-            cols = st.columns(3)
-            for i, pergunta in enumerate(grupo["perguntas"]):
-                with cols[i % 3]:
-                    st.markdown('<div class="suggestion-btn">', unsafe_allow_html=True)
-                    if st.button(
-                        pergunta, key=f"sugestao_{grupo['categoria']}_{i}",
-                        use_container_width=True,
-                    ):
-                        st.session_state.sugestoes_usadas = True
-                        st.session_state.mensagens.append({"role": "user", "content": pergunta})
-                        with st.chat_message("user"):
-                            st.markdown(pergunta)
-                        with st.chat_message("assistant"):
-                            with st.spinner("Consultando fontes..."):
-                                resultado = perguntar(pergunta)
-                            st.markdown(resultado["resposta"])
-                            if resultado["fontes"]:
-                                exibir_fontes(resultado["fontes"])
-                        st.session_state.mensagens.append({
-                            "role": "assistant", "content": resultado["resposta"],
-                            "fontes": resultado["fontes"],
-                        })
-                        st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
+            for idx_cat, grupo in enumerate(PERGUNTAS_SUGERIDAS):
+                st.markdown(f"**{grupo['categoria']}**")
+                cols = st.columns(3)
+                for i, pergunta in enumerate(grupo["perguntas"]):
+                    with cols[i % 3]:
+                        if st.button(
+                            pergunta, key=f"sugestao_{idx_cat}_{i}",
+                            use_container_width=True,
+                        ):
+                            st.session_state.sugestoes_usadas = True
+                            st.session_state.mensagens.append({"role": "user", "content": pergunta})
+                            with st.chat_message("user"):
+                                st.markdown(pergunta)
+                            with st.chat_message("assistant"):
+                                with st.spinner("Consultando fontes..."):
+                                    resultado = perguntar(pergunta)
+                                st.markdown(resultado["resposta"], unsafe_allow_html=True)
+                                if resultado["fontes"]:
+                                    exibir_fontes(resultado["fontes"])
+                            st.session_state.mensagens.append({
+                                "role": "assistant", "content": resultado["resposta"],
+                                "fontes": resultado["fontes"],
+                            })
+                            st.rerun()
 
     for i, msg in enumerate(st.session_state.mensagens):
         with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+            st.markdown(msg["content"], unsafe_allow_html=True)
             if msg["role"] == "assistant" and msg.get("fontes"):
                 exibir_fontes(msg["fontes"])
             if msg["role"] == "assistant" and i == len(st.session_state.mensagens) - 1:
@@ -662,117 +2359,287 @@ with tab_assistente:
         })
 
 with tab_calendario:
-    st.title("📅 Calendário Editorial")
     st.markdown(
-        "Gere um plano mensal de ações de marketing personalizado "
-        "para a unidade Tatuapé."
+        '<div class="app-card">'
+        '<h2>📅 Calendário Editorial</h2>'
+        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        'Gere um plano mensal de ações de marketing personalizado '
+        'para a unidade Tatuapé.</p>'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
-    hoje = date.today()
-    col_mes, col_ano = st.columns(2)
-    with col_mes:
-        mes_idx = MESES.index(MESES[hoje.month - 1])
-        mes_selecionado = st.selectbox("Mês", MESES, index=mes_idx)
-    with col_ano:
-        ano_selecionado = st.number_input("Ano", value=hoje.year, min_value=2024, max_value=2030)
+    with st.container(border=True):
+        hoje = date.today()
+        col_mes, col_ano = st.columns(2)
+        with col_mes:
+            mes_idx = MESES.index(MESES[hoje.month - 1])
+            mes_selecionado = st.selectbox("Mês", MESES, index=mes_idx)
+        with col_ano:
+            ano_selecionado = st.number_input("Ano", value=hoje.year, min_value=2024, max_value=2030)
 
-    if st.button("Gerar Calendário", type="primary", use_container_width=True, disabled=st.session_state.processing):
-        st.session_state.processing = True
-        progress = st.progress(0, text="Iniciando geração do calendário...")
-        progress.progress(30, text="Consultando fontes...")
-        resultado = gerar_calendario(mes_selecionado, ano_selecionado)
-        progress.progress(80, text="Estruturando resultado...")
-        progress.progress(100, text="Concluído!")
-        progress.empty()
-        if resultado["status"] == "ok":
-            if resultado.get("contexto_usado"):
-                st.success("✅ Calendário gerado com base nas suas fontes carregadas.")
+        # Render monthly grid calendar on load
+        import streamlit.components.v1 as components
+        calendar_html = render_html_calendar_grid(mes_selecionado, ano_selecionado)
+        components.html(calendar_html, height=640, scrolling=False)
+
+        if st.button("Gerar Calendário", type="primary", use_container_width=True, disabled=st.session_state.processing):
+            st.session_state.processing = True
+            progress = st.progress(0, text="Iniciando geração do calendário...")
+            progress.progress(30, text="Consultando fontes...")
+            resultado = gerar_calendario(mes_selecionado, ano_selecionado)
+            progress.progress(80, text="Estruturando resultado...")
+            progress.progress(100, text="Concluído!")
+            progress.empty()
+            if resultado["status"] == "ok":
+                st.session_state.calendarios_gerados += 1
+                st.session_state.ultimo_calendario = resultado["conteudo"]
+                st.session_state.ultimo_calendario_contexto = resultado.get("contexto_usado", False)
+                st.session_state.ultimo_calendario_mes = mes_selecionado
+                st.session_state.ultimo_calendario_ano = ano_selecionado
+                st.toast("Calendário gerado com sucesso!")
             else:
-                st.info("📚 Nenhuma fonte carregada — usei conhecimento geral do calendário escolar.")
-            html_content = _md.render(resultado["conteudo"])
-            st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
-            st.session_state.calendarios_gerados += 1
-            st.session_state.ultimo_calendario = resultado["conteudo"]
-            col_exp, col_base = st.columns(2)
-            with col_exp:
-                docx_bytes = exportar_markdown_docx(resultado["conteudo"])
-                st.download_button(
-                    "📥 Baixar como DOCX",
-                    data=docx_bytes,
-                    file_name=f"calendario_{mes_selecionado}_{ano_selecionado}.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True,
-                )
-            with col_base:
-                if st.button("📚 Incluir na base", key="inc_cal", use_container_width=True):
-                    with st.spinner("Adicionando à base de conhecimento..."):
-                        proc = processar_texto(
-                            resultado["conteudo"],
-                            titulo=f"Calendário {mes_selecionado} {ano_selecionado}",
-                        )
-                    if proc["status"] == "ok":
-                        st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
-                    else:
-                        st.error(f"❌ {proc['mensagem']}")
+                st.error(f"❌ Não foi possível gerar o calendário: {resultado['mensagem']}")
+            st.session_state.processing = False
+            st.rerun()
+
+    # Display generated calendar if available
+    if st.session_state.get("ultimo_calendario"):
+        st.divider()
+        st.markdown(
+            '<div class="app-card">'
+            '<h3>📝 Calendário Planejado</h3>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        
+        mes_cal = st.session_state.get("ultimo_calendario_mes", mes_selecionado)
+        ano_cal = st.session_state.get("ultimo_calendario_ano", ano_selecionado)
+        ctx_usado = st.session_state.get("ultimo_calendario_contexto", False)
+        
+        if ctx_usado:
+            st.success("✅ Calendário gerado com base nas suas fontes carregadas.")
         else:
-            st.error(f"❌ Não foi possível gerar o calendário: {resultado['mensagem']}")
-        st.session_state.processing = False
+            st.info("📚 Nenhuma fonte carregada — usei conhecimento geral do calendário escolar.")
+            
+        html_content = _md.render(st.session_state.ultimo_calendario)
+        st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
+        
+        col_exp, col_base = st.columns(2)
+        with col_exp:
+            docx_bytes = exportar_markdown_docx(st.session_state.ultimo_calendario)
+            st.download_button(
+                "📥 Baixar como DOCX",
+                data=docx_bytes,
+                file_name=f"calendario_{mes_cal}_{ano_cal}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+                key="dl_cal_last"
+            )
+        with col_base:
+            if st.button("📚 Incluir na base", key="inc_cal_last", use_container_width=True):
+                with st.spinner("Adicionando à base de conhecimento..."):
+                    proc = processar_texto(
+                        st.session_state.ultimo_calendario,
+                        titulo=f"Calendário {mes_cal} {ano_cal}",
+                    )
+                if proc["status"] == "ok":
+                    st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
+                else:
+                    st.error(f"❌ {proc['mensagem']}")
 
 with tab_campanhas:
-    st.title("📢 Gerador de Campanhas")
     st.markdown(
-        "Crie uma campanha de marketing completa para a unidade Tatuapé."
+        '<div class="app-card">'
+        '<h2>📢 Gerador de Campanhas</h2>'
+        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        'Crie uma campanha de marketing completa para a unidade Tatuapé.</p>'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
-    objetivo = st.selectbox("Objetivo da campanha", OBJETIVOS)
-    publico = st.selectbox("Público-alvo", PUBLICOS)
-    servico = st.selectbox("Serviço", SERVICOS)
+    with st.container(border=True):
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+            nome_campanha = st.text_input("Nome da Campanha (opcional)", placeholder="Ex: Campanha Volta às Aulas 2026")
+            objetivo = st.selectbox("Objetivo da campanha", OBJETIVOS)
+            publico = st.selectbox("Público-alvo", PUBLICOS)
+        with col_c2:
+            servico = st.selectbox("Serviço", SERVICOS)
+            orcamento = st.number_input("Orçamento Estimado (R$)", min_value=0.0, step=100.0, value=0.0)
+            datas = st.text_input("Período / Datas planejadas", placeholder="Ex: De 01/06 a 30/06")
+        
+        canais = st.multiselect(
+            "Canais de divulgação preferenciais",
+            ["Instagram", "Facebook", "E-mail", "WhatsApp", "SMS", "Google Ads", "Material Impresso"],
+            default=["Instagram", "WhatsApp", "Material Impresso"]
+        )
 
-    if st.button("Gerar Campanha", type="primary", use_container_width=True, disabled=st.session_state.processing):
-        st.session_state.processing = True
-        progress = st.progress(0, text="Iniciando criação da campanha...")
-        progress.progress(25, text="Analisando objetivos...")
-        resultado = gerar_campanha(objetivo, publico, servico)
-        progress.progress(75, text="Montando estrutura da campanha...")
-        progress.progress(100, text="Concluído!")
-        progress.empty()
-        if resultado["status"] == "ok":
-            if resultado.get("contexto_usado"):
-                st.success("✅ Campanha personalizada com base nas suas fontes carregadas.")
+        if st.button("Gerar Campanha", type="primary", use_container_width=True, disabled=st.session_state.processing):
+            st.session_state.processing = True
+            progress = st.progress(0, text="Iniciando criação da campanha...")
+            progress.progress(25, text="Analisando objetivos...")
+            resultado = gerar_campanha(
+                objetivo, publico, servico,
+                nome=nome_campanha, canais=canais, orcamento=orcamento, datas=datas
+            )
+            progress.progress(75, text="Montando estrutura da campanha...")
+            progress.progress(100, text="Concluído!")
+            progress.empty()
+            if resultado["status"] == "ok":
+                st.session_state.campanhas_geradas += 1
+                st.session_state.ultima_campanha = resultado["conteudo"]
+                st.session_state.ultima_campanha_contexto = resultado.get("contexto_usado", False)
+                st.session_state.dados_ultima_campanha = {
+                    "nome": nome_campanha,
+                    "objetivo": objetivo,
+                    "publico": publico,
+                    "servico": servico,
+                    "orcamento": orcamento,
+                    "canais": canais,
+                    "datas": datas
+                }
+                st.toast("Campanha gerada com sucesso!")
             else:
-                st.info("📚 Nenhuma fonte carregada — campanha baseada em conhecimento geral.")
-            html_content = _md.render(resultado["conteudo"])
-            st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
-            st.session_state.campanhas_geradas += 1
-            st.session_state.ultima_campanha = resultado["conteudo"]
-            col_exp, col_base = st.columns(2)
-            with col_exp:
-                docx_bytes = exportar_markdown_docx(resultado["conteudo"])
-                st.download_button(
-                    "📥 Baixar como DOCX",
-                    data=docx_bytes,
-                    file_name=f"campanha_{objetivo}_{publico}.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True,
-                )
-            with col_base:
-                if st.button("📚 Incluir na base", key="inc_camp", use_container_width=True):
-                    with st.spinner("Adicionando à base de conhecimento..."):
-                        proc = processar_texto(
-                            resultado["conteudo"],
-                            titulo=f"Campanha {objetivo} / {publico}",
-                        )
-                    if proc["status"] == "ok":
-                        st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
-                    else:
-                        st.error(f"❌ {proc['mensagem']}")
+                st.error(f"❌ Não foi possível gerar a campanha: {resultado['mensagem']}")
+            st.session_state.processing = False
+            st.rerun()
+
+    # Display generated campaign if available
+    if st.session_state.get("ultima_campanha"):
+        st.divider()
+        st.markdown(
+            '<div class="app-card">'
+            '<h3>📝 Detalhes da Campanha</h3>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        
+        dados = st.session_state.get("dados_ultima_campanha", {})
+        ctx_usado = st.session_state.get("ultima_campanha_contexto", False)
+        
+        if ctx_usado:
+            st.success("✅ Campanha personalizada com base nas suas fontes carregadas.")
         else:
-            st.error(f"❌ Não foi possível gerar a campanha: {resultado['mensagem']}")
-        st.session_state.processing = False
+            st.info("📚 Nenhuma fonte carregada — campanha baseada em conhecimento geral.")
+
+        if dados:
+            card_html = render_campaign_result_card(
+                nome=dados.get("nome", ""),
+                objetivo=dados.get("objetivo", ""),
+                publico=dados.get("publico", ""),
+                servico=dados.get("servico", ""),
+                orcamento=dados.get("orcamento", 0.0),
+                canais=dados.get("canais", []),
+                datas=dados.get("datas", "")
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
+            
+        html_content = _md.render(st.session_state.ultima_campanha)
+        st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
+        
+        col_exp, col_base = st.columns(2)
+        with col_exp:
+            docx_bytes = exportar_markdown_docx(st.session_state.ultima_campanha)
+            fn_obj = dados.get("objetivo", "campanha").lower().replace(" ", "_")
+            fn_pub = dados.get("publico", "geral").lower().replace(" ", "_")
+            st.download_button(
+                "📥 Baixar como DOCX",
+                data=docx_bytes,
+                file_name=f"campanha_{fn_obj}_{fn_pub}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+                key="dl_camp_last"
+            )
+        with col_base:
+            if st.button("📚 Incluir na base", key="inc_camp_last", use_container_width=True):
+                with st.spinner("Adicionando à base de conhecimento..."):
+                    proc = processar_texto(
+                        st.session_state.ultima_campanha,
+                        titulo=f"Campanha {dados.get('nome', '') or dados.get('objetivo', '')}",
+                    )
+                if proc["status"] == "ok":
+                    st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
+                else:
+                    st.error(f"❌ {proc['mensagem']}")
 
 with tab_relatorio:
-    st.title("📋 Relatório de Conteúdo Ingerido")
-    st.markdown("Visão detalhada de todo o conteúdo carregado no sistema.")
+    st.markdown(
+        '<div class="app-card">'
+        '<h2>📋 Relatório de Conteúdo Ingerido</h2>'
+        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        'Visão detalhada de todo o conteúdo gerado e das fontes carregadas.</p>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # 1. Mock Contents filters and summary cards at the top
+    st.markdown("### 🔍 Filtrar Conteúdos Gerados")
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        tipos_disponiveis = ["Todos"] + sorted(list(set(item["tipo"] for item in MOCK_CONTEUDOS)))
+        tipo_filtro = st.selectbox("Tipo de Conteúdo", tipos_disponiveis, index=0)
+    with col_f2:
+        status_disponiveis = ["Todos", "Publicado", "Agendado", "Rascunho"]
+        status_filtro = st.selectbox("Status", status_disponiveis, index=0)
+
+    # Filter MOCK_CONTEUDOS
+    filtered_conteudos = MOCK_CONTEUDOS
+    if tipo_filtro != "Todos":
+        filtered_conteudos = [item for item in filtered_conteudos if item["tipo"] == tipo_filtro]
+    if status_filtro != "Todos":
+        filtered_conteudos = [item for item in filtered_conteudos if item["status"] == status_filtro]
+
+    # Summary cards
+    tot_total = len(MOCK_CONTEUDOS)
+    tot_pub = len([item for item in MOCK_CONTEUDOS if item["status"].lower() == "publicado"])
+    tot_agd = len([item for item in MOCK_CONTEUDOS if item["status"].lower() == "agendado"])
+    tot_ras = len([item for item in MOCK_CONTEUDOS if item["status"].lower() == "rascunho"])
+
+    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+    col_m1.markdown(
+        f'<div class="metric-card metric-blue">'
+        f'<div class="metric-card-val">{tot_total}</div>'
+        f'<div class="metric-card-label">Total de Conteúdos</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    col_m2.markdown(
+        f'<div class="metric-card metric-green">'
+        f'<div class="metric-card-val">{tot_pub}</div>'
+        f'<div class="metric-card-label">✨ Publicados</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    col_m3.markdown(
+        f'<div class="metric-card metric-yellow">'
+        f'<div class="metric-card-val">{tot_agd}</div>'
+        f'<div class="metric-card-label">⏳ Agendados</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    col_m4.markdown(
+        f'<div class="metric-card metric-red">'
+        f'<div class="metric-card-val">{tot_ras}</div>'
+        f'<div class="metric-card-label">📝 Rascunhos</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Render report table
+    table_html = render_report_table(filtered_conteudos)
+    st.markdown(table_html, unsafe_allow_html=True)
+
+    # 2. Database RAG status section below divider
+    st.divider()
+    st.markdown(
+        '<div class="app-card">'
+        '<h3>📁 Base de Dados & Fontes Ingeridas (RAG)</h3>'
+        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        'Abaixo você confere o status e detalhamento dos arquivos importados na base vetorial (Chroma).</p>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
     from utils.relatorios import resumo_conteudo
     relatorio = resumo_conteudo()
@@ -780,19 +2647,42 @@ with tab_relatorio:
     if relatorio["total_chunks"] == 0:
         st.markdown(
             '<div class="app-card-empty">'
-            "📂 <strong>Nenhum conteúdo ingerido</strong><br>"
-            "Carregue fontes pela barra lateral ou pelo Dashboard."
+            "📂 <strong>Nenhuma fonte na base de conhecimento (RAG)</strong><br>"
+            "Carregue fontes pela barra lateral ou pelo Dashboard para personalizar os conteúdos."
             "</div>",
             unsafe_allow_html=True,
         )
     else:
         col1, col2, col3 = st.columns(3)
-        col1.metric("📄 Total de chunks", relatorio["total_chunks"])
-        col2.metric("📏 Total de caracteres", f"{relatorio['total_caracteres']:,}".replace(",", "."))
-        col3.metric("🗂️ Tipos de fonte", len(relatorio["por_fonte"]))
+        col1.markdown(
+            f'<div class="app-card" style="text-align:center;padding:1.25rem 1rem;">'
+            f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
+            f'{relatorio["total_chunks"]}</div>'
+            f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
+            f'📄 Total de chunks</div></div>',
+            unsafe_allow_html=True,
+        )
+        col2.markdown(
+            f'<div class="app-card" style="text-align:center;padding:1.25rem 1rem;">'
+            f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
+            f'{relatorio["total_caracteres"]:,}</div>'
+            f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
+            f'📏 Total de caracteres</div></div>',
+            unsafe_allow_html=True,
+        )
+        col3.markdown(
+            f'<div class="app-card" style="text-align:center;padding:1.25rem 1rem;">'
+            f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
+            f'{len(relatorio["por_fonte"])}</div>'
+            f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
+            f'🗂️ Tipos de fonte</div></div>',
+            unsafe_allow_html=True,
+        )
 
-        st.divider()
-        st.markdown("### Distribuição por tipo de fonte")
+        st.markdown(
+            '<h4 style="margin-bottom:1rem;font-weight:700;">📊 Distribuição por tipo de fonte</h4>',
+            unsafe_allow_html=True,
+        )
 
         por_fonte_items = sorted(relatorio["por_fonte"].items())
         cols_fonte = st.columns(len(por_fonte_items))
@@ -802,24 +2692,35 @@ with tab_relatorio:
             with cols_fonte[idx]:
                 icone = icones_f.get(fonte, "📄")
                 nome = nomes_f.get(fonte, fonte.capitalize())
-                st.metric(f"{icone} {nome}", dados["chunks"], f"{dados['caracteres']:,} caracteres".replace(",", "."))
+                st.markdown(
+                    f'<div class="app-card" style="text-align:center;padding:1rem;">'
+                    f'<div style="font-size:1.4rem;font-weight:800;color:var(--primary);">'
+                    f'{dados["chunks"]}</div>'
+                    f'<div style="font-size:0.8rem;color:var(--on-surface-variant);font-weight:500;">'
+                    f'{icone} {nome}</div>'
+                    f'<div style="font-size:0.75rem;color:var(--on-surface-variant);">'
+                    f'{dados["caracteres"]:,} caracteres</div></div>',
+                    unsafe_allow_html=True,
+                )
 
-        st.divider()
-        st.markdown("### Detalhamento por documento")
+        st.markdown(
+            '<h4 style="margin-bottom:1rem;font-weight:700;">📋 Detalhamento por documento</h4>',
+            unsafe_allow_html=True,
+        )
 
         for item in relatorio["fontes_detalhadas"]:
             documento_id = item.get("documento_id")
             resumo = item.get("resumo", "")
             resumo_html = ""
             if resumo:
-                resumo_html = f'<br><span style="color: var(--gray-500); font-size: 0.82rem; font-style: italic;">{resumo}</span>'
+                resumo_html = f'<br><span style="color: var(--on-surface-variant); font-size: 0.82rem; font-style: italic;">{resumo}</span>'
 
             c1, c2 = st.columns([5, 1])
             with c1:
                 st.markdown(
                     f'<div class="app-card" style="padding: 0.75rem 1rem;">'
                     f'<span style="font-size: 1.1rem; font-weight: 600;">{item["icone"]} {item["titulo"]}</span><br>'
-                    f'<span style="color: var(--gray-600); font-size: 0.85rem;">'
+                    f'<span style="color: var(--on-surface-variant); font-size: 0.85rem;">'
                     f'{item["chunks"]} chunks · {item["caracteres"]:,} caracteres'
                     f"</span>"
                     f"{resumo_html}"
@@ -840,85 +2741,131 @@ with tab_relatorio:
                             break
                     st.rerun()
 
-        st.divider()
-        st.markdown("### Exportar relatório")
-        csv_data = exportar_relatorio_csv(relatorio)
-        st.download_button(
-            "📥 Exportar CSV",
-            data=csv_data,
-            file_name="relatorio_conteudo.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
+        with st.container(border=True):
+            st.markdown(
+                '<h4 style="margin-bottom:1rem;font-weight:700;">📥 Exportar relatório da base</h4>',
+                unsafe_allow_html=True,
+            )
+            csv_data = exportar_relatorio_csv(relatorio)
+            st.download_button(
+                "📥 Exportar CSV",
+                data=csv_data,
+                file_name="relatorio_conteudo.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="btn_exportar_relatorio",
+            )
 
 with tab_legendas:
-    st.title("📸 Legendas para Instagram")
     st.markdown(
-        "Faça upload de uma imagem e gere legendas prontas para o Instagram "
-        "com o tom e estilo ideais para a franquia."
+        '<div class="app-card">'
+        '<h2>📸 Legendas para Instagram</h2>'
+        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        'Faça upload de uma imagem e gere legendas prontas para o Instagram '
+        'com o tom e estilo ideais para a franquia.</p>'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
-    col_img, col_config = st.columns([2, 1])
+    with st.container(border=True):
+        col_img, col_config = st.columns([2, 1])
 
-    with col_img:
-        uploaded_image = st.file_uploader(
-            "Escolha uma imagem",
-            type=["jpg", "jpeg", "png", "webp"],
-            key="legendas_img",
-        )
-        if uploaded_image:
-            from PIL import Image
-            img = Image.open(uploaded_image)
-            st.image(img, caption="Imagem selecionada", use_container_width=True)
+        with col_img:
+            uploaded_image = st.file_uploader(
+                "Escolha uma imagem",
+                type=["jpg", "jpeg", "png", "webp"],
+                key="legendas_img",
+            )
+            if uploaded_image:
+                from PIL import Image
+                img = Image.open(uploaded_image)
+                st.image(img, caption="Imagem selecionada", use_container_width=True)
 
-    with col_config:
-        tom = st.selectbox(
-            "Tom da legenda",
-            options=list(TOM_ESTILO.keys()),
-            index=0,
-            key="legendas_tom",
-        )
-        tema = st.text_input(
-            "Tema (opcional)",
-            placeholder="Ex: Dia das Mães, matrículas, dica de estudo...",
-            key="legendas_tema",
-        )
+        with col_config:
+            tom = st.selectbox(
+                "Tom da legenda",
+                options=list(TOM_ESTILO.keys()),
+                index=0,
+                key="legendas_tom",
+            )
+            tema = st.text_input(
+                "Tema (opcional)",
+                placeholder="Ex: Dia das Mães, matrículas, dica de estudo...",
+                key="legendas_tema",
+            )
+            instrucoes = st.text_area(
+                "Contexto / Instruções (opcional)",
+                placeholder="Ex: Destacar o desconto de 15% nas matrículas de robótica...",
+                key="legendas_instrucoes",
+            )
 
-        if st.button(
-            "✨ Gerar Legendas",
-            type="primary",
-            use_container_width=True,
-            disabled="legendas_img" not in st.session_state or not uploaded_image,
-        ):
-            if not uploaded_image:
-                st.warning("Faça upload de uma imagem primeiro.")
-            else:
-                from PIL import Image as PILImage
-                img_pil = PILImage.open(uploaded_image)
-                with st.spinner("Analisando imagem e gerando legendas..."):
-                    resultado = gerar_legenda(
-                        image=img_pil,
-                        tom=tom,
-                        tema=tema,
-                    )
-                if resultado["status"] == "ok":
-                    st.session_state.legendas_geradas.append(resultado["conteudo"])
-                    st.balloons()
+            if st.button(
+                "✨ Gerar Legendas",
+                type="primary",
+                use_container_width=True,
+                disabled="legendas_img" not in st.session_state or not uploaded_image,
+            ):
+                if not uploaded_image:
+                    st.warning("Faça upload de uma imagem primeiro.")
                 else:
-                    st.error(resultado.get("mensagem", "Erro ao gerar legendas."))
+                    from PIL import Image as PILImage
+                    img_pil = PILImage.open(uploaded_image)
+                    
+                    import io
+                    import base64
+                    buffered = io.BytesIO()
+                    if img_pil.mode in ("RGBA", "P"):
+                        img_pil_rgb = img_pil.convert("RGB")
+                    else:
+                        img_pil_rgb = img_pil
+                    img_pil_rgb.save(buffered, format="JPEG")
+                    img_b64 = "data:image/jpeg;base64," + base64.b64encode(buffered.getvalue()).decode()
+                    
+                    with st.spinner("Analisando imagem e gerando legendas..."):
+                        resultado = gerar_legenda(
+                            image=img_pil,
+                            tom=tom,
+                            tema=tema,
+                            instrucoes=instrucoes,
+                        )
+                    if resultado["status"] == "ok":
+                        st.session_state.legendas_geradas.append(resultado["conteudo"])
+                        st.session_state.legendas_imagens_b64.append(img_b64)
+                        st.balloons()
+                    else:
+                        st.error(resultado.get("mensagem", "Erro ao gerar legendas."))
 
     if st.session_state.legendas_geradas:
         st.divider()
-        st.markdown("### Legendas geradas")
+        st.markdown(
+            '<div class="app-card">'
+            '<h3>📝 Legendas geradas</h3></div>',
+            unsafe_allow_html=True,
+        )
+        import streamlit.components.v1 as components
         for i, legenda in enumerate(reversed(st.session_state.legendas_geradas), 1):
-            with st.container():
+            orig_idx = len(st.session_state.legendas_geradas) - i
+            if len(st.session_state.legendas_imagens_b64) > orig_idx:
+                img_b64 = st.session_state.legendas_imagens_b64[orig_idx]
+            else:
+                img_b64 = None
+                
+            with st.container(border=True):
                 st.markdown(
-                    f'<div class="app-card">'
-                    f'<strong>Geração #{len(st.session_state.legendas_geradas) - i + 1}</strong>',
+                    f'<strong>Geração #{orig_idx + 1}</strong>',
                     unsafe_allow_html=True,
                 )
-                st.markdown(legenda)
-                st.markdown("</div>", unsafe_allow_html=True)
+                options = parse_instagram_options(legenda)
+                tabs = st.tabs([f"Opção {idx+1}" for idx in range(len(options))])
+                for idx, option in enumerate(options):
+                    with tabs[idx]:
+                        mockup_html = render_instagram_mockup(
+                            index=f"{orig_idx}-{idx}",
+                            title=f"Opção {idx+1}",
+                            content_markdown=option,
+                            img_base64_str=img_b64,
+                        )
+                        components.html(mockup_html, height=720, scrolling=True)
                 st.divider()
 
 st.markdown("""
