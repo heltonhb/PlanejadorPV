@@ -2270,14 +2270,22 @@ with tab_dash:
         _render_upload_tab(st, aba_mobile, key_prefix="mob_")
 
 with tab_assistente:
-    st.markdown(
-        '<div class="app-card">'
-        '<h2>💬 Assistente — Marketing para Franquias</h2>'
-        '<p style="color: var(--on-surface-variant); margin: 0;">'
-        'Carregue informações na barra lateral e faça perguntas sobre o conteúdo.</p>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
+    col_titulo, col_limpar = st.columns([0.85, 0.15])
+    with col_titulo:
+        st.markdown(
+            '<div class="app-card">'
+            '<h2>💬 Assistente — Marketing para Franquias</h2>'
+            '<p style="color: var(--on-surface-variant); margin: 0;">'
+            'Carregue informações na barra lateral e faça perguntas sobre o conteúdo.</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    with col_limpar:
+        if st.session_state.mensagens:
+            if st.button("🗑️ Limpar conversa", use_container_width=True):
+                st.session_state.mensagens = []
+                st.session_state.sugestoes_usadas = False
+                st.rerun()
 
     if not st.session_state.mensagens and not st.session_state.sugestoes_usadas:
         with st.container(border=True):
