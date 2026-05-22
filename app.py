@@ -692,46 +692,145 @@ st.markdown("""
         .stTabs [role="tablist"] { gap: 0; padding: 0.25rem; }
         .stTabs [role="tab"] { font-size: 0.75rem; padding: 0.25rem 0.5rem; min-height: var(--touch-target-min) !important; }
 
-        /* ── Bottom tab bar ── */
+        /* ── Premium Bottom Tab Bar ── */
         div[data-testid="stTabs"] {
             /* container stays in normal flow */
         }
         div[data-testid="stTabs"] div[role="tablist"] {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 9999;
-            background: white;
-            border-top: 1px solid var(--outline-variant);
-            padding-bottom: var(--safe-bottom);
-            box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0.25rem 0;
-            gap: 0;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 9999 !important;
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border-top: 1px solid rgba(0, 168, 89, 0.15) !important;
+            padding-bottom: calc(4px + var(--safe-bottom)) !important;
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08) !important;
+            display: flex !important;
+            justify-content: space-around !important;
+            align-items: center !important;
+            padding-top: 6px !important;
+            gap: 2px !important;
+            height: calc(60px + var(--safe-bottom)) !important;
         }
         div[data-testid="stTabs"] button[role="tab"] {
-            padding: 0.5rem 0.25rem;
-            min-width: 0;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            border-radius: var(--radius-sm);
-            background: transparent;
-            border: none;
-            color: var(--on-surface-variant);
-            font-weight: 500;
+            padding: 6px 4px !important;
+            min-width: 0 !important;
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 2px !important;
+            border-radius: 16px !important;
+            background: transparent !important;
+            border: none !important;
+            color: var(--on-surface-variant) !important;
+            font-weight: 500 !important;
+            font-size: 0.7rem !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            margin: 0 2px !important;
         }
         div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-            color: var(--primary);
-            background: rgba(0, 168, 89, 0.08);
+            color: white !important;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+            font-weight: 700 !important;
+            box-shadow: 0 4px 10px rgba(0, 168, 89, 0.25) !important;
+            transform: scale(1.03) !important;
+        }
+        div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] * {
+            color: white !important;
         }
         .stMainBlockContainer {
-            padding-bottom: 72px !important;
+            padding-bottom: calc(76px + var(--safe-bottom)) !important;
+        }
+
+        /* ── Premium Segmented Control for mobile upload aba ── */
+        div[class*="st-key-mobile_aba"] [role="radiogroup"] {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            gap: 6px !important;
+            padding: 4px !important;
+        }
+        div[class*="st-key-mobile_aba"] [role="radiogroup"] label {
+            background: var(--surface-container-low) !important;
+            border: 1px solid var(--outline-variant) !important;
+            border-radius: 20px !important;
+            padding: 6px 14px !important;
+            font-size: 0.8rem !important;
+            font-weight: 500 !important;
+            color: var(--on-surface-variant) !important;
+            cursor: pointer !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            margin: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        div[class*="st-key-mobile_aba"] [role="radiogroup"] label:hover {
+            border-color: var(--primary) !important;
+            color: var(--primary) !important;
+        }
+        div[class*="st-key-mobile_aba"] [role="radiogroup"] label:has(input:checked) {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+            border-color: var(--primary) !important;
+            color: white !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 10px rgba(0, 168, 89, 0.2) !important;
+            transform: translateY(-1px) !important;
+        }
+        div[class*="st-key-mobile_aba"] [role="radiogroup"] label > div:first-child {
+            display: none !important;
+        }
+
+        /* ── Premium Suggestions Shelf (Horizontal Carousel) ── */
+        div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-sugestao_"]) {
+            display: flex !important;
+            flex-direction: row !important;
+            overflow-x: auto !important;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+            padding: 6px 4px 12px 4px !important;
+            -webkit-overflow-scrolling: touch !important;
+            scroll-snap-type: x mandatory !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-sugestao_"]) > div[data-testid="column"] {
+            flex: 0 0 75% !important;
+            width: 75% !important;
+            min-width: 220px !important;
+            max-width: 75% !important;
+            scroll-snap-align: start !important;
+        }
+        div[class*="st-key-sugestao_"] button {
+            height: 100% !important;
+            white-space: normal !important;
+            box-shadow: var(--shadow-sm) !important;
+            border-radius: var(--radius-md) !important;
+        }
+
+        /* ── Premium Sidebar Controls on Mobile ── */
+        button[data-testid="collapsedControl"] {
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(0, 168, 89, 0.2) !important;
+            border-radius: 50% !important;
+            width: 42px !important;
+            height: 42px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+            top: 16px !important;
+            left: 16px !important;
+            z-index: 9999 !important;
+            transition: all 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        button[data-testid="collapsedControl"] svg {
+            color: var(--primary) !important;
+            fill: var(--primary) !important;
         }
 
         /* ── Sidebar mobile ── */
@@ -886,10 +985,15 @@ st.markdown("""
             margin-left: auto !important;
         }
         div[data-testid="stChatInput"] {
-            position: sticky;
-            bottom: 72px;
-            z-index: 100;
-            padding-bottom: var(--safe-bottom);
+            position: fixed !important;
+            bottom: 60px !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 999 !important;
+            padding: 10px 12px calc(10px + var(--safe-bottom)) 12px !important;
+            background: white !important;
+            border-top: 1px solid var(--outline-variant) !important;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05) !important;
         }
         div[data-testid="stChatInput"] textarea {
             font-size: 0.85rem !important;
@@ -1078,6 +1182,22 @@ def render_html_calendar_grid(mes_nome, ano):
             height: 12px !important;
             border-radius: 3px !important;
         }
+        .calendar-grid-wrapper {
+            width: 100% !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            border-radius: 0 0 12px 12px !important;
+        }
+        .mobile-swipe-hint {
+            display: none !important;
+            background: #E8F5E9 !important;
+            color: #007A40 !important;
+            text-align: center !important;
+            padding: 6px !important;
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            border-bottom: 1px solid var(--outline-variant) !important;
+        }
         .calendar-grid {
             width: 100% !important;
             border-collapse: collapse !important;
@@ -1222,6 +1342,39 @@ def render_html_calendar_grid(mes_nome, ano):
             color: var(--on-surface-variant) !important;
             line-height: 1.4 !important;
         }
+
+        @media (max-width: 640px) {
+            .mobile-swipe-hint {
+                display: block !important;
+            }
+            .calendar-grid {
+                min-width: 600px !important;
+            }
+            .cal-modal-overlay {
+                align-items: flex-end !important;
+            }
+            .cal-modal-content {
+                width: 100% !important;
+                max-width: 100% !important;
+                border-radius: 20px 20px 0 0 !important;
+                margin: 0 !important;
+                padding: 24px 20px calc(24px + var(--safe-bottom, 0px)) 20px !important;
+                animation: bottomSheetUp 0.3s cubic-bezier(0.1, 0.76, 0.55, 0.94) !important;
+            }
+            .cal-modal-content::before {
+                content: '';
+                display: block;
+                width: 40px;
+                height: 4px;
+                background: #DDE3EB;
+                border-radius: 2px;
+                margin: -12px auto 16px auto;
+            }
+            @keyframes bottomSheetUp {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+            }
+        }
     </style>
     """
     
@@ -1275,22 +1428,25 @@ def render_html_calendar_grid(mes_nome, ano):
     {styles}
     <div class="calendar-container">
         {legend_html}
-        <table class="calendar-grid">
-            <thead>
-                <tr>
-                    <th>Dom</th>
-                    <th>Seg</th>
-                    <th>Ter</th>
-                    <th>Qua</th>
-                    <th>Qui</th>
-                    <th>Sex</th>
-                    <th>Sáb</th>
-                </tr>
-            </thead>
-            <tbody>
-                {grid_html}
-            </tbody>
-        </table>
+        <div class="mobile-swipe-hint">👉 Deslize lateralmente para ver a semana inteira</div>
+        <div class="calendar-grid-wrapper">
+            <table class="calendar-grid">
+                <thead>
+                    <tr>
+                        <th>Dom</th>
+                        <th>Seg</th>
+                        <th>Ter</th>
+                        <th>Qua</th>
+                        <th>Qui</th>
+                        <th>Sex</th>
+                        <th>Sáb</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {grid_html}
+                </tbody>
+            </table>
+        </div>
     </div>
     
     <!-- Modal HTML -->
@@ -2200,7 +2356,7 @@ def sidebar_upload():
 sidebar_upload()
 
 tab_dash, tab_assistente, tab_calendario, tab_campanhas, tab_relatorio, tab_legendas = st.tabs(
-    ["📊 Dashboard", "💬 Assistente", "📅 Calendário Editorial", "📢 Gerador de Campanhas", "📋 Relatório de Conteúdo", "📸 Legendas Instagram"],
+    ["📊 Painel", "💬 Chat", "📅 Calendário", "📢 Campanhas", "📋 Relatórios", "📸 Legendas"],
 )
 
 with tab_dash:
@@ -2355,10 +2511,10 @@ with tab_dash:
         '<div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">'
         '<span style="font-size:1.5rem;">💡</span>'
         '<span style="font-size:0.9rem;color:var(--on-surface-variant);">'
-        'Use as abas <strong>💬 Assistente</strong> para conversar com seus documentos, '
-        '<strong>📅 Calendário Editorial</strong> para gerar um plano mensal, '
-        '<strong>📢 Gerador de Campanhas</strong> para campanhas completas, '
-        'ou <strong>📸 Legendas Instagram</strong> para criar legendas a partir de imagens.'
+        'Use as abas <strong>💬 Chat</strong> para conversar com seus documentos, '
+        '<strong>📅 Calendário</strong> para gerar um plano mensal, '
+        '<strong>📢 Campanhas</strong> para campanhas completas, '
+        'ou <strong>📸 Legendas</strong> para criar legendas a partir de imagens.'
         '</span></div></div>',
         unsafe_allow_html=True,
     )
