@@ -339,7 +339,7 @@ st.markdown("""
         transition: box-shadow 0.2s ease;
     }
     .app-card:hover { box-shadow: var(--shadow-lg); }
-    div[data-testid="stVerticalBlockBorderWrapper"]:not(section[data-testid="stSidebar"] *) {
+    div[data-testid="stVerticalBlockBorderWrapper"]:not(section[data-testid="stSidebar"] *):not([data-testid="stChatMessage"] *) {
         background: var(--surface-container-lowest) !important;
         border: 1px solid var(--outline-variant) !important;
         border-radius: var(--radius-xl) !important;
@@ -347,7 +347,7 @@ st.markdown("""
         box-shadow: var(--ambient-shadow) !important;
         transition: box-shadow 0.2s ease, transform 0.2s ease !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    div[data-testid="stVerticalBlockBorderWrapper"]:not(section[data-testid="stSidebar"] *):not([data-testid="stChatMessage"] *):hover {
         box-shadow: var(--shadow-lg) !important;
     }
     .app-card h1, .app-card h2, .app-card h3 { color: var(--primary); margin-top: 1rem; }
@@ -476,42 +476,51 @@ st.markdown("""
     }
 
     /* ── Chat bubbles ── */
-    div[data-testid="stChatMessage"][aria-label="user"],
-    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatar"][aria-label="user"]),
-    div[data-testid="stChatMessage"]:has(svg[aria-label="user"]) {
+    /* Make the inner containers transparent to let our chat bubble backgrounds show through */
+    div[data-testid="stChatMessage"] div[data-testid="stVerticalBlockBorderWrapper"],
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageContent"],
+    div[data-testid="stChatMessage"] .stChatMessageContent {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* User Message Bubble */
+    div[data-testid="stChatMessage"][aria-label*="user"] {
         background-color: #00A859 !important;
-        border-color: #007A40 !important;
+        border: 1px solid #007A40 !important;
         border-radius: 12px 12px 0 12px !important;
         margin-left: auto !important;
         margin-right: 0 !important;
         width: fit-content !important;
         max-width: 80% !important;
-        color: white !important;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-sm) !important;
     }
-    div[data-testid="stChatMessage"][aria-label="user"] *,
-    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatar"][aria-label="user"]) *,
-    div[data-testid="stChatMessage"]:has(svg[aria-label="user"]) * {
+    /* Force white text color on user message */
+    div[data-testid="stChatMessage"][aria-label*="user"] [data-testid="stMarkdownContainer"] {
         color: white !important;
+    }
+    div[data-testid="stChatMessage"][aria-label*="user"] [data-testid="stMarkdownContainer"] *:not(a) {
+        color: inherit !important;
     }
 
-    div[data-testid="stChatMessage"][aria-label="assistant"],
-    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatar"][aria-label="assistant"]),
-    div[data-testid="stChatMessage"]:has(svg[aria-label="assistant"]) {
-        background-color: #F8F9FA !important;
-        border-color: #E9EEF6 !important;
+    /* Assistant Message Bubble */
+    div[data-testid="stChatMessage"][aria-label*="assistant"] {
+        background-color: var(--surface-container) !important;
+        border: 1px solid var(--outline-variant) !important;
         border-radius: 12px 12px 12px 0 !important;
         margin-left: 0 !important;
         margin-right: auto !important;
         width: fit-content !important;
         max-width: 80% !important;
-        color: #343A40 !important;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-sm) !important;
     }
-    div[data-testid="stChatMessage"][aria-label="assistant"] *,
-    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatar"][aria-label="assistant"]) *,
-    div[data-testid="stChatMessage"]:has(svg[aria-label="assistant"]) * {
-        color: #343A40 !important;
+    /* Force dark color on assistant message */
+    div[data-testid="stChatMessage"][aria-label*="assistant"] [data-testid="stMarkdownContainer"] {
+        color: var(--on-surface) !important;
+    }
+    div[data-testid="stChatMessage"][aria-label*="assistant"] [data-testid="stMarkdownContainer"] *:not(a) {
+        color: inherit !important;
     }
 
     div[data-testid="stChatInput"] textarea {
@@ -709,28 +718,38 @@ st.markdown("""
             padding-bottom: calc(4px + var(--safe-bottom)) !important;
             box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08) !important;
             display: flex !important;
-            justify-content: space-around !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            justify-content: flex-start !important;
             align-items: center !important;
             padding-top: 6px !important;
-            gap: 2px !important;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+            gap: 4px !important;
             height: calc(60px + var(--safe-bottom)) !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important; /* Firefox */
+        }
+        div[data-testid="stTabs"] div[role="tablist"]::-webkit-scrollbar {
+            display: none !important; /* Safari/Chrome */
         }
         div[data-testid="stTabs"] button[role="tab"] {
             padding: 6px 4px !important;
-            min-width: 0 !important;
-            flex: 1 !important;
+            min-width: 72px !important;
+            flex: 1 1 0% !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             gap: 2px !important;
-            border-radius: 16px !important;
+            border-radius: 12px !important;
             background: transparent !important;
             border: none !important;
             color: var(--on-surface-variant) !important;
             font-weight: 500 !important;
             font-size: 0.7rem !important;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            margin: 0 2px !important;
+            margin: 0 !important;
         }
         div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
             color: white !important;
@@ -979,10 +998,6 @@ st.markdown("""
         div[data-testid="stChatMessage"] {
             max-width: 92% !important;
             padding: 0.5rem 0.75rem !important;
-            border-radius: 14px !important;
-        }
-        div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) {
-            margin-left: auto !important;
         }
         div[data-testid="stChatInput"] {
             position: fixed !important;
