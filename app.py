@@ -91,6 +91,9 @@ st.markdown("""
         --inverse-surface: #2b3137;
         --inverse-on-surface: #ecf1f9;
         --pwa-bar-height: env(safe-area-inset-top, 0px);
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --touch-target-min: 44px;
         --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
         --shadow-md: 0px 4px 12px rgba(0, 0, 0, 0.05);
         --shadow-lg: 0px 8px 24px rgba(0, 0, 0, 0.12);
@@ -659,19 +662,202 @@ st.markdown("""
         padding: 0.5rem 1rem;
     }
 
+    @media (display-mode: standalone) {
+        .stApp {
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
+        }
+        div[data-testid="stTabs"] {
+            padding-bottom: calc(0.25rem + var(--safe-bottom));
+        }
+    }
+
     @media (max-width: 640px) {
+        p, span, div, label, .stMarkdown {
+            line-height: 1.5 !important;
+        }
         .stMainBlockContainer { padding: 0.75rem 0.5rem !important; }
         .stColumn > div { min-width: 100% !important; }
         div[data-testid="column"] { width: 100% !important; flex: 0 0 100% !important; }
-        .stChatMessage { font-size: 0.9rem; }
+        .stChatMessage { font-size: 0.85rem !important; }
         section[data-testid="stSidebar"] .stSidebarContent { padding: 0.75rem; }
-        button[kind="primary"] { width: 100% !important; }
+        button[kind="primary"] { width: 100% !important; min-height: var(--touch-target-min) !important; font-size: 0.85rem !important; }
+        button[kind="secondary"] { min-height: var(--touch-target-min) !important; font-size: 0.85rem !important; }
         .app-header { padding: 0.75rem 1rem; }
-        .app-title { font-size: 1.2rem; }
-        .app-card { padding: 1rem; }
+        .app-title { font-size: 1rem !important; }
+        .app-card { padding: 0.75rem !important; border-radius: var(--radius-md) !important; }
+        .app-card h3 { font-size: 1rem !important; }
+        .app-card p { font-size: 0.85rem !important; }
         div[data-testid="stMetric"] { padding: 0.75rem 1rem; }
         .stTabs [role="tablist"] { gap: 0; padding: 0.25rem; }
-        .stTabs [role="tab"] { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+        .stTabs [role="tab"] { font-size: 0.75rem; padding: 0.25rem 0.5rem; min-height: var(--touch-target-min) !important; }
+
+        /* ── Bottom tab bar ── */
+        div[data-testid="stTabs"] {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: white;
+            border-top: 1px solid var(--outline-variant);
+            padding-bottom: var(--safe-bottom);
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+        }
+        div[data-testid="stTabs"] div[role="tablist"] {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0.25rem 0;
+            gap: 0;
+        }
+        div[data-testid="stTabs"] button[role="tab"] {
+            padding: 0.5rem 0.25rem;
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            border: none;
+            color: var(--on-surface-variant);
+            font-weight: 500;
+        }
+        div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+            color: var(--primary);
+            background: rgba(0, 168, 89, 0.08);
+        }
+        .stMainBlockContainer {
+            padding-bottom: 72px !important;
+        }
+
+        /* ── Sidebar mobile ── */
+        section[data-testid="stSidebar"] {
+            width: 85vw !important;
+            max-width: 320px !important;
+        }
+        section[data-testid="stSidebar"] .stSidebarContent {
+            background: linear-gradient(180deg, #003F20, #007A40);
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        /* ── Forms & inputs full-width ── */
+        div[data-testid="stSelectbox"], div[data-testid="stTextInput"],
+        div[data-testid="stNumberInput"], div[data-testid="stDateInput"],
+        div[data-testid="stMultiselect"], div[data-testid="stFileUploader"] {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+        div[data-testid="stSelectbox"] input, div[data-testid="stTextInput"] input,
+        div[data-testid="stNumberInput"] input, div[data-testid="stDateInput"] input {
+            min-height: var(--touch-target-min) !important;
+            font-size: 0.85rem !important;
+        }
+
+        /* ── Tables scrollable ── */
+        div[data-testid="stTable"], div[data-testid="stDataFrame"] {
+            font-size: 0.75rem !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ── Touch targets ── */
+        button, a, select, input, textarea,
+        [role="button"], [role="tab"], [role="radio"],
+        [role="checkbox"], [data-testid="stExpander"] summary,
+        .stDownloadButton button {
+            min-height: var(--touch-target-min) !important;
+        }
+        [data-testid="stExpander"] summary {
+            padding: 0.75rem 0.75rem !important;
+            font-size: 0.85rem !important;
+        }
+
+        /* ── Loading / Empty states ── */
+        div[data-testid="stStatusWidget"] {
+            font-size: 0.85rem !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+        div.stSpinner {
+            font-size: 0.85rem !important;
+        }
+
+        /* ── Animations ── */
+        .stTabs, .stMainBlockContainer {
+            animation: fadeSlideIn 0.25s ease-out;
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+    }
+
+    @media (max-width: 480px) {
+        /* ── Header stacking ── */
+        .app-header-content {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 0.5rem !important;
+        }
+        .app-header-content > div:first-child {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.25rem !important;
+        }
+        .app-header img {
+            height: 48px !important;
+            max-width: 200px !important;
+        }
+        .app-subtitle {
+            font-size: 0.75rem !important;
+        }
+        .app-header-content > div:last-child {
+            font-size: 0.75rem !important;
+            padding: 4px 12px !important;
+            align-self: flex-start;
+        }
+
+        /* ── Metric cards 2×2 ── */
+        .metric-card {
+            padding: 0.75rem !important;
+        }
+        .metric-card-val {
+            font-size: 1.6rem !important;
+        }
+        .metric-card-label {
+            font-size: 0.75rem !important;
+        }
+        div.row-widget.stColumns > div[data-testid="column"] {
+            flex: 0 0 50% !important;
+            max-width: 50% !important;
+            min-width: 0 !important;
+            padding: 4px;
+        }
+
+        /* ── Chat bubbles ── */
+        div[data-testid="stChatMessage"] {
+            max-width: 92% !important;
+            padding: 0.5rem 0.75rem !important;
+            border-radius: 14px !important;
+        }
+        div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) {
+            margin-left: auto !important;
+        }
+        div[data-testid="stChatInput"] {
+            position: sticky;
+            bottom: 60px;
+            z-index: 100;
+        }
+        div[data-testid="stChatInput"] textarea {
+            font-size: 0.85rem !important;
+            min-height: var(--touch-target-min) !important;
+        }
     }
 </style>
 <meta name="theme-color" content="#006D38">
