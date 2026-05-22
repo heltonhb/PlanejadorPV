@@ -709,67 +709,73 @@ st.markdown("""
         .stTabs [role="tab"] { font-size: 0.75rem; padding: 0.25rem 0.5rem; min-height: var(--touch-target-min) !important; }
 
         /* ── Premium Bottom Tab Bar ── */
-        div[data-testid="stTabs"] {
+        .st-key-main_tabs {
             /* container stays in normal flow */
         }
-        div[data-testid="stTabs"] div[role="tablist"] {
+        .st-key-main_tabs div[role="tablist"] {
             position: fixed !important;
             bottom: 0 !important;
             left: 0 !important;
             right: 0 !important;
             z-index: 9999 !important;
-            background: rgba(255, 255, 255, 0.85) !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
             border-top: 1px solid rgba(0, 168, 89, 0.15) !important;
-            padding-bottom: calc(4px + var(--safe-bottom)) !important;
+            padding-bottom: calc(6px + var(--safe-bottom)) !important;
             box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08) !important;
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
             justify-content: flex-start !important;
             align-items: center !important;
-            padding-top: 6px !important;
-            padding-left: 8px !important;
-            padding-right: 8px !important;
-            gap: 4px !important;
-            height: calc(60px + var(--safe-bottom)) !important;
+            padding-top: 8px !important;
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+            gap: 8px !important;
+            height: calc(64px + var(--safe-bottom)) !important;
             overflow-x: auto !important;
             -webkit-overflow-scrolling: touch !important;
             scrollbar-width: none !important; /* Firefox */
         }
-        div[data-testid="stTabs"] div[role="tablist"]::-webkit-scrollbar {
+        .st-key-main_tabs div[role="tablist"]::-webkit-scrollbar {
             display: none !important; /* Safari/Chrome */
         }
-        div[data-testid="stTabs"] button[role="tab"] {
-            padding: 6px 4px !important;
-            min-width: 72px !important;
-            flex: 1 1 0% !important;
-            display: flex !important;
-            flex-direction: column !important;
+        .st-key-main_tabs button[role="tab"] {
+            padding: 8px 12px !important;
+            min-width: 85px !important;
+            flex: 0 0 auto !important;
+            display: inline-flex !important;
+            flex-direction: row !important;
             align-items: center !important;
-            gap: 2px !important;
-            border-radius: 12px !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            border-radius: 16px !important;
             background: transparent !important;
             border: none !important;
             color: var(--on-surface-variant) !important;
             font-weight: 500 !important;
-            font-size: 0.7rem !important;
+            font-size: 0.75rem !important;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
             margin: 0 !important;
+            white-space: nowrap !important;
         }
-        div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        .st-key-main_tabs button[role="tab"][aria-selected="true"] {
             color: white !important;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
-            font-weight: 700 !important;
-            box-shadow: 0 4px 10px rgba(0, 168, 89, 0.25) !important;
-            transform: scale(1.03) !important;
+            font-weight: 600 !important;
+            box-shadow: 0 2px 8px rgba(0, 168, 89, 0.2) !important;
+            transform: scale(1.02) !important;
         }
-        div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] * {
+        .st-key-main_tabs button[role="tab"][aria-selected="true"] * {
             color: white !important;
         }
+        .st-key-main_tabs [data-baseweb="tab-highlight"],
+        .st-key-main_tabs [data-baseweb="tab-border"] {
+            display: none !important;
+        }
         .stMainBlockContainer {
-            padding-bottom: calc(76px + var(--safe-bottom)) !important;
+            padding-bottom: calc(80px + var(--safe-bottom)) !important;
         }
 
         /* ── Premium Segmented Control for mobile upload aba ── */
@@ -2377,9 +2383,10 @@ def sidebar_upload():
 
 sidebar_upload()
 
-tab_dash, tab_assistente, tab_calendario, tab_campanhas, tab_relatorio, tab_legendas = st.tabs(
-    ["📊 Painel", "💬 Chat", "📅 Calendário", "📢 Campanhas", "📋 Relatórios", "📸 Legendas"],
-)
+with st.container(key="main_tabs"):
+    tab_dash, tab_assistente, tab_calendario, tab_campanhas, tab_relatorio, tab_legendas = st.tabs(
+        ["📊 Painel", "💬 Chat", "📅 Calendário", "📢 Campanhas", "📋 Relatórios", "📸 Legendas"],
+    )
 
 with tab_dash:
     st.markdown(
