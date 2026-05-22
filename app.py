@@ -231,7 +231,7 @@ st.markdown("""
     section[data-testid="stSidebar"] p,
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stRadio div[data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] span {
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span {
         font-size: 0.85rem;
         color: rgba(255,255,255,0.85);
     }
@@ -661,8 +661,15 @@ st.markdown("""
 
     /* ── Status / Spinner messages ── */
     div[data-testid="stStatusWidget"] {
-        border-radius: var(--radius-lg);
-        border: 1px solid var(--outline-variant);
+        background-color: var(--surface-container-high) !important;
+        border-radius: var(--radius-lg) !important;
+        border: 1px solid var(--outline-variant) !important;
+    }
+    div[data-testid="stStatusWidget"] summary {
+        color: var(--on-surface) !important;
+    }
+    div[data-testid="stStatusWidget"] summary * {
+        color: var(--on-surface) !important;
     }
 
     .stMainBlockContainer {
