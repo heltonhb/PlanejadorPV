@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from google import genai
 
 from utils.documentos import _get_collection
+from utils.helpers import get_gemini_key
 
 load_dotenv()
 
@@ -32,19 +33,8 @@ def _buscar_contexto_calendario(mes: str, top_k: int = 10) -> str:
     return ""
 
 
-def _get_gemini_key() -> str | None:
-    key = os.getenv("GEMINI_API_KEY")
-    if key:
-        return key
-    try:
-        import streamlit as st
-        return st.secrets.get("GEMINI_API_KEY")
-    except Exception:
-        return None
-
-
 def gerar_calendario(mes: str, ano: int) -> dict:
-    api_key = _get_gemini_key()
+    api_key = get_gemini_key()
     if not api_key:
         return {"status": "erro", "mensagem": "GEMINI_API_KEY não configurada.", "conteudo": ""}
 

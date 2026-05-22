@@ -7,6 +7,7 @@ from chromadb import PersistentClient
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 from utils.documentos import CHROMA_PATH, COLLECTION_NAME
+from utils.helpers import get_gemini_key
 
 load_dotenv()
 
@@ -55,17 +56,6 @@ def buscar_contexto(pergunta: str, top_k: int = TOP_K) -> tuple[str, list[dict]]
     return "\n\n".join(documentos[0]), fontes
 
 
-def _get_gemini_key() -> Optional[str]:
-    key = os.getenv("GEMINI_API_KEY")
-    if key:
-        return key
-    try:
-        import streamlit as st
-        return st.secrets.get("GEMINI_API_KEY")
-    except Exception:
-        return None
-
-
 def perguntar(pergunta: str, contexto: str = None) -> dict:
     fontes = []
     if not contexto:
@@ -80,7 +70,7 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
             "fontes": [],
         }
 
-    api_key = _get_gemini_key()
+    api_key = get_gemini_key()
     if not api_key:
         return {"resposta": "Erro: GEMINI_API_KEY não configurada.", "fontes": []}
 
