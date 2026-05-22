@@ -1124,6 +1124,95 @@ if "ultima_campanha" not in st.session_state:
     st.session_state.ultima_campanha = None
 
 
+def render_markdown_with_copy(markdown_text, key, label="📋 Copiar Markdown"):
+    """Render markdown content with a styled copy-to-clipboard button."""
+    import streamlit.components.v1 as components
+    import html as html_mod
+    import json
+
+    escaped_md = json.dumps(markdown_text)
+    html_rendered = _md.render(markdown_text)
+
+    copy_html = f"""
+    <div style="position:relative;">
+        <div style="
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-bottom: 8px;
+        ">
+            <button id="copy-btn-{key}" onclick="copyMarkdown_{key}()" style="
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 18px;
+                background: linear-gradient(135deg, #00A859, #007A40);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 8px rgba(0,168,89,0.2);
+                font-family: 'Inter', sans-serif;
+            ">
+                {label}
+            </button>
+        </div>
+        <div style="
+            background: #FAFBFC;
+            border: 1px solid #E1E4E8;
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: #24292E;
+            overflow-x: auto;
+        ">
+            {html_rendered}
+        </div>
+    </div>
+    <script>
+    function copyMarkdown_{key}() {{
+        const md = {escaped_md};
+        const btn = document.getElementById('copy-btn-{key}');
+        const origHTML = btn.innerHTML;
+        function onSuccess() {{
+            btn.innerHTML = '✅ Copiado!';
+            btn.style.background = '#007A40';
+            setTimeout(() => {{
+                btn.innerHTML = origHTML;
+                btn.style.background = 'linear-gradient(135deg, #00A859, #007A40)';
+            }}, 2200);
+        }}
+        function fallback() {{
+            const ta = document.createElement('textarea');
+            ta.value = md;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {{ document.execCommand('copy'); onSuccess(); }}
+            catch(e) {{ alert('Não foi possível copiar.'); }}
+            document.body.removeChild(ta);
+        }}
+        if (navigator.clipboard && window.isSecureContext) {{
+            navigator.clipboard.writeText(md).then(onSuccess).catch(fallback);
+        }} else {{
+            fallback();
+        }}
+    }}
+    </script>
+    """
+    line_count = html_rendered.count('<') // 2 + markdown_text.count('\n')
+    est_height = max(320, min(900, line_count * 28 + 120))
+    components.html(copy_html, height=est_height, scrolling=True)
+
+
+
 def get_calendar_events(mes_nome, ano):
     events = {}
     events[2] = [{"title": "Reunião Alinhamento Tatuapé", "category": "reuniao", "time": "09:30", "description": "Alinhamento das campanhas locais e metas pedagógicas para o mês de " + mes_nome}]
@@ -2608,17 +2697,43 @@ with tab_assistente:
             if msg["role"] == "assistant" and msg.get("fontes"):
                 exibir_fontes(msg["fontes"])
             if msg["role"] == "assistant" and i == len(st.session_state.mensagens) - 1:
-                col_exp, col_base = st.columns(2)
+                col_exp, col_copy, col_base = st.columns(3)
                 with col_exp:
                     docx_bytes = exportar_markdown_docx(msg["content"])
                     st.download_button(
-                        "📥 Baixar como DOCX",
+                        "📥 Baixar DOCX",
                         data=docx_bytes,
                         file_name="resposta_assistente.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         use_container_width=True,
                         key=f"exp_msg_{i}",
                     )
+                with col_copy:
+                    import streamlit.components.v1 as components
+                    import json as _json
+                    _escaped = _json.dumps(msg["content"])
+                    components.html(f"""
+                    <button id="copy-chat-{i}" onclick="(function(){{
+                        var md={_escaped};
+                        var btn=document.getElementById('copy-chat-{i}');
+                        var orig=btn.innerHTML;
+                        function ok(){{btn.innerHTML='✅ Copiado!';btn.style.background='#007A40';setTimeout(function(){{btn.innerHTML=orig;btn.style.background='linear-gradient(135deg,#00A859,#007A40)';}},2200);}}
+                        function fb(){{var ta=document.createElement('textarea');ta.value=md;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.focus();ta.select();try{{document.execCommand('copy');ok();}}catch(e){{}}document.body.removeChild(ta);}}
+                        if(navigator.clipboard&&window.isSecureContext){{navigator.clipboard.writeText(md).then(ok).catch(fb);}}else{{fb();}}
+                    }})()" style="
+                        width:100%;
+                        padding:10px 14px;
+                        background:linear-gradient(135deg,#00A859,#007A40);
+                        color:white;
+                        border:none;
+                        border-radius:10px;
+                        font-size:0.82rem;
+                        font-weight:600;
+                        cursor:pointer;
+                        font-family:'Inter',sans-serif;
+                        box-shadow:0 2px 8px rgba(0,168,89,0.2);
+                    ">📋 Copiar</button>
+                    """, height=46)
                 with col_base:
                     if st.button("📚 Incluir na base", key=f"inc_msg_{i}", use_container_width=True):
                         with st.spinner("Adicionando à base de conhecimento..."):
@@ -2711,8 +2826,11 @@ with tab_calendario:
         else:
             st.info("📚 Nenhuma fonte carregada — usei conhecimento geral do calendário escolar.")
             
-        html_content = _md.render(st.session_state.ultimo_calendario)
-        st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
+        render_markdown_with_copy(
+            st.session_state.ultimo_calendario,
+            key="cal_copy",
+            label="📋 Copiar Calendário",
+        )
         
         col_exp, col_base = st.columns(2)
         with col_exp:
@@ -2736,6 +2854,9 @@ with tab_calendario:
                     st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
                 else:
                     st.error(f"❌ {proc['mensagem']}")
+
+        with st.expander("📝 Ver código Markdown original", expanded=False):
+            st.code(st.session_state.ultimo_calendario, language="markdown")
 
 with tab_campanhas:
     st.markdown(
@@ -2824,8 +2945,11 @@ with tab_campanhas:
             )
             st.markdown(card_html, unsafe_allow_html=True)
             
-        html_content = _md.render(st.session_state.ultima_campanha)
-        st.markdown(f'<div class="app-card">{html_content}</div>', unsafe_allow_html=True)
+        render_markdown_with_copy(
+            st.session_state.ultima_campanha,
+            key="camp_copy",
+            label="📋 Copiar Campanha",
+        )
         
         col_exp, col_base = st.columns(2)
         with col_exp:
@@ -2851,6 +2975,9 @@ with tab_campanhas:
                     st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
                 else:
                     st.error(f"❌ {proc['mensagem']}")
+
+        with st.expander("📝 Ver código Markdown original", expanded=False):
+            st.code(st.session_state.ultima_campanha, language="markdown")
 
 with tab_relatorio:
     st.markdown(
@@ -3098,6 +3225,11 @@ with tab_legendas:
                             img_base64_str=img_b64,
                         )
                         components.html(mockup_html, height=720, scrolling=True)
+                        render_markdown_with_copy(
+                            option,
+                            key=f"leg_{orig_idx}_{idx}",
+                            label="📋 Copiar Legenda",
+                        )
                 st.divider()
 
 st.markdown("""
