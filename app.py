@@ -694,6 +694,9 @@ st.markdown("""
 
         /* ── Bottom tab bar ── */
         div[data-testid="stTabs"] {
+            /* container stays in normal flow */
+        }
+        div[data-testid="stTabs"] div[role="tablist"] {
             position: fixed;
             bottom: 0;
             left: 0;
@@ -703,8 +706,6 @@ st.markdown("""
             border-top: 1px solid var(--outline-variant);
             padding-bottom: var(--safe-bottom);
             box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
-        }
-        div[data-testid="stTabs"] div[role="tablist"] {
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -735,11 +736,46 @@ st.markdown("""
 
         /* ── Sidebar mobile ── */
         section[data-testid="stSidebar"] {
+            position: fixed !important;
             width: 85vw !important;
             max-width: 320px !important;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 10000;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            height: 100% !important;
+        }
+        section[data-testid="stSidebar"][aria-expanded="true"] {
+            transform: translateX(0);
+        }
+        body.sidebar-open section[data-testid="stSidebar"] {
+            transform: translateX(0);
+        }
+        section[data-testid="stSidebar"]::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.4);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        section[data-testid="stSidebar"][aria-expanded="true"]::after,
+        body.sidebar-open section[data-testid="stSidebar"]::after {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        body.sidebar-open {
+            overflow: hidden;
         }
         section[data-testid="stSidebar"] .stSidebarContent {
-            background: linear-gradient(180deg, #003F20, #007A40);
+            background: linear-gradient(180deg, var(--sidebar-gradient-start, #003F20), var(--sidebar-gradient-end, #007A40));
             height: 100%;
             overflow-y: auto;
         }
@@ -851,8 +887,9 @@ st.markdown("""
         }
         div[data-testid="stChatInput"] {
             position: sticky;
-            bottom: 60px;
+            bottom: 72px;
             z-index: 100;
+            padding-bottom: var(--safe-bottom);
         }
         div[data-testid="stChatInput"] textarea {
             font-size: 0.85rem !important;
@@ -888,6 +925,22 @@ st.markdown("""
     var l = document.createElement("link");
     l.rel = "manifest"; l.href = URL.createObjectURL(b);
     document.head.appendChild(l);
+})();
+</script>
+<script>
+(function(){
+    var sidebar = document.querySelector('section[data-testid="stSidebar"]');
+    if (sidebar) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                if (m.type === 'attributes' && m.attributeName === 'aria-expanded') {
+                    document.body.classList.toggle('sidebar-open', sidebar.getAttribute('aria-expanded') === 'true');
+                }
+            });
+        });
+        observer.observe(sidebar, { attributes: true, attributeFilter: ['aria-expanded'] });
+        document.body.classList.toggle('sidebar-open', sidebar.getAttribute('aria-expanded') === 'true');
+    }
 })();
 </script>
 """, unsafe_allow_html=True)
