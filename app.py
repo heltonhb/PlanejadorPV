@@ -1275,7 +1275,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                 if resultado["status"] == "ok":
                     container.success(
                         f"URL: {resultado['titulo']} — "
-                        f"{resultado['total_chunks']} chunks, "
+                        f"{resultado['total_chunks']} trechos, "
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(url)
@@ -1308,7 +1308,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                     if resultado["status"] == "ok":
                         container.success(
                             f"HTML: {resultado['titulo']} — "
-                            f"{resultado['total_chunks']} chunks, "
+                            f"{resultado['total_chunks']} trechos, "
                             f"{resultado['total_caracteres']} caracteres"
                         )
                         st.session_state.documentos.append(nome)
@@ -1341,7 +1341,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                     resultado = processar_instagram(perfil)
                 if resultado["status"] == "ok":
                     container.success(
-                        f"Instagram @{perfil} — {resultado['total_chunks']} chunks, "
+                        f"Instagram @{perfil} — {resultado['total_chunks']} trechos, "
                         f"{resultado['total_caracteres']} caracteres "
                         f"({resultado['posts']} posts)"
                     )
@@ -1380,7 +1380,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                 if resultado["status"] == "ok":
                     container.success(
                         f"Texto: {resultado['titulo']} — "
-                        f"{resultado['total_chunks']} chunks, "
+                        f"{resultado['total_chunks']} trechos, "
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(chave)
@@ -1412,7 +1412,7 @@ def _render_upload_tab(container, aba, key_prefix=""):
                 if resultado["status"] == "ok":
                     container.success(
                         f"Planilha: {resultado['titulo']} — "
-                        f"{resultado['total_chunks']} chunks, "
+                        f"{resultado['total_chunks']} trechos, "
                         f"{resultado['total_caracteres']} caracteres"
                     )
                     st.session_state.documentos.append(chave)
@@ -1453,7 +1453,7 @@ def sidebar_upload():
             col1, col2 = st.sidebar.columns([5, 1])
             with col1:
                 st.markdown(f"**{icone} {nome}**")
-                st.caption(f"{chunks} chunks")
+                st.caption(f"{chunks} trechos")
             with col2:
                 if st.button("🗑️", key=f"del_{chave}", help="Remover esta fonte"):
                     colecao = _get_docs_collection()
@@ -1578,7 +1578,7 @@ with tab_dash:
                     f'<div class="app-card animate-in" style="animation-delay: {0.4 + i*0.05}s; padding:1rem 1.25rem; margin: 0.5rem 0;">'
                     f'<strong style="color: var(--on-surface);">{icone} {nome}</strong><br>'
                     f'<small style="color:var(--on-surface-variant); font-size: 0.8rem;">'
-                    f'{meta.get("chunks", "?")} chunks · {meta.get("caracteres", 0):,} caracteres{extra}'
+                    f'{meta.get("chunks", "?")} trechos · {meta.get("caracteres", 0):,} caracteres{extra}'
                     f'</small></div>',
                     unsafe_allow_html=True,
                 )
@@ -1696,7 +1696,7 @@ with tab_assistente:
                                 titulo=f"Resposta do assistente #{i}",
                             )
                         if proc["status"] == "ok":
-                            st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
+                            st.success(f"✅ Adicionado ({proc['total_chunks']} trechos).")
                         else:
                             st.error(f"❌ {proc['mensagem']}")
                 with st.expander("📋 Copiar resposta — clique para ver e copiar o texto", expanded=False):
@@ -1929,7 +1929,7 @@ with tab_relatorio:
                 f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
                 f'{relatorio["total_chunks"]}</div>'
                 f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
-                f'📄 Total de chunks</div></div>',
+                f'📄 Total de trechos</div></div>',
                 unsafe_allow_html=True,
             )
         with col2:
@@ -2009,7 +2009,7 @@ with tab_relatorio:
                 f'<span style="background:{cor_tipo};color:white;padding:0.15rem 0.6rem;border-radius:100px;'
                 f'font-size:0.75rem;font-weight:600;">{total_items} doc{'' if total_items == 1 else 's'}</span>'
                 f'<span style="font-size:0.82rem;color:var(--on-surface-variant);margin-left:auto;">'
-                f'{total_chunks_tipo} chunk{'' if total_chunks_tipo == 1 else 's'}</span>'
+                f'{total_chunks_tipo} trecho{'' if total_chunks_tipo == 1 else 's'}</span>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -2025,7 +2025,7 @@ with tab_relatorio:
                 ):
                     cols_info = st.columns([1, 1, 1])
                     with cols_info[0]:
-                        st.markdown(f'<span style="font-size:0.85rem;color:var(--on-surface-variant);">📦 Chunks</span><br><span style="font-size:1.3rem;font-weight:700;">{item["chunks"]}</span>', unsafe_allow_html=True)
+                        st.markdown(f'<span style="font-size:0.85rem;color:var(--on-surface-variant);">📦 Trechos</span><br><span style="font-size:1.3rem;font-weight:700;">{item["chunks"]}</span>', unsafe_allow_html=True)
                     with cols_info[1]:
                         st.markdown(f'<span style="font-size:0.85rem;color:var(--on-surface-variant);">📏 Caracteres</span><br><span style="font-size:1.3rem;font-weight:700;">{item["caracteres"]:,}</span>', unsafe_allow_html=True)
                     with cols_info[2]:

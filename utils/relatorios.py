@@ -53,7 +53,7 @@ def resumo_conteudo() -> dict:
                 "filhos": 0,
                 "caracteres": 0,
                 "documento_id": documento_id,
-                "primeiro_chunk": data["documents"][i] if data["documents"][i] else "",
+                "primeiro_trecho": data["documents"][i] if data["documents"][i] else "",
                 "resumo": resumo,
             }
         agrupado[fonte][unique_key]["filhos"] += 1
@@ -69,7 +69,7 @@ def resumo_conteudo() -> dict:
                 "chunks": info["filhos"],
                 "caracteres": info["caracteres"],
                 "documento_id": info["documento_id"],
-                "preview": info.get("primeiro_chunk", "")[:250],
+                "preview": info.get("primeiro_trecho", "")[:250],
                 "resumo": info.get("resumo", ""),
             })
 
