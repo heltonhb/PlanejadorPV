@@ -234,6 +234,98 @@ st.markdown("""
         height: 400px;
         background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
         border-radius: 50%;
+        pointer-events: none;
+    }
+    
+    .app-header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        gap: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .app-header-left {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        min-width: 0;
+    }
+    
+    .app-header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-shrink: 0;
+    }
+    
+    .app-header-logo {
+        flex-shrink: 0;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+    }
+    .app-header-logo img {
+        height: 80px;
+        width: auto;
+        max-width: 380px;
+        display: block;
+    }
+    
+    .app-header-greeting {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        padding: 0.6rem 1.25rem;
+        border-radius: 100px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: var(--shadow-sm);
+        white-space: nowrap;
+    }
+    
+    .app-header-theme-btn {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        padding: 0.6rem 1rem;
+        border-radius: 100px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+        line-height: 1;
+    }
+    .app-header-theme-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
+    }
+    
+    .app-title {
+        font-weight: 800;
+        font-size: 1.8rem;
+        color: white;
+        letter-spacing: -0.5px;
+        line-height: 1.2;
+    }
+    
+    .app-subtitle {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        color: rgba(255,255,255,0.9);
+        font-weight: 500;
+        line-height: 1.4;
     }
 
     /* ── Sidebar ── */
@@ -497,9 +589,49 @@ st.markdown("""
     /* ── Mobile Optimization ── */
     @media (max-width: 640px) {
         .stMainBlockContainer { padding: 1rem !important; }
-        .app-header { padding: 1.25rem !important; }
-        .app-title { font-size: 1.25rem !important; }
+        .app-header { padding: 1rem 1.25rem !important; }
+        .app-title { font-size: 1.1rem !important; }
+        .app-subtitle { font-size: 0.75rem !important; }
         .metric-card-val { font-size: 2rem !important; }
+        
+        .app-header::before { display: none; }
+        
+        .app-header-content {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.75rem;
+        }
+        
+        .app-header-left {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0.5rem;
+        }
+        
+        .app-header-logo img {
+            height: 48px;
+            max-width: 200px;
+        }
+        
+        .app-header-right {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .app-header-greeting {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.9rem;
+        }
+        .app-header-greeting .status-pulse {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .app-header-theme-btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.85rem;
+        }
         
         .stTabs [role="tablist"] {
             flex-wrap: nowrap !important;
@@ -571,23 +703,21 @@ def _load_svg_as_base64(path):
     except Exception:
         return ""
 
-logo_img = f'<img src="{_load_svg_as_base64("assets/logo.svg")}" alt="PlanejadorPV" style="height:80px;width:auto;max-width:380px;display:block;" />'
+logo_img = f'<img src="{_load_svg_as_base64("assets/logo.svg")}" alt="PlanejadorPV" />'
 
 st.markdown(f"""
 <div class="app-header animate-in">
-    <div class="app-header-content" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <div style="display: flex; align-items: center; gap: 1.5rem;">
-            <div style="flex-shrink:0; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">{logo_img}</div>
-            <div>
-                <div class="app-title" style="font-weight: 800; font-size: 1.8rem; color: white; letter-spacing: -0.5px;">Marketing Planner</div>
-                <div class="app-subtitle" style="font-size: 0.9rem; opacity: 0.9; color: rgba(255,255,255,0.9); font-weight: 500;">Ensina Mais Turma da Mônica · Unidade Tatuapé</div>
+    <div class="app-header-content">
+        <div class="app-header-left">
+            <div class="app-header-logo">{logo_img}</div>
+            <div class="app-header-title-group">
+                <div class="app-title">Marketing Planner</div>
+                <div class="app-subtitle">Ensina Mais Turma da Mônica · Unidade Tatuapé</div>
             </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <button id="themeToggleBtn" style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.6rem 1rem; border-radius: 100px; font-weight: 600; font-size: 0.9rem; color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); transition: all 0.2s ease;">
-                🌓
-            </button>
-            <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.6rem 1.25rem; border-radius: 100px; font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm);">
+        <div class="app-header-right">
+            <button id="themeToggleBtn" class="app-header-theme-btn">🌓</button>
+            <div class="app-header-greeting">
                 <span class="status-pulse"></span>
                 Olá, Gestor! 👋
             </div>
