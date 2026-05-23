@@ -1213,7 +1213,7 @@ def exibir_fontes(fontes: list[dict]):
     if chips_html:
         st.markdown(
             f'<div style="margin-top: 8px; margin-bottom: 12px; display: flex; flex-wrap: wrap; align-items: center;">'
-            f'<span style="font-size: 0.8rem; color: #6C757D; margin-right: 8px; font-weight: 600;">Fontes citadas:</span>'
+            f'<span style="font-size: 0.8rem; color: var(--on-surface-variant); margin-right: 8px; font-weight: 600;">Fontes citadas:</span>'
             f'{"".join(chips_html)}'
             f'</div>',
             unsafe_allow_html=True
