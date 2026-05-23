@@ -104,7 +104,7 @@ st.markdown("""
         --background: #0D1117;
         --surface: #161B22;
         --on-surface: #E6EDF3;
-        --on-surface-variant: #8B949E;
+        --on-surface-variant: #A0ABB3;
         
         --outline: #30363D;
         --outline-variant: #21262D;
@@ -123,6 +123,8 @@ st.markdown("""
         --radius-xl: 24px;
         
         --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+        --info: #60A5FA;
+        --info-dark: #3B82F6;
         --card-bg: #161B22;
         --card-border: #30363D;
         --input-bg: #0D1117;
@@ -134,9 +136,9 @@ st.markdown("""
 
     /* ── Tema Claro ── */
     [data-theme="light"] {
-        --primary: #00A859;
-        --primary-dark: #007A40;
-        --primary-light: #4ADE80;
+        --primary: #006D38;
+        --primary-dark: #005A2E;
+        --primary-light: #00A859;
         --primary-container: #E8F5E9;
         --on-primary-container: #00210d;
         
@@ -145,12 +147,12 @@ st.markdown("""
         --secondary-light: #3B82F6;
         --secondary-container: #E3F2FD;
         
-        --tertiary: #F7B731;
-        --tertiary-dark: #E09E1A;
+        --tertiary: #B87A0E;
+        --tertiary-dark: #8E5F0A;
         --tertiary-container: #FFFDE7;
         
-        --danger: #E84C3D;
-        --danger-dark: #C0392B;
+        --danger: #C62828;
+        --danger-dark: #9E1B1B;
         --danger-container: #FFEBEE;
         
         --background: #F8F9FA;
@@ -175,10 +177,15 @@ st.markdown("""
         --radius-xl: 24px;
         
         --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+        --info: #005CAA;
+        --info-dark: #003F7A;
         --card-bg: #ffffff;
         --card-border: #C4C6D0;
         --input-bg: #ffffff;
         --hover-bg: rgba(0,0,0,0.03);
+        --sidebar-bg: #0D1117;
+        --sidebar-text: rgba(255,255,255,0.75);
+        --sidebar-text-active: #00A859;
     }
 
     * { font-family: var(--font-main); }
@@ -273,7 +280,7 @@ st.markdown("""
     .metric-card {
         border-radius: var(--radius-lg);
         padding: 1.5rem;
-        background: white;
+        background: var(--card-bg);
         border: 1px solid var(--outline-variant);
         box-shadow: var(--shadow-sm);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -311,7 +318,7 @@ st.markdown("""
 
     /* ── Custom Cards ── */
     .app-card {
-        background: white;
+        background: var(--card-bg);
         border: 1px solid var(--outline-variant);
         border-radius: var(--radius-lg);
         padding: 1.75rem;
@@ -341,7 +348,7 @@ st.markdown("""
     }
     
     .stTabs [role="tab"][aria-selected="true"] {
-        background: white !important;
+        background: var(--surface) !important;
         color: var(--primary) !important;
         box-shadow: var(--shadow-sm) !important;
     }
@@ -360,7 +367,7 @@ st.markdown("""
     }
 
     div[data-testid="stChatMessage"][aria-label*="assistant"] {
-        background: white !important;
+        background: var(--card-bg) !important;
         border-color: var(--outline-variant) !important;
         box-shadow: var(--shadow-sm) !important;
     }
@@ -418,7 +425,7 @@ st.markdown("""
     .stAlert { 
         border: 1px solid var(--outline-variant) !important;
         border-radius: var(--radius-md) !important;
-        background: white !important;
+        background: var(--card-bg) !important;
     }
     
     div[data-testid="stAlert"] {
@@ -455,7 +462,7 @@ st.markdown("""
     div[data-testid="stExpander"] {
         border: 1px solid var(--outline-variant) !important;
         border-radius: var(--radius-md) !important;
-        background: white !important;
+        background: var(--card-bg) !important;
         margin-bottom: 1rem !important;
     }
 
@@ -692,7 +699,7 @@ def render_campaign_result_card(nome, objetivo, publico, servico, orcamento, can
     styles = """
     <style>
         .campaign-result-card {
-            background: #ffffff !important;
+            background: var(--card-bg) !important;
             border: 1px solid var(--outline-variant) !important;
             border-radius: 12px !important;
             padding: 1.5rem !important;
@@ -700,7 +707,7 @@ def render_campaign_result_card(nome, objetivo, publico, servico, orcamento, can
             margin-bottom: 1.5rem !important;
             box-shadow: var(--shadow-md) !important;
             text-align: left !important;
-            color: #343A40 !important;
+            color: var(--on-surface) !important;
         }
         .campaign-result-title {
             color: var(--primary) !important;
@@ -946,15 +953,15 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
     styles = """
     <style>
         .instagram-card {
-            background: #ffffff !important;
-            border: 1px solid #dbdbdb !important;
+            background: var(--card-bg) !important;
+            border: 1px solid var(--outline-variant) !important;
             border-radius: 12px !important;
             max-width: 470px !important;
             margin: 1.5rem auto !important;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.05) !important;
+            box-shadow: var(--shadow-md) !important;
             overflow: hidden !important;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-            color: #262626 !important;
+            color: var(--on-surface) !important;
             text-align: left !important;
         }
         .instagram-header {
@@ -1629,7 +1636,7 @@ with tab_dash:
                 cols[i % 2].markdown(f"- {chave}")
     else:
         st.markdown(
-            '<div class="app-card-empty animate-in" style="animation-delay: 0.4s; padding: 3.5rem 1.5rem; text-align: center; border-radius: var(--radius-lg); border: 2px dashed var(--outline-variant); background: white; margin: 1.5rem 0;">'
+            '<div class="app-card-empty animate-in" style="animation-delay: 0.4s; padding: 3.5rem 1.5rem; text-align: center; border-radius: var(--radius-lg); border: 2px dashed var(--outline-variant); background: var(--card-bg); margin: 1.5rem 0;">'
             '<div style="font-size: 4rem; margin-bottom: 1rem; display: inline-block;">📚</div>'
             '<h3 style="color: var(--on-surface); margin-top: 0.5rem; margin-bottom: 0.5rem; font-weight:700;">Nenhuma fonte carregada</h3>'
             '<p style="color: var(--on-surface-variant); font-size: 0.95rem; margin: 0;">'
@@ -1955,7 +1962,7 @@ with tab_relatorio:
 
     if relatorio["total_chunks"] == 0:
         st.markdown(
-            '<div class="app-card-empty animate-in" style="padding: 3.5rem 1.5rem; text-align: center; border-radius: var(--radius-lg); border: 2px dashed var(--outline-variant); background: white; margin: 1.5rem 0;">'
+            '<div class="app-card-empty animate-in" style="padding: 3.5rem 1.5rem; text-align: center; border-radius: var(--radius-lg); border: 2px dashed var(--outline-variant); background: var(--card-bg); margin: 1.5rem 0;">'
             '<div style="font-size: 4rem; margin-bottom: 1rem; display: inline-block;">📂</div>'
             '<h3 style="color: var(--on-surface); margin-top: 0.5rem; margin-bottom: 0.5rem; font-weight:700;">Nenhuma fonte na base de conhecimento (RAG)</h3>'
             '<p style="color: var(--on-surface-variant); font-size: 0.95rem; margin: 0;">'
