@@ -1613,7 +1613,7 @@ with tab_assistente:
 
     for i, msg in enumerate(st.session_state.mensagens):
         with st.chat_message(msg["role"]):
-            st.markdown(f'<div class="animate-in" style="animation-delay: {0.1 + i*0.05}s;">'{msg["content']}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="animate-in" style="animation-delay: {0.1 + i*0.05}s;">{msg["content"]}</div>', unsafe_allow_html=True)
             if msg["role"] == "assistant" and msg.get("fontes"):
                 exibir_fontes(msg["fontes"])
             if msg["role"] == "assistant" and i == len(st.session_state.mensagens) - 1:
@@ -1645,67 +1645,19 @@ with tab_assistente:
     if prompt := st.chat_input("Faça uma pergunta sobre os documentos..."):
         st.session_state.mensagens.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
-            st.markdown(f'<div class="animate-in">'{prompt}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="animate-in">{prompt}</div>', unsafe_allow_html=True)
 
         with st.chat_message("assistant"):
             with st.spinner("Consultando fontes..."):
                 resultado = perguntar(prompt)
-            st.markdown(f'<div class="animate-in">'{resultado["resposta']}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="animate-in">{resultado["resposta"]}</div>', unsafe_allow_html=True)
             if resultado["fontes"]:
                 exibir_fontes(resultado["fontes"])
         st.session_state.mensagens.append({
             "role": "assistant", "content": resultado["resposta"],
             "fontes": resultado["fontes"],
         })
-st.markdown('</div>', unsafe_allow_html=True)
-
-
-    for i, msg in enumerate(st.session_state.mensagens):
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"], unsafe_allow_html=True)
-            if msg["role"] == "assistant" and msg.get("fontes"):
-                exibir_fontes(msg["fontes"])
-            if msg["role"] == "assistant" and i == len(st.session_state.mensagens) - 1:
-                col_exp, col_base = st.columns(2)
-                with col_exp:
-                    docx_bytes = exportar_markdown_docx(msg["content"])
-                    st.download_button(
-                        "📥 Baixar DOCX",
-                        data=docx_bytes,
-                        file_name="resposta_assistente.docx",
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        use_container_width=True,
-                        key=f"exp_msg_{i}",
-                    )
-                with col_base:
-                    if st.button("📚 Incluir na base", key=f"inc_msg_{i}", use_container_width=True):
-                        with st.spinner("Adicionando à base de conhecimento..."):
-                            proc = processar_texto(
-                                msg["content"],
-                                titulo=f"Resposta do assistente #{i}",
-                            )
-                        if proc["status"] == "ok":
-                            st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
-                        else:
-                            st.error(f"❌ {proc['mensagem']}")
-                with st.expander("📋 Copiar resposta — clique para ver e copiar o texto", expanded=False):
-                    st.code(msg["content"], language="markdown")
-
-    if prompt := st.chat_input("Faça uma pergunta sobre os documentos..."):
-        st.session_state.mensagens.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        with st.chat_message("assistant"):
-            with st.spinner("Consultando fontes..."):
-                resultado = perguntar(prompt)
-            st.markdown(resultado["resposta"])
-            if resultado["fontes"]:
-                exibir_fontes(resultado["fontes"])
-        st.session_state.mensagens.append({
-            "role": "assistant", "content": resultado["resposta"],
-            "fontes": resultado["fontes"],
-        })
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with tab_calendario:
     st.markdown('<div class="animate-in">', unsafe_allow_html=True)
