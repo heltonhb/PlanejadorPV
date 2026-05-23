@@ -1551,58 +1551,8 @@ with tab_dash:
         unsafe_allow_html=True,
     )
 
-    col_chart1, col_chart2 = st.columns(2)
-    with col_chart1:
-        st.markdown(
-            f'<div class="app-card animate-in" style="animation-delay: 0.3s; display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;padding:1.75rem;">'
-            f'<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: var(--on-surface); width:100%; font-weight:700;">📊 Distribuição das Fontes</h3>'
-            f'<img src="{_load_svg_as_base64("assets/pizza_chart.svg")}" alt="Distribuição por categoria" style="max-width:100%;height:auto;max-height:220px;display:block;margin:auto;" />'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-    with col_chart2:
-        st.markdown(
-            f'<div class="app-card animate-in" style="animation-delay: 0.35s; display:flex;flex-direction:column;justify-content:center;height:100%;padding:1.75rem;">'
-            f'<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: var(--on-surface); font-weight:700;">📈 Conteúdos por Categoria</h3>'
-            f'<div style="margin-bottom: 1rem;">'
-            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--on-surface-variant);">'
-            f'<span>📅 Calendários</span>'
-            f'<span>42%</span>'
-            f'</div>'
-            f'<div style="background: var(--primary-container); border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
-            f'<div style="background: linear-gradient(90deg, var(--primary), var(--primary-dark)); width: 42%; height: 100%; border-radius: 6px;"></div>'
-            f'</div>'
-            f'</div>'
-            f'<div style="margin-bottom: 1rem;">'
-            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--on-surface-variant);">'
-            f'<span>📢 Campanhas</span>'
-            f'<span>28%</span>'
-            f'</div>'
-            f'<div style="background: var(--secondary-container); border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
-            f'<div style="background: linear-gradient(90deg, var(--secondary), var(--secondary-dark)); width: 28%; height: 100%; border-radius: 6px;"></div>'
-            f'</div>'
-            f'</div>'
-            f'<div style="margin-bottom: 1rem;">'
-            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--on-surface-variant);">'
-            f'<span>📸 Legendas</span>'
-            f'<span>18%</span>'
-            f'</div>'
-            f'<div style="background: var(--tertiary-container); border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
-            f'<div style="background: linear-gradient(90deg, var(--tertiary), var(--tertiary-dark)); width: 18%; height: 100%; border-radius: 6px;"></div>'
-            f'</div>'
-            f'</div>'
-            f'<div style="margin-bottom: 0.5rem;">'
-            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--on-surface-variant);">'
-            f'<span>📋 Análises</span>'
-            f'<span>12%</span>'
-            f'</div>'
-            f'<div style="background: var(--danger-container); border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
-            f'<div style="background: linear-gradient(90deg, var(--danger), var(--danger-dark)); width: 12%; height: 100%; border-radius: 6px;"></div>'
-            f'</div>'
-            f'</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+    # Os gráficos de distribuição foram removidos pois não refletiam dados reais.
+    # Futuramente, substituir por visualizações baseadas em dados do RAG.
 
     if st.session_state.documentos:
         st.markdown(
