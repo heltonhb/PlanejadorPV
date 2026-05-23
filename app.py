@@ -1920,7 +1920,7 @@ with tab_relatorio:
             unsafe_allow_html=True,
         )
 
-        for item in relatorio["fontes_detalhadas"]:
+        for idx, item in enumerate(relatorio["fontes_detalhadas"]):
             documento_id = item.get("documento_id")
             resumo = item.get("resumo", "")
             resumo_html = ""
@@ -1930,7 +1930,7 @@ with tab_relatorio:
             c1, c2 = st.columns([5, 1])
             with c1:
                 st.markdown(
-                    f'<div class="app-card animate-in" style="animation-delay: {0.35 + item["idx"]*0.05}s; padding: 0.75rem 1rem;">'
+                    f'<div class="app-card animate-in" style="animation-delay: {0.35 + idx*0.05}s; padding: 0.75rem 1rem;">'
                     f'<span style="font-size: 1.1rem; font-weight: 600;">{item["icone"]} {item["titulo"]}</span><br>'
                     f'<span style="color: var(--on-surface-variant); font-size: 0.85rem;">'
                     f'{item["chunks"]} chunks · {item["caracteres"]:,} caracteres'
