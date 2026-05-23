@@ -2010,12 +2010,14 @@ with tab_relatorio:
         cols_fonte = st.columns(len(por_fonte_items))
         icones_f = {"pdf": "📄", "url": "🔗", "html": "🌐", "instagram": "📷", "texto": "📝", "planilha": "📊"}
         nomes_f = {"pdf": "PDF", "url": "URL", "html": "HTML", "instagram": "Instagram", "texto": "Texto", "planilha": "Planilha"}
+        cores_f = {"pdf": "var(--secondary)", "url": "var(--primary)", "html": "var(--tertiary)", "instagram": "#E1306C", "texto": "var(--on-surface-variant)", "planilha": "var(--info)"}
         for idx, (fonte, dados) in enumerate(por_fonte_items):
             with cols_fonte[idx]:
                 icone = icones_f.get(fonte, "📄")
                 nome = nomes_f.get(fonte, fonte.capitalize())
+                cor = cores_f.get(fonte, "var(--primary)")
                 st.markdown(
-                    f'<div class="app-card animate-in" style="animation-delay: {0.25 + idx*0.05}s; text-align:center;padding:1rem;">'
+                    f'<div class="app-card animate-in" style="animation-delay: {0.25 + idx*0.05}s; text-align:center;padding:1rem; border-top: 3px solid {cor};">'
                     f'<div style="font-size:1.4rem;font-weight:800;color:var(--primary);">'
                     f'{dados["chunks"]}</div>'
                     f'<div style="font-size:0.8rem;color:var(--on-surface-variant);font-weight:500;">'
@@ -2026,42 +2028,96 @@ with tab_relatorio:
                 )
 
         st.markdown(
-            '<h4 style="margin-top: 2rem; margin-bottom:1rem;font-weight:700; color: var(--on-surface);">📋 Detalhamento por documento</h4>',
+            '<h4 style="margin-top: 2rem; margin-bottom:1rem;font-weight:700; color: var(--on-surface);">'
+            '📋 Fontes carregadas <span style="font-size:0.85rem;font-weight:400;color:var(--on-surface-variant);">'
+            '— clique no título para expandir os detalhes</span></h4>',
             unsafe_allow_html=True,
         )
 
-        for idx, item in enumerate(relatorio["fontes_detalhadas"]):
-            documento_id = item.get("documento_id")
-            resumo = item.get("resumo", "")
-            resumo_html = ""
-            if resumo:
-                resumo_html = f'<br><span style="color: var(--on-surface-variant); font-size: 0.82rem; font-style: italic;">{resumo}</span>'
+        # Agrupa as fontes detalhadas por tipo para exibição organizada
+        fontes_por_tipo = {}
+        for item in relatorio["fontes_detalhadas"]:
+            tipo = item["fonte"]
+            if tipo not in fontes_por_tipo:
+                fontes_por_tipo[tipo] = []
+            fontes_por_tipo[tipo].append(item)
 
-            c1, c2 = st.columns([5, 1])
-            with c1:
-                st.markdown(
-                    f'<div class="app-card animate-in" style="animation-delay: {0.35 + idx*0.05}s; padding: 0.75rem 1rem;">'
-                    f'<span style="font-size: 1.1rem; font-weight: 600;">{item["icone"]} {item["titulo"]}</span><br>'
-                    f'<span style="color: var(--on-surface-variant); font-size: 0.85rem;">'
-                    f'{item["chunks"]} chunks · {item["caracteres"]:,} caracteres'
-                    f"</span>"
-                    f"{resumo_html}"
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-            with c2:
-                if documento_id and st.button("🗑️ Excluir", key=f"del_rel_{documento_id}", help="Remover esta fonte"):
-                    colecao = _get_docs_collection()
-                    try:
-                        colecao.delete(where={"documento_id": documento_id})
-                    except Exception:
-                        pass
-                    for chv, meta in list(st.session_state.documentos_meta.items()):
-                        if meta.get("documento_id") == documento_id:
-                            st.session_state.documentos.remove(chv)
-                            st.session_state.documentos_meta.pop(chv, None)
-                            break
-                    st.rerun()
+        idx_global = 0
+        for tipo, items in sorted(fontes_por_tipo.items()):
+            icone_tipo = icones_f.get(tipo, "📄")
+            nome_tipo = nomes_f.get(tipo, tipo.capitalize())
+            cor_tipo = cores_f.get(tipo, "var(--primary)")
+            total_items = len(items)
+            total_chunks_tipo = sum(it["chunks"] for it in items)
+
+            # Cabeçalho do grupo
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:0.75rem;margin-top:1.75rem;margin-bottom:0.75rem;'
+                f'padding:0.5rem 0.75rem;border-radius:var(--radius-md);background:var(--primary-container);">'
+                f'<span style="font-size:1.3rem;">{icone_tipo}</span>'
+                f'<span style="font-weight:700;font-size:1.05rem;color:var(--on-surface);">{nome_tipo}</span>'
+                f'<span style="background:{cor_tipo};color:white;padding:0.15rem 0.6rem;border-radius:100px;'
+                f'font-size:0.75rem;font-weight:600;">{total_items} doc{'' if total_items == 1 else 's'}</span>'
+                f'<span style="font-size:0.82rem;color:var(--on-surface-variant);margin-left:auto;">'
+                f'{total_chunks_tipo} chunk{'' if total_chunks_tipo == 1 else 's'}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+            for item in items:
+                documento_id = item.get("documento_id")
+                resumo = item.get("resumo", "")
+                preview = item.get("preview", "")
+
+                with st.expander(
+                    f'{item["icone"]} {item["titulo"]}',
+                    expanded=False,
+                ):
+                    cols_info = st.columns([1, 1, 1])
+                    with cols_info[0]:
+                        st.markdown(f'<span style="font-size:0.85rem;color:var(--on-surface-variant);">📦 Chunks</span><br><span style="font-size:1.3rem;font-weight:700;">{item["chunks"]}</span>', unsafe_allow_html=True)
+                    with cols_info[1]:
+                        st.markdown(f'<span style="font-size:0.85rem;color:var(--on-surface-variant);">📏 Caracteres</span><br><span style="font-size:1.3rem;font-weight:700;">{item["caracteres"]:,}</span>', unsafe_allow_html=True)
+                    with cols_info[2]:
+                        if documento_id and st.button("🗑️ Remover", key=f"del_rel_{documento_id}", help="Remover esta fonte da base", use_container_width=True):
+                            colecao = _get_docs_collection()
+                            try:
+                                colecao.delete(where={"documento_id": documento_id})
+                            except Exception:
+                                pass
+                            for chv, meta in list(st.session_state.documentos_meta.items()):
+                                if meta.get("documento_id") == documento_id:
+                                    st.session_state.documentos.remove(chv)
+                                    st.session_state.documentos_meta.pop(chv, None)
+                                    break
+                            st.rerun()
+
+                    # Resumo amigável
+                    if resumo:
+                        st.markdown(
+                            f'<div style="background:var(--primary-container);border-radius:var(--radius-sm);'
+                            f'padding:0.75rem 1rem;margin-top:0.75rem;border-left:3px solid var(--primary);">'
+                            f'<span style="font-size:0.8rem;font-weight:600;color:var(--primary);">📝 Resumo</span><br>'
+                            f'<span style="font-size:0.9rem;color:var(--on-surface);">{resumo}</span>'
+                            f'</div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    # Preview do conteúdo
+                    if preview:
+                        with st.container(border=False):
+                            st.markdown(
+                                f'<details style="margin-top:0.5rem;">'
+                                f'<summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--on-surface-variant);">'
+                                f'🔍 Ver preview do conteúdo</summary>'
+                                f'<div style="margin-top:0.5rem;padding:0.75rem;background:var(--input-bg);border-radius:var(--radius-sm);'
+                                f'font-size:0.82rem;color:var(--on-surface-variant);line-height:1.6;border:1px solid var(--outline-variant);">'
+                                f'{preview}…'
+                                f'</div></details>',
+                                unsafe_allow_html=True,
+                            )
+
+                idx_global += 1
 
         with st.container(border=False):
             st.markdown('<div class="app-card" style="margin-top: 2rem;">', unsafe_allow_html=True)
