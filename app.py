@@ -36,10 +36,104 @@ st.set_page_config(
 )
 
 st.markdown("""
+<script>
+(function() {
+    // Dark mode é o padrão
+    const DARK = 'dark', LIGHT = 'light';
+    function getTheme() { return localStorage.getItem('pv-theme') || DARK; }
+    function setTheme(t) {
+        localStorage.setItem('pv-theme', t);
+        document.documentElement.setAttribute('data-theme', t);
+        // Atualiza meta theme-color
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.content = t === DARK ? '#0D1117' : '#006D38';
+    }
+    // Aplica tema salvo antes do render (evita flash)
+    var saved = getTheme();
+    document.documentElement.setAttribute('data-theme', saved);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = saved === DARK ? '#0D1117' : '#006D38';
+    // Atualiza o botão com o ícone e texto do tema atual
+    function updateThemeButton() {
+        var btn = document.getElementById('themeToggleBtn');
+        if (!btn) return;
+        var current = getTheme();
+        if (current === DARK) {
+            btn.innerHTML = '🌙 <span style="font-size:0.8rem;opacity:0.8;">Escuro</span>';
+        } else {
+            btn.innerHTML = '☀️ <span style="font-size:0.8rem;opacity:0.8;">Claro</span>';
+        }
+    }
+    // Expõe função global pro botão
+    window.toggleTheme = function() {
+        var current = getTheme();
+        setTheme(current === DARK ? LIGHT : DARK);
+        updateThemeButton();
+        // Recarrega para aplicar nos componentes Streamlit
+        location.reload();
+    };
+    // Atualiza o botão assim que carregar
+    document.addEventListener('DOMContentLoaded', updateThemeButton);
+    updateThemeButton();
+})();
+</script>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-    :root {
+    /* ── Tema Escuro (PADRÃO) ── */
+    [data-theme="dark"], :root {
+        --primary: #00A859;
+        --primary-dark: #007A40;
+        --primary-light: #4ADE80;
+        --primary-container: rgba(0, 168, 89, 0.12);
+        --on-primary-container: #4ADE80;
+        
+        --secondary: #3B82F6;
+        --secondary-dark: #2563EB;
+        --secondary-light: #60A5FA;
+        --secondary-container: rgba(59, 130, 246, 0.12);
+        
+        --tertiary: #F7B731;
+        --tertiary-dark: #E09E1A;
+        --tertiary-container: rgba(247, 183, 49, 0.12);
+        
+        --danger: #EF4444;
+        --danger-dark: #DC2626;
+        --danger-container: rgba(239, 68, 68, 0.12);
+        
+        --background: #0D1117;
+        --surface: #161B22;
+        --on-surface: #E6EDF3;
+        --on-surface-variant: #8B949E;
+        
+        --outline: #30363D;
+        --outline-variant: #21262D;
+        
+        --glass-bg: rgba(22, 27, 34, 0.8);
+        --glass-border: rgba(48, 54, 61, 0.5);
+        --glass-blur: blur(12px);
+        
+        --shadow-sm: 0 2px 4px rgba(0,0,0,0.3);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+        --shadow-lg: 0 12px 24px rgba(0,0,0,0.5);
+        
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+        
+        --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+        --card-bg: #161B22;
+        --card-border: #30363D;
+        --input-bg: #0D1117;
+        --hover-bg: rgba(255,255,255,0.05);
+        --sidebar-bg: #0D1117;
+        --sidebar-text: rgba(255,255,255,0.7);
+        --sidebar-text-active: #4ADE80;
+    }
+
+    /* ── Tema Claro ── */
+    [data-theme="light"] {
         --primary: #00A859;
         --primary-dark: #007A40;
         --primary-light: #4ADE80;
@@ -81,6 +175,10 @@ st.markdown("""
         --radius-xl: 24px;
         
         --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+        --card-bg: #ffffff;
+        --card-border: #C4C6D0;
+        --input-bg: #ffffff;
+        --hover-bg: rgba(0,0,0,0.03);
     }
 
     * { font-family: var(--font-main); }
@@ -131,8 +229,8 @@ st.markdown("""
 
     /* ── Sidebar ── */
     section[data-testid="stSidebar"] {
-        background: #00210d !important;
-        border-right: 1px solid rgba(255,255,255,0.05);
+        background: var(--sidebar-bg) !important;
+        border-right: 1px solid var(--outline) !important;
     }
     
     section[data-testid="stSidebar"] .stSidebarContent {
@@ -152,7 +250,7 @@ st.markdown("""
     section[data-testid="stSidebar"] .stRadio label {
         background: transparent !important;
         border-radius: var(--radius-md) !important;
-        color: rgba(255,255,255,0.7) !important;
+        color: var(--sidebar-text) !important;
         padding: 0.75rem 1rem !important;
         margin-bottom: 0.25rem !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -160,14 +258,14 @@ st.markdown("""
     }
 
     section[data-testid="stSidebar"] .stRadio label:hover {
-        background: rgba(255,255,255,0.05) !important;
-        color: white !important;
+        background: var(--hover-bg) !important;
+        color: var(--on-surface) !important;
     }
 
     section[data-testid="stSidebar"] .stRadio label:has(input:checked) {
-        background: rgba(0, 168, 89, 0.15) !important;
-        color: var(--primary-light) !important;
-        border: 1px solid rgba(0, 168, 89, 0.3) !important;
+        background: var(--primary-container) !important;
+        color: var(--sidebar-text-active) !important;
+        border: 1px solid var(--primary) !important;
         font-weight: 600 !important;
     }
 
@@ -476,9 +574,14 @@ st.markdown(f"""
                 <div class="app-subtitle" style="font-size: 0.9rem; opacity: 0.9; color: rgba(255,255,255,0.9); font-weight: 500;">Ensina Mais Turma da Mônica · Unidade Tatuapé</div>
             </div>
         </div>
-        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.6rem 1.25rem; border-radius: 100px; font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm);">
-            <span class="status-pulse"></span>
-            Olá, Gestor! 👋
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button onclick="toggleTheme()" id="themeToggleBtn" style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.6rem 1rem; border-radius: 100px; font-weight: 600; font-size: 0.9rem; color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); transition: all 0.2s ease;">
+                🌓
+            </button>
+            <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.6rem 1.25rem; border-radius: 100px; font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm);">
+                <span class="status-pulse"></span>
+                Olá, Gestor! 👋
+            </div>
         </div>
     </div>
 </div>

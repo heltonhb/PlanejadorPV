@@ -1,15 +1,23 @@
-import os
-from typing import Optional
+"""
+Módulo principal do motor RAG — consulta a base vetorial e gera respostas com Gemini.
+"""
 
-from dotenv import load_dotenv
-from google import genai
+import logging
+
 from chromadb import PersistentClient
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 from utils.documentos import CHROMA_PATH, COLLECTION_NAME
-from utils.helpers import get_gemini_key
+from utils.gemini_client import (
+    GeminiError,
+    GeminiAPIKeyError,
+    GeminiQuotaError,
+    GeminiServerError,
+    GeminiSafetyError,
+    get_cliente,
+)
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 MODELO = "gemini-2.5-flash"
 TOP_K = 5
@@ -70,11 +78,6 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
             "fontes": [],
         }
 
-    api_key = get_gemini_key()
-    if not api_key:
-        return {"resposta": "Erro: GEMINI_API_KEY não configurada.", "fontes": []}
-
-    client = genai.Client(api_key=api_key)
     prompt = (
         f"Você é um consultor de marketing especializado em "
         f"franquias educacionais, com foco na rede Ensina Mais Turma da Mônica. "
@@ -91,8 +94,37 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
         f"Documentos de referência:\n{contexto}\n\n"
         f"Pergunta: {pergunta}"
     )
-    resposta = client.models.generate_content(
-        model=MODELO,
-        contents=prompt,
-    )
-    return {"resposta": resposta.text, "fontes": fontes}
+
+    try:
+        cliente = get_cliente(modelo=MODELO)
+        resposta = cliente.gerar_texto(
+            prompt=prompt,
+            usar_cache=True,
+            temperatura=0.7,
+            max_tokens=2048,
+        )
+        return {"resposta": resposta, "fontes": fontes}
+
+    except GeminiAPIKeyError:
+        return {"resposta": "Erro: GEMINI_API_KEY não configurada.", "fontes": []}
+    except GeminiQuotaError:
+        return {
+            "resposta": "Limite de requisições excedido. Aguarde alguns minutos e tente novamente.",
+            "fontes": [],
+        }
+    except GeminiServerError:
+        return {
+            "resposta": "Servidor do Gemini temporariamente indisponível. Tente novamente em alguns instantes.",
+            "fontes": [],
+        }
+    except GeminiSafetyError:
+        return {
+            "resposta": "O conteúdo foi bloqueado pelos filtros de segurança do Gemini.",
+            "fontes": [],
+        }
+    except GeminiError as e:
+        logger.error(f"Erro Gemini: {e}")
+        return {
+            "resposta": f"Erro ao comunicar com o Gemini: {e.message[:200]}",
+            "fontes": [],
+        }

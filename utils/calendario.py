@@ -1,13 +1,21 @@
-import os
-import calendar
+"""
+Módulo para geração de calendários editoriais usando Gemini.
+"""
 
-from dotenv import load_dotenv
-from google import genai
+import calendar
+import logging
 
 from utils.documentos import _get_collection
-from utils.helpers import get_gemini_key
+from utils.gemini_client import (
+    GeminiError,
+    GeminiAPIKeyError,
+    GeminiQuotaError,
+    GeminiServerError,
+    GeminiSafetyError,
+    get_cliente,
+)
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 MODELO = "gemini-2.5-flash"
 
@@ -34,8 +42,11 @@ def _buscar_contexto_calendario(mes: str, top_k: int = 10) -> str:
 
 
 def gerar_calendario(mes: str, ano: int) -> dict:
-    api_key = get_gemini_key()
-    if not api_key:
+    try:
+        cliente = get_cliente(modelo=MODELO)
+        if not cliente.api_key_configured:
+            return {"status": "erro", "mensagem": "GEMINI_API_KEY não configurada.", "conteudo": ""}
+    except GeminiAPIKeyError:
         return {"status": "erro", "mensagem": "GEMINI_API_KEY não configurada.", "conteudo": ""}
 
     contexto = _buscar_contexto_calendario(mes)
@@ -78,29 +89,53 @@ def gerar_calendario(mes: str, ano: int) -> dict:
         f"sobre o calendário escolar brasileiro."
     )
 
-    client = genai.Client(api_key=api_key)
     try:
-        resposta = client.models.generate_content(model=MODELO, contents=prompt)
-    except Exception as e:
-        erro = str(e)
-        if "API_KEY" in erro.upper() or "not found" in erro.lower():
-            msg = "Chave da API Gemini inválida ou não encontrada."
-        elif "quota" in erro.lower() or "rate" in erro.lower() or "429" in erro:
-            msg = "Limite de requisições excedido. Aguarde alguns minutos e tente novamente."
-        elif "500" in erro or "503" in erro or "server" in erro.lower():
-            msg = "Servidor do Gemini temporariamente indisponível. Tente novamente em alguns instantes."
-        elif "safety" in erro.lower() or "blocked" in erro.lower():
-            msg = "O conteúdo foi bloqueado pelos filtros de segurança do Gemini. Tente reformular a solicitação."
-        else:
-            msg = f"Erro ao comunicar com o Gemini: {erro[:200]}"
-        return {"status": "erro", "mensagem": msg, "conteudo": ""}
+        conteudo = cliente.gerar_texto(
+            prompt=prompt,
+            usar_cache=True,
+            temperatura=0.7,
+            max_tokens=4096,
+        )
+        if not conteudo:
+            return {
+                "status": "erro",
+                "mensagem": "Gemini retornou uma resposta vazia. Tente novamente.",
+                "conteudo": "",
+            }
+        return {
+            "status": "ok",
+            "conteudo": conteudo,
+            "contexto_usado": bool(contexto),
+        }
 
-    conteudo = resposta.text or ""
-    if not conteudo:
-        return {"status": "erro", "mensagem": "Gemini retornou uma resposta vazia. Tente novamente.", "conteudo": ""}
-
-    return {
-        "status": "ok",
-        "conteudo": conteudo,
-        "contexto_usado": bool(contexto),
-    }
+    except GeminiAPIKeyError:
+        return {
+            "status": "erro",
+            "mensagem": "Chave da API Gemini inválida ou não encontrada.",
+            "conteudo": "",
+        }
+    except GeminiQuotaError:
+        return {
+            "status": "erro",
+            "mensagem": "Limite de requisições excedido. Aguarde alguns minutos e tente novamente.",
+            "conteudo": "",
+        }
+    except GeminiServerError:
+        return {
+            "status": "erro",
+            "mensagem": "Servidor do Gemini temporariamente indisponível. Tente novamente em alguns instantes.",
+            "conteudo": "",
+        }
+    except GeminiSafetyError:
+        return {
+            "status": "erro",
+            "mensagem": "O conteúdo foi bloqueado pelos filtros de segurança do Gemini. Tente reformular a solicitação.",
+            "conteudo": "",
+        }
+    except GeminiError as e:
+        logger.error(f"Erro Gemini: {e}")
+        return {
+            "status": "erro",
+            "mensagem": f"Erro ao comunicar com o Gemini: {e.message[:200]}",
+            "conteudo": "",
+        }

@@ -1,22 +1,3 @@
-import os
-from typing import Optional
-
-
-def get_gemini_key() -> Optional[str]:
-    """
-    Obtém a chave da API Gemini das variáveis de ambiente
-    ou dos secrets do Streamlit.
-    """
-    key = os.getenv("GEMINI_API_KEY")
-    if key:
-        return key
-    try:
-        import streamlit as st
-        return st.secrets.get("GEMINI_API_KEY")
-    except Exception:
-        return None
-
-
 def formatar_numero(numero: int | float) -> str:
     """Formata números com separadores de milhar."""
     return f"{numero:,}".replace(",", ".")
