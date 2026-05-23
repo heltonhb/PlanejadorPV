@@ -1,3 +1,7 @@
+"""
+Módulo para processamento e extração de texto de documentos.
+"""
+
 import logging
 import multiprocessing as mp
 import os
@@ -6,6 +10,7 @@ import tempfile
 import traceback
 import urllib.request
 from pathlib import Path
+from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,12 +29,28 @@ CHUNK_OVERLAP = 50
 TESSDATA_PATH = Path("tessdata")
 TESSDATA_URL = "https://github.com/tesseract-ocr/tessdata/raw/main/por.traineddata"
 
+EXTENSOES_SUPORTADAS = {
+    ".pdf": "pdf",
+    ".docx": "docx",
+    ".doc": "docx",
+    ".txt": "texto",
+    ".md": "texto",
+    ".png": "imagem",
+    ".jpg": "imagem",
+    ".jpeg": "imagem",
+    ".gif": "imagem",
+    ".bmp": "imagem",
+    ".tiff": "imagem",
+}
+
 
 def sanitizar_id(nome: str) -> str:
+    """Sanitiza um nome para uso como ID, removendo caracteres especiais."""
     return re.sub(r'[^a-zA-Z0-9_\-.:]', '_', nome)[:120]
 
 
 def _get_collection():
+    """Obtém ou cria a collection do ChromaDB."""
     CHROMA_PATH.mkdir(exist_ok=True)
     client = PersistentClient(str(CHROMA_PATH))
     return client.get_or_create_collection(
@@ -38,7 +59,8 @@ def _get_collection():
     )
 
 
-def _extrair_pdfplumber(tmp_path: str) -> tuple[str | None, int]:
+def _extrair_pdfplumber(tmp_path: str) -> tuple[Optional[str], int]:
+    """Extrai texto de PDF usando pdfplumber."""
     try:
         with pdfplumber.open(tmp_path) as pdf:
             paginas = len(pdf.pages)
@@ -53,7 +75,8 @@ def _extrair_pdfplumber(tmp_path: str) -> tuple[str | None, int]:
         return None, 0
 
 
-def _extrair_pymupdf(tmp_path: str) -> tuple[str | None, int]:
+def _extrair_pymupdf(tmp_path: str) -> tuple[Optional[str], int]:
+    """Extrai texto de PDF usando PyMuPDF."""
     try:
         doc = fitz.open(tmp_path)
         paginas = len(doc)
@@ -65,12 +88,13 @@ def _extrair_pymupdf(tmp_path: str) -> tuple[str | None, int]:
         return None, 0
 
 
-def _extrair_ocr(tmp_path: str) -> tuple[str | None, int]:
+def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
+    """Extrai texto de PDF usando OCR (Tesseract)."""
     try:
         from PIL import Image
         from tesserocr import PyTessBaseAPI
     except ImportError as e:
-        logger.warning("tesserocr nao disponivel: %s", e)
+        logger.warning("tesserocr não disponível: %s", e)
         return None, 0
 
     TESSDATA_PATH.mkdir(exist_ok=True)
@@ -98,8 +122,75 @@ def _extrair_ocr(tmp_path: str) -> tuple[str | None, int]:
         return None, 0
 
 
+def _extrair_docx(tmp_path: str) -> tuple[Optional[str], int]:
+    """Extrai texto de documentos DOCX."""
+    try:
+        from docx import Document
+        
+        doc = Document(tmp_path)
+        paragrafos = [p.text for p in doc.paragraphs if p.text.strip()]
+        texto = "\n\n".join(paragrafos)
+        
+        tabelas_texto = []
+        for table in doc.tables:
+            for row in table.rows:
+                row_text = " | ".join(cell.text for cell in row.cells)
+                if row_text.strip():
+                    tabelas_texto.append(row_text)
+        
+        if tabelas_texto:
+            texto += "\n\n[Tabelas]\n" + "\n".join(tabelas_texto)
+        
+        return texto, len(paragrafos)
+    except ImportError:
+        logger.warning("python-docx não disponível")
+        return None, 0
+    except Exception:
+        logger.warning("docx falhou:\n%s", traceback.format_exc())
+        return None, 0
+
+
+def _extrair_texto_puro(tmp_path: str) -> tuple[str, int]:
+    """Extrai texto de arquivos de texto puro."""
+    try:
+        with open(tmp_path, "r", encoding="utf-8") as f:
+            texto = f.read()
+        linhas = texto.split("\n")
+        return texto, len(linhas)
+    except Exception:
+        logger.warning("texto puro falhou:\n%s", traceback.format_exc())
+        return "", 0
+
+
+def _extrair_imagem_ocr(tmp_path: str) -> tuple[Optional[str], int]:
+    """Extrai texto de imagens usando OCR."""
+    try:
+        from PIL import Image
+        from tesserocr import PyTessBaseAPI
+    except ImportError as e:
+        logger.warning("tesserocr/PIL não disponível: %s", e)
+        return None, 0
+
+    TESSDATA_PATH.mkdir(exist_ok=True)
+    traineddata = TESSDATA_PATH / "por.traineddata"
+    if not traineddata.exists():
+        urllib.request.urlretrieve(TESSDATA_URL, traineddata)
+
+    try:
+        img = Image.open(tmp_path)
+        api = PyTessBaseAPI(lang="por", path=str(TESSDATA_PATH))
+        api.SetImage(img)
+        texto = api.GetUTF8Text()
+        api.End()
+        img.close()
+        return texto.strip(), 1
+    except Exception:
+        logger.warning("imagem OCR falhou:\n%s", traceback.format_exc())
+        return None, 0
+
+
 def _extrair_em_processo(pdf_bytes: bytes, queue: mp.Queue):
-    """Executado em processo filho (main thread real)."""
+    """Executado em processo filho para extração de PDF."""
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         tmp.write(pdf_bytes)
         tmp_path = tmp.name
@@ -121,6 +212,7 @@ def _extrair_em_processo(pdf_bytes: bytes, queue: mp.Queue):
 
 
 def extrair_texto(pdf_bytes: bytes) -> dict:
+    """Extrai texto de bytes de PDF usando multiprocessamento."""
     queue: mp.Queue = mp.Queue()
     proc = mp.Process(target=_extrair_em_processo, args=(pdf_bytes, queue))
     proc.start()
@@ -132,7 +224,59 @@ def extrair_texto(pdf_bytes: bytes) -> dict:
     return queue.get()
 
 
+def extrair_arquivo(bytes_arquivo: bytes, nome_arquivo: str) -> dict:
+    """Extrai texto de um arquivo baseado em sua extensão."""
+    extensao = Path(nome_arquivo).suffix.lower()
+    tipo = EXTENSOES_SUPORTADAS.get(extensao, "desconhecido")
+    
+    if tipo == "desconhecido":
+        return {
+            "texto": "",
+            "metodo": "extensão não suportada",
+            "paginas": 0,
+            "erro": f"Extensão {extensao} não suportada",
+        }
+    
+    with tempfile.NamedTemporaryFile(suffix=extensao, delete=False) as tmp:
+        tmp.write(bytes_arquivo)
+        tmp_path = tmp.name
+    
+    try:
+        if tipo == "pdf":
+            return extrair_texto(bytes_arquivo)
+        
+        elif tipo == "docx":
+            texto, paginas = _extrair_docx(tmp_path)
+            return {
+                "texto": texto or "",
+                "metodo": "docx",
+                "paginas": paginas,
+            }
+        
+        elif tipo == "texto":
+            texto, paginas = _extrair_texto_puro(tmp_path)
+            return {
+                "texto": texto,
+                "metodo": "texto",
+                "paginas": paginas,
+            }
+        
+        elif tipo == "imagem":
+            texto, paginas = _extrair_imagem_ocr(tmp_path)
+            return {
+                "texto": texto or "",
+                "metodo": "ocr",
+                "paginas": paginas,
+            }
+        
+        return {"texto": "", "metodo": "erro", "paginas": 0}
+    
+    finally:
+        os.unlink(tmp_path)
+
+
 def chunk_texto(texto: str) -> list[dict]:
+    """Divide texto em chunks para indexação."""
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
@@ -148,7 +292,12 @@ def chunk_texto(texto: str) -> list[dict]:
     ]
 
 
-def salvar_chunks(chunks: list[dict], documento_id: str = None, extra_metadata: dict = None):
+def salvar_chunks(
+    chunks: list[dict],
+    documento_id: str = None,
+    extra_metadata: dict = None,
+) -> int:
+    """Salva chunks no ChromaDB e opcionalmente no Firebase."""
     collection = _get_collection()
     ids = []
     textos = []
@@ -177,7 +326,7 @@ def salvar_chunks(chunks: list[dict], documento_id: str = None, extra_metadata: 
 
 
 def salvar_resumo_documento(documento_id: str, resumo: str):
-    """Atualiza o campo 'resumo' em todos os chunks de um documento no ChromaDB."""
+    """Atualiza o campo 'resumo' em todos os chunks de um documento."""
     collection = _get_collection()
     try:
         resultados = collection.get(where={"documento_id": sanitizar_id(documento_id)})
@@ -196,6 +345,7 @@ def salvar_resumo_documento(documento_id: str, resumo: str):
 
 
 def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
+    """Processa um documento PDF: extrai texto, cria chunks e salva."""
     resultado_extracao = extrair_texto(pdf_bytes)
     texto = resultado_extracao["texto"]
     paginas = resultado_extracao["paginas"]
@@ -208,11 +358,52 @@ def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
             "paginas": paginas,
             "metodo": metodo,
         }
+    
     chunks = chunk_texto(texto)
     total = salvar_chunks(
         chunks,
         documento_id=nome_arquivo,
         extra_metadata={"fonte": "pdf", "arquivo": nome_arquivo},
+    )
+    return {
+        "status": "ok",
+        "total_chunks": total,
+        "total_caracteres": len(texto),
+        "paginas": paginas,
+        "metodo": metodo,
+        "texto_completo": texto,
+    }
+
+
+def processar_arquivo(bytes_arquivo: bytes, nome_arquivo: str) -> dict:
+    """Processa um arquivo qualquer: extrai texto, cria chunks e salva."""
+    resultado = extrair_arquivo(bytes_arquivo, nome_arquivo)
+    texto = resultado["texto"]
+    paginas = resultado["paginas"]
+    metodo = resultado["metodo"]
+    
+    if "erro" in resultado:
+        return {
+            "status": "erro",
+            "mensagem": resultado["erro"],
+            "paginas": 0,
+            "metodo": metodo,
+        }
+
+    if not texto.strip():
+        return {
+            "status": "erro",
+            "mensagem": f"Nenhum texto extraído ({nome_arquivo}, método: {metodo}).",
+            "paginas": paginas,
+            "metodo": metodo,
+        }
+    
+    chunks = chunk_texto(texto)
+    extensao = Path(nome_arquivo).suffix.lower()
+    total = salvar_chunks(
+        chunks,
+        documento_id=nome_arquivo,
+        extra_metadata={"fonte": extensao, "arquivo": nome_arquivo},
     )
     return {
         "status": "ok",

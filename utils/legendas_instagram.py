@@ -1,12 +1,20 @@
-import os
-from pathlib import Path
+"""
+Módulo para geração de legendas para Instagram usando Gemini.
+"""
 
-from dotenv import load_dotenv
-from google import genai
+import logging
 
 from utils.documentos import _get_collection
+from utils.gemini_client import (
+    GeminiError,
+    GeminiAPIKeyError,
+    GeminiSafetyError,
+    GeminiQuotaError,
+    GeminiServerError,
+    get_cliente,
+)
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 MODELO = "gemini-2.5-flash"
 TOP_K = 6
@@ -17,35 +25,31 @@ TOM_ESTILO = {
     "Inspiracional": "Tom emotivo e motivacional, destacando conquistas e potencial dos alunos.",
     "Engajamento": "Tom de pergunta ou desafio, estimulando interação nos comentários.",
     "Depoimento": "Tom de caso real, contando uma história de sucesso em primeira pessoa.",
-    "Humor": "Tom leve e descontraído, com memes ou situações do dia adia escolar.",
+    "Humor": "Tom leve e descontraído, com memes ou situações do dia a dia escolar.",
 }
 
-def _get_gemini_key() -> str | None:
-    key = os.getenv("GEMINI_API_KEY")
-    if key:
-        return key
-    try:
-        import streamlit as st
-        return st.secrets.get("GEMINI_API_KEY")
-    except Exception:
-        return None
 
 def _buscar_contexto(top_k: int = TOP_K) -> str:
+    """Busca contexto relevante do vector store."""
     try:
         collection = _get_collection()
         count = collection.count()
         if count == 0:
             return ""
+        
         consulta = "Ensina Mais Turma da Monica Tatuapé marketing franquia educação"
         resultados = collection.query(
             query_texts=[consulta],
             n_results=min(top_k, count),
             include=["documents"],
         )
-        docs = resultados.get("documents", [[]])[0]
+        docs = resultados.get("documents", [[]])
         return "\n\n".join(docs) if docs else ""
-    except Exception:
+    
+    except Exception as e:
+        logger.warning(f"Erro ao buscar contexto: {e}")
         return ""
+
 
 def gerar_legenda(
     image,
@@ -54,13 +58,107 @@ def gerar_legenda(
     instrucoes: str = "",
     top_k: int = TOP_K,
 ) -> dict:
-    api_key = _get_gemini_key()
-    if not api_key:
-        return {"status": "erro", "mensagem": "GEMINI_API_KEY não configurada.", "legendas": [], "hashtags": []}
-
+    """
+    Gera 3 opções de legenda para Instagram com base em uma imagem.
+    
+    Returns:
+        Dicionário com status, conteúdo, contexto_usado e tom.
+    """
+    if tom not in TOM_ESTILO:
+        logger.warning(f"Tom '{tom}' não reconhecido, usando 'Educativo'")
+        tom = "Educativo"
+    
+    try:
+        cliente = get_cliente(modelo=MODELO)
+        if not cliente.api_key_configured:
+            return {
+                "status": "erro",
+                "mensagem": "GEMINI_API_KEY não configurada.",
+                "legendas": [],
+                "hashtags": [],
+            }
+    except GeminiAPIKeyError:
+        return {
+            "status": "erro",
+            "mensagem": "GEMINI_API_KEY não configurada.",
+            "legendas": [],
+            "hashtags": [],
+        }
+    
     contexto = _buscar_contexto(top_k)
     estilo = TOM_ESTILO.get(tom, TOM_ESTILO["Educativo"])
+    prompt = _construir_prompt(tom, estilo, tema, instrucoes, contexto)
+    
+    try:
+        cliente = get_cliente(modelo=MODELO)
+        conteudo = cliente.gerar_com_imagem(
+            prompt=prompt,
+            imagem=image,
+            usar_cache=False,
+            temperatura=0.7,
+            max_tokens=2048,
+        )
+        
+        if not conteudo:
+            return {
+                "status": "erro",
+                "mensagem": "Gemini retornou resposta vazia.",
+                "legendas": [],
+                "hashtags": [],
+            }
+        
+        return {
+            "status": "ok",
+            "conteudo": conteudo,
+            "contexto_usado": bool(contexto),
+            "tom": tom,
+        }
+    
+    except GeminiAPIKeyError:
+        return {
+            "status": "erro",
+            "mensagem": "GEMINI_API_KEY não configurada.",
+            "legendas": [],
+            "hashtags": [],
+        }
+    except GeminiSafetyError:
+        return {
+            "status": "erro",
+            "mensagem": "A imagem foi bloqueada pelas políticas de segurança do Gemini. Tente outra imagem.",
+            "legendas": [],
+            "hashtags": [],
+        }
+    except GeminiQuotaError:
+        return {
+            "status": "erro",
+            "mensagem": "Limite de requisições excedido. Aguarde um momento e tente novamente.",
+            "legendas": [],
+            "hashtags": [],
+        }
+    except GeminiServerError:
+        return {
+            "status": "erro",
+            "mensagem": "Erro interno do servidor Gemini. Tente novamente.",
+            "legendas": [],
+            "hashtags": [],
+        }
+    except GeminiError as e:
+        return {
+            "status": "erro",
+            "mensagem": f"Erro ao gerar legendas: {e.message[:300]}",
+            "legendas": [],
+            "hashtags": [],
+        }
 
+
+def _construir_prompt(
+    tom: str,
+    estilo: str,
+    tema: str,
+    instrucoes: str,
+    contexto: str,
+) -> str:
+    """Constrói o prompt completo para geração de legendas."""
     prompt = (
         "Você é um social media especializado em franquias educacionais, "
         "criando conteúdo para o Instagram da unidade Tatuapé da rede "
@@ -71,15 +169,19 @@ def gerar_legenda(
         "- Um texto de legenda envolvente (2-4 parágrafos curtos)\n"
         "- Entre 5-10 hashtags relevantes\n"
     )
+    
     if tema:
         prompt += f"\nTEMA SUGERIDO: {tema}\n"
+    
     if instrucoes:
         prompt += f"\nINSTRUÇÕES ADICIONAIS: {instrucoes}\n"
+    
     if contexto:
         prompt += (
             f"\nUse as informações abaixo sobre a unidade para personalizar:\n"
             f"{contexto}\n\n"
         )
+    
     prompt += (
         "\nRegras:\n"
         "1. Relacione a legenda com o que aparece na imagem.\n"
@@ -102,34 +204,5 @@ def gerar_legenda(
         "**Hashtags:** #tag1 #tag2 ...\n"
         "---\n"
     )
-
-    client = genai.Client(api_key=api_key)
-    try:
-        resposta = client.models.generate_content(
-            model=MODELO,
-            contents=[prompt, image],
-        )
-    except Exception as e:
-        erro_msg = str(e)
-        if "API_KEY" in erro_msg or "API key" in erro_msg:
-            msg = "API key inválida. Verifique sua GEMINI_API_KEY."
-        elif "SAFETY" in erro_msg or "safety" in erro_msg or "blocked" in erro_msg:
-            msg = "A imagem foi bloqueada pelas políticas de segurança do Gemini. Tente outra imagem."
-        elif "quota" in erro_msg or "quota" in erro_msg.lower() or "429" in erro_msg:
-            msg = "Limite de requisições excedido. Aguarde um momento e tente novamente."
-        elif "500" in erro_msg or "internal" in erro_msg.lower():
-            msg = "Erro interno do servidor Gemini. Tente novamente."
-        else:
-            msg = f"Erro ao gerar legendas: {erro_msg[:300]}"
-        return {"status": "erro", "mensagem": msg, "legendas": [], "hashtags": []}
-
-    conteudo = resposta.text or ""
-    if not conteudo:
-        return {"status": "erro", "mensagem": "Gemini retornou resposta vazia.", "legendas": [], "hashtags": []}
-
-    return {
-        "status": "ok",
-        "conteudo": conteudo,
-        "contexto_usado": bool(contexto),
-        "tom": tom,
-    }
+    
+    return prompt

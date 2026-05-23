@@ -1,34 +1,41 @@
-import os
+"""
+Módulo para geração de resumos de documentos usando Gemini.
+"""
 
-from dotenv import load_dotenv
-from google import genai
+import logging
 
-load_dotenv()
+from utils.gemini_client import (
+    GeminiError,
+    GeminiAPIKeyError,
+    get_cliente,
+)
+
+logger = logging.getLogger(__name__)
 
 MODELO = "gemini-2.5-flash"
-
-
-def _get_gemini_key() -> str | None:
-    key = os.getenv("GEMINI_API_KEY")
-    if key:
-        return key
-    try:
-        import streamlit as st
-        return st.secrets.get("GEMINI_API_KEY")
-    except Exception:
-        return None
+TAMANHO_MAXIMO_TEXTO = 8000
+TAMANHO_MAXIMO_RESUMO = 250
 
 
 def gerar_resumo(texto: str, fonte: str = "documento") -> str:
-    """Gera um resumo humanizado de 1-2 frases sobre o conteúdo do texto."""
-    api_key = _get_gemini_key()
-    if not api_key:
+    """
+    Gera um resumo humanizado de 1-2 frases sobre o conteúdo do texto.
+    
+    Args:
+        texto: Texto original a ser resumido.
+        fonte: Nome/fonte do documento para contexto.
+        
+    Returns:
+        Resumo gerado ou string vazia em caso de erro.
+    """
+    if not texto or not texto.strip():
+        logger.debug("Texto vazio fornecido para resumo")
         return ""
-
-    texto_cortado = texto[:8000]
+    
+    texto_cortado = texto[:TAMANHO_MAXIMO_TEXTO]
     if not texto_cortado.strip():
         return ""
-
+    
     prompt = (
         f"Leia o texto abaixo e escreva UMA frase curta (máximo 25 palavras) "
         f"descrevendo do que o documento trata. "
@@ -37,14 +44,31 @@ def gerar_resumo(texto: str, fonte: str = "documento") -> str:
         f"Texto:\n{texto_cortado}\n\n"
         "Resumo:"
     )
-
-    client = genai.Client(api_key=api_key)
+    
     try:
-        resposta = client.models.generate_content(
-            model=MODELO,
-            contents=[prompt],
+        cliente = get_cliente(modelo=MODELO)
+        resumo = cliente.gerar_texto(
+            prompt=prompt,
+            usar_cache=True,
+            temperatura=0.3,
+            max_tokens=100,
         )
-        resumo = (resposta.text or "").strip()
-        return resumo[:250]
-    except Exception:
+        return resumo[:TAMANHO_MAXIMO_RESUMO].strip()
+    
+    except GeminiAPIKeyError:
+        logger.warning("GEMINI_API_KEY não configurada")
         return ""
+    except GeminiError as e:
+        logger.error(f"Erro ao gerar resumo: {e}")
+        return ""
+
+
+def gerar_resumo_batch(textos: list[str], fontes: list[str] = None) -> list[str]:
+    """Gera resumos para múltiplos textos em lote."""
+    if fontes is None:
+        fontes = ["documento"] * len(textos)
+    
+    return [
+        gerar_resumo(texto, fonte)
+        for texto, fonte in zip(textos, fontes)
+    ]
