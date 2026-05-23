@@ -64,14 +64,16 @@ st.markdown("""
             btn.innerHTML = '☀️ <span style="font-size:0.8rem;opacity:0.8;">Claro</span>';
         }
     }
-    // Expõe função global pro botão
-    window.toggleTheme = function() {
-        var current = getTheme();
-        setTheme(current === DARK ? LIGHT : DARK);
-        updateThemeButton();
-        // Recarrega para aplicar nos componentes Streamlit
-        location.reload();
-    };
+    // Escuta clique no botão de tema via addEventListener (evita conflito com React)
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'themeToggleBtn' || e.target.closest('#themeToggleBtn')) {
+            var current = getTheme();
+            setTheme(current === DARK ? LIGHT : DARK);
+            updateThemeButton();
+            // Recarrega para aplicar nos componentes Streamlit
+            location.reload();
+        }
+    });
     // Atualiza o botão assim que carregar
     document.addEventListener('DOMContentLoaded', updateThemeButton);
     updateThemeButton();
@@ -582,7 +584,7 @@ st.markdown(f"""
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <button onclick="toggleTheme()" id="themeToggleBtn" style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.6rem 1rem; border-radius: 100px; font-weight: 600; font-size: 0.9rem; color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); transition: all 0.2s ease;">
+            <button id="themeToggleBtn" style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.6rem 1rem; border-radius: 100px; font-weight: 600; font-size: 0.9rem; color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); transition: all 0.2s ease;">
                 🌓
             </button>
             <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.6rem 1.25rem; border-radius: 100px; font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm);">
@@ -1087,8 +1089,12 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
 
     script_html = """
     <script>
-    if (typeof window.copyCaptionText !== 'function') {
-        window.copyCaptionText = function(captionId, btnId) {
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.instagram-copy-btn');
+        if (!btn) return;
+        var captionId = btn.getAttribute('data-caption-id');
+        var btnId = btn.id;
+        if (!captionId || !btnId) return;
             const captionEl = document.getElementById(captionId);
             if (!captionEl) return;
             const bodyEl = captionEl.querySelector('.caption-body');
@@ -1145,8 +1151,7 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
             } else {
                 fallbackCopy(textToCopy, btnId);
             }
-        };
-    }
+        });
     </script>
     """
         
@@ -1182,7 +1187,7 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
         <div class="instagram-caption-container">
             <div class="instagram-caption-text" id="{caption_id}"><strong>ensinamais.tatuape</strong> <span class="caption-body">{body_text}</span></div>
             <div class="instagram-hashtags">{hashtags}</div>
-            <button class="instagram-copy-btn" id="{btn_id}" onclick="copyCaptionText('{caption_id}', '{btn_id}')">
+            <button class="instagram-copy-btn" id="{btn_id}" data-caption-id="{caption_id}">
                 📋 Copiar Legenda
             </button>
         </div>
