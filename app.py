@@ -42,408 +42,255 @@ st.markdown("""
     :root {
         --primary: #00A859;
         --primary-dark: #007A40;
-        --primary-container: #00A859;
-        --primary-fixed: #E8F5E9;
-        --primary-fixed-dim: #C8E6C9;
-        --on-primary: #ffffff;
+        --primary-light: #4ADE80;
+        --primary-container: #E8F5E9;
         --on-primary-container: #00210d;
-        --on-primary-fixed: #00210d;
-        --on-primary-fixed-variant: #005228;
-        --secondary: #E84C3D;
-        --secondary-dark: #C0392B;
-        --secondary-container: #FFEBEE;
-        --secondary-fixed: #FFCDD2;
-        --secondary-fixed-dim: #EF9A9A;
-        --on-secondary: #ffffff;
-        --on-secondary-container: #610002;
-        --on-secondary-fixed: #410001;
-        --on-secondary-fixed-variant: #910707;
+        
+        --secondary: #005CAA;
+        --secondary-dark: #003F7A;
+        --secondary-light: #3B82F6;
+        --secondary-container: #E3F2FD;
+        
         --tertiary: #F7B731;
         --tertiary-dark: #E09E1A;
         --tertiary-container: #FFFDE7;
-        --tertiary-fixed: #FFF59D;
-        --tertiary-fixed-dim: #FFE082;
-        --on-tertiary: #ffffff;
-        --on-tertiary-container: #3b2700;
-        --on-tertiary-fixed: #271900;
-        --on-tertiary-fixed-variant: #5e4200;
-        --info: #005CAA;
-        --info-dark: #003F7A;
-        --background: #ffffff;
-        --on-background: #343A40;
+        
+        --danger: #E84C3D;
+        --danger-dark: #C0392B;
+        --danger-container: #FFEBEE;
+        
+        --background: #F8F9FA;
         --surface: #ffffff;
-        --surface-container: #F8F9FA;
-        --surface-container-low: #F8F9FA;
-        --surface-container-lowest: #ffffff;
-        --surface-container-high: #E9EEF6;
-        --surface-container-highest: #DDE3EB;
-        --surface-variant: #DDE3EB;
-        --surface-dim: #d5dae2;
-        --on-surface: #343A40;
-        --on-surface-variant: #6C757D;
-        --outline: #6d7b6e;
-        --outline-variant: #bccabc;
-        --error: #E84C3D;
-        --error-container: #ffdad6;
-        --on-error: #ffffff;
-        --on-error-container: #93000a;
-        --inverse-primary: #59df89;
-        --inverse-surface: #2b3137;
-        --inverse-on-surface: #ecf1f9;
-        --pwa-bar-height: env(safe-area-inset-top, 0px);
-        --safe-top: env(safe-area-inset-top, 0px);
-        --safe-bottom: env(safe-area-inset-bottom, 0px);
-        --touch-target-min: 44px;
-        --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-        --shadow-md: 0px 4px 12px rgba(0, 0, 0, 0.05);
-        --shadow-lg: 0px 8px 24px rgba(0, 0, 0, 0.12);
-        --ambient-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-        --radius-sm: 4px;
-        --radius-md: 8px;
-        --radius-lg: 12px;
-        --radius-xl: 12px;
+        --on-surface: #1A1C1E;
+        --on-surface-variant: #44474E;
+        
+        --outline: #74777F;
+        --outline-variant: #C4C6D0;
+        
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --glass-blur: blur(12px);
+        
+        --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+        --shadow-lg: 0 12px 24px rgba(0,0,0,0.12);
+        
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+        
+        --font-main: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
-    * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-    body, [data-testid="stAppViewContainer"] h1, [data-testid="stAppViewContainer"] h2,
-    [data-testid="stAppViewContainer"] h3, [data-testid="stAppViewContainer"] h4,
-    [data-testid="stAppViewContainer"] h5, [data-testid="stAppViewContainer"] h6,
-    [data-testid="stMarkdownContainer"], .stTabs [role="tab"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    * { font-family: var(--font-main); }
+    
+    [data-testid="stAppViewContainer"] {
+        background-color: var(--background);
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-in {
+        animation: fadeIn 0.4s ease-out forwards;
     }
 
     /* ── Layout ── */
-    .stMainBlockContainer { padding-top: 1rem !important; }
-    .block-container { padding-top: 1rem !important; }
-
-    /* ── Stitch Utilities ── */
-    .ambient-shadow { box-shadow: var(--ambient-shadow); }
-    .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .hover-lift:hover { transform: translateY(-2px); box-shadow: 0px 8px 16px rgba(52, 58, 64, 0.12); }
-    
-    .metric-card {
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        color: white;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15);
-    }
-    .metric-card-val {
-        font-size: 2.3rem;
-        font-weight: 800;
-        line-height: 1.1;
-        margin-bottom: 0.25rem;
-    }
-    .metric-card-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        opacity: 0.9;
-    }
-    .metric-green {
-        background: linear-gradient(135deg, #00A859 0%, #007A40 100%);
-    }
-    .metric-blue {
-        background: linear-gradient(135deg, #005CAA 0%, #003F7A 100%);
-    }
-    .metric-yellow {
-        background: linear-gradient(135deg, #F7B731 0%, #E09E1A 100%);
-        color: #343A40 !important;
-    }
-    .metric-yellow .metric-card-val {
-        color: #343A40 !important;
-    }
-    .metric-yellow .metric-card-label {
-        color: #343A40 !important;
-    }
-    .metric-red {
-        background: linear-gradient(135deg, #E84C3D 0%, #C0392B 100%);
+    .stMainBlockContainer { 
+        padding-top: 1.5rem !important; 
+        max-width: 1240px !important;
     }
 
     /* ── Header ── */
     .app-header {
-        background: linear-gradient(135deg, var(--primary), #007A40, #003F20);
-        padding: 1.25rem 2rem;
+        background: linear-gradient(135deg, #006D38 0%, #00A859 100%);
+        padding: 1.5rem 2rem;
         border-radius: var(--radius-lg);
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
         color: white;
-        box-shadow: 0 4px 20px rgba(0,168,89,0.2);
+        box-shadow: var(--shadow-lg);
         position: relative;
         overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
+    
     .app-header::before {
         content: '';
         position: absolute;
         top: -50%;
-        right: -20%;
-        width: 300px;
-        height: 300px;
-        background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
         border-radius: 50%;
     }
-    .app-header::after {
-        content: '';
-        position: absolute;
-        bottom: -60%;
-        left: 40%;
-        width: 200px;
-        height: 200px;
-        background: radial-gradient(circle, rgba(0,168,89,0.1) 0%, transparent 70%);
-        border-radius: 50%;
-    }
-    .app-header-content { display: flex; align-items: center; gap: 1.25rem; position: relative; z-index: 1; }
-    .app-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
-    .app-subtitle { font-size: 0.85rem; opacity: 0.85; font-weight: 400; }
 
     /* ── Sidebar ── */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #003F20, #007A40);
+        background: #00210d !important;
+        border-right: 1px solid rgba(255,255,255,0.05);
     }
+    
     section[data-testid="stSidebar"] .stSidebarContent {
-        padding: 1.25rem;
+        padding: 1.5rem 1rem;
     }
+
     section[data-testid="stSidebar"] h2 {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--on-primary);
-        margin-top: 1.25rem;
-        margin-bottom: 0.75rem;
-        padding-bottom: 0.4rem;
-        border-bottom: 2px solid rgba(255,255,255,0.2);
-    }
-    section[data-testid="stSidebar"] h2:first-child {
-        margin-top: 0;
-    }
-    section[data-testid="stSidebar"] h1 {
-        color: white;
-    }
-    section[data-testid="stSidebar"] h3 {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: rgba(255,255,255,0.7);
+        color: var(--primary-light);
+        font-size: 0.75rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 1.5px;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        opacity: 0.8;
     }
-    section[data-testid="stSidebar"] p,
-    section[data-testid="stSidebar"] label,
-    section[data-testid="stSidebar"] .stRadio div[data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span {
-        font-size: 0.85rem;
-        color: rgba(255,255,255,0.85);
-    }
-    section[data-testid="stSidebar"] .stRadio [role="radiogroup"] {
-        gap: 0.35rem;
-    }
+
     section[data-testid="stSidebar"] .stRadio label {
-        padding: 0.5rem 0.85rem !important;
-        border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-        font-size: 0.85rem;
-        color: rgba(255,255,255,0.8) !important;
-        transition: all 0.2s ease;
-        border-left: 4px solid transparent;
-        margin-left: -1rem;
+        background: transparent !important;
+        border-radius: var(--radius-md) !important;
+        color: rgba(255,255,255,0.7) !important;
+        padding: 0.75rem 1rem !important;
+        margin-bottom: 0.25rem !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border: 1px solid transparent !important;
     }
+
     section[data-testid="stSidebar"] .stRadio label:hover {
         background: rgba(255,255,255,0.05) !important;
         color: white !important;
-        opacity: 1;
     }
+
     section[data-testid="stSidebar"] .stRadio label:has(input:checked) {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-left: 4px solid #F7B731 !important;
-        color: white !important;
-        font-weight: 700 !important;
-        opacity: 1;
-    }
-    section[data-testid="stSidebar"] .stRadio label:has(input:checked) p {
-        color: white !important;
-        font-weight: 700 !important;
-    }
-    section[data-testid="stSidebar"] .stTextInput input {
-        border-radius: var(--radius-lg);
-        font-size: 0.85rem;
-    }
-    section[data-testid="stSidebar"] .stButton button {
-        font-size: 0.85rem;
-        border-radius: var(--radius-lg);
-    }
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 2px dashed rgba(255, 255, 255, 0.2) !important;
-    }
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] * {
-        color: white !important;
-    }
-    section[data-testid="stSidebar"] div[data-testid="stFileUploader"] button {
-        background: var(--warning) !important;
-        color: var(--on-tertiary-fixed) !important;
-        border: none !important;
+        background: rgba(0, 168, 89, 0.15) !important;
+        color: var(--primary-light) !important;
+        border: 1px solid rgba(0, 168, 89, 0.3) !important;
         font-weight: 600 !important;
     }
-    section[data-testid="stSidebar"] .stButton button,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] button {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        color: white !important;
-        border-radius: var(--radius-lg) !important;
+
+    /* ── Metric Cards ── */
+    .metric-card {
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        background: white;
+        border: 1px solid var(--outline-variant);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }
-    section[data-testid="stSidebar"] .stButton button:hover,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover {
-        background: rgba(255, 255, 255, 0.2) !important;
-        border-color: rgba(255, 255, 255, 0.4) !important;
+    
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
     }
-    section[data-testid="stSidebar"] .stRadio label > div:first-child {
-        display: none !important;
+
+    .metric-card-val {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--on-surface);
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-card-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--on-surface-variant);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .metric-green { border-top: 4px solid var(--primary); }
+    .metric-blue { border-top: 4px solid var(--secondary); }
+    .metric-yellow { border-top: 4px solid var(--tertiary); }
+    .metric-red { border-top: 4px solid var(--danger); }
+
+    /* ── Custom Cards ── */
+    .app-card {
+        background: white;
+        border: 1px solid var(--outline-variant);
+        border-radius: var(--radius-lg);
+        padding: 1.75rem;
+        margin: 1.5rem 0;
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .app-card:hover {
+        box-shadow: var(--shadow-md);
     }
 
     /* ── Tabs ── */
     .stTabs [role="tablist"] {
-        gap: 0.25rem;
-        background: var(--surface-container);
-        padding: 0.35rem;
+        padding: 0.5rem;
+        background: rgba(0, 0, 0, 0.03);
         border-radius: var(--radius-md);
-        margin-bottom: 1.25rem;
+        gap: 0.5rem;
     }
+    
     .stTabs [role="tab"] {
+        padding: 0.6rem 1.25rem;
         border-radius: var(--radius-sm);
-        padding: 0.35rem 0.85rem;
-        font-size: 0.85rem;
-        font-weight: 500;
         color: var(--on-surface-variant);
-        transition: all 0.15s ease;
-    }
-    .stTabs [role="tab"]:hover {
-        color: var(--primary);
-        background: color-mix(in srgb, var(--primary) 8%, transparent);
-    }
-    .stTabs [role="tab"][aria-selected="true"] {
-        background: white;
-        color: var(--primary);
         font-weight: 600;
-        box-shadow: var(--shadow-sm);
-    }
-
-    /* ── Cards ── */
-    .app-card {
-        background: var(--surface-container-lowest);
-        border: 1px solid var(--outline-variant);
-        border-radius: var(--radius-xl);
-        padding: 1.5rem;
-        margin: 1rem 0;
-        box-shadow: var(--ambient-shadow);
-        color: var(--on-surface);
-        transition: box-shadow 0.2s ease;
-    }
-    .app-card:hover { box-shadow: var(--shadow-lg); }
-    div[data-testid="stVerticalBlockBorderWrapper"]:not(section[data-testid="stSidebar"] *):not([data-testid="stChatMessage"] *) {
-        background: var(--surface-container-lowest) !important;
-        border: 1px solid var(--outline-variant) !important;
-        border-radius: var(--radius-xl) !important;
-        padding: 1.5rem !important;
-        box-shadow: var(--ambient-shadow) !important;
-        transition: box-shadow 0.2s ease, transform 0.2s ease !important;
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"]:not(section[data-testid="stSidebar"] *):not([data-testid="stChatMessage"] *):hover {
-        box-shadow: var(--shadow-lg) !important;
-    }
-    .app-card h1, .app-card h2, .app-card h3 { color: var(--primary); margin-top: 1rem; }
-    .app-card h1:first-child, .app-card h2:first-child, .app-card h3:first-child { margin-top: 0; }
-    .app-card p { color: var(--on-surface); line-height: 1.7; margin-bottom: 0.75rem; }
-    .app-card ul, .app-card ol { padding-left: 1.25rem; margin-bottom: 0.75rem; }
-    .app-card li { margin-bottom: 0.35rem; color: var(--on-surface); }
-    .app-card hr { border: none; border-top: 2px solid var(--outline-variant); margin: 1rem 0; }
-    .app-card strong { color: var(--on-primary-fixed-variant); }
-
-    .app-card-empty {
-        background: var(--surface-container-low);
-        border: 2px dashed var(--outline-variant);
-        border-radius: var(--radius-xl);
-        padding: 2.5rem 1.5rem;
-        text-align: center;
-        color: var(--on-surface-variant);
-        margin: 1rem 0;
-        transition: border-color 0.2s ease;
-    }
-    .app-card-empty:hover { border-color: var(--outline); }
-
-    /* ── Metrics ── */
-    div[data-testid="stMetric"] {
-        background: var(--surface-container-lowest);
-        border: 1px solid var(--outline-variant);
-        border-radius: var(--radius-xl);
-        padding: 1rem 1.25rem;
-        box-shadow: var(--ambient-shadow);
-        transition: box-shadow 0.2s ease, transform 0.2s ease;
-    }
-    div[data-testid="stMetric"]:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
-    div[data-testid="stMetricLabel"] {
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: var(--on-surface-variant);
-    }
-    div[data-testid="stMetricValue"] {
-        color: var(--primary);
-        font-weight: 700;
-        font-size: 1.6rem !important;
-    }
-    div[data-testid="stMetricDelta"] {
-        font-size: 0.75rem;
-    }
-    .stColumns div[data-testid="column"] > div:has(> div[data-testid="stMetric"]) {
-        padding: 0.35rem;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        div[data-testid="stMetric"] {
-            background: #1E1E1E;
-            border-color: #333;
-        }
-        div[data-testid="stMetricLabel"] {
-            color: #B0B0B0;
-        }
-        div[data-testid="stMetricValue"] {
-            color: #4ADE80;
-        }
-    }
-
-    /* ── Alerts ── */
-    .stAlert { border-left-color: var(--primary) !important; }
-    div[data-testid="stAlert"] {
-        border-radius: var(--radius-sm);
-        font-size: 0.9rem;
-        padding: 0.5rem 0.75rem;
-    }
-    div[data-testid="stAlert"] svg { width: 1rem; height: 1rem; }
-
-    .success-msg div[data-testid="stAlert"] { border-left-color: var(--primary-container) !important; }
-    .success-msg div[data-testid="stAlert"] svg { fill: var(--primary-container); }
-
-    /* ── Buttons ── */
-    div.stButton > button {
-        border-radius: var(--radius-lg);
-        font-weight: 500;
-        font-size: 0.85rem;
         transition: all 0.2s ease;
-        border: 1px solid var(--outline-variant);
     }
-    div.stButton > button:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-lg);
+    
+    .stTabs [role="tab"][aria-selected="true"] {
+        background: white !important;
+        color: var(--primary) !important;
+        box-shadow: var(--shadow-sm) !important;
     }
-    div.stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        border: none;
-        font-weight: 600;
-        color: white;
+
+    /* ── Chat ── */
+    div[data-testid="stChatMessage"] {
+        padding: 1.25rem !important;
+        border-radius: var(--radius-md) !important;
+        margin-bottom: 1rem !important;
+        border: 1px solid transparent !important;
     }
-    div.stButton > button[kind="primary"]:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,168,89,0.3);
-        filter: brightness(0.95);
+
+    div[data-testid="stChatMessage"][aria-label*="user"] {
+        background: var(--primary-container) !important;
+        border-color: rgba(0, 168, 89, 0.1) !important;
+    }
+
+    div[data-testid="stChatMessage"][aria-label*="assistant"] {
+        background: white !important;
+        border-color: var(--outline-variant) !important;
+        box-shadow: var(--shadow-sm) !important;
+    }
+
+    /* ── Inputs ── */
+    div[data-baseweb="input"], div[data-baseweb="select"], div[data-baseweb="textarea"] {
+        border-radius: var(--radius-md) !important;
+    }
+    
+    .stButton button {
+        border-radius: var(--radius-md) !important;
+        padding: 0.6rem 1.5rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .stButton button[kind="primary"] {
+        background: var(--primary) !important;
+        border: none !important;
+        box-shadow: 0 4px 14px 0 rgba(0, 168, 89, 0.3) !important;
+    }
+
+    .stButton button[kind="primary"]:hover {
+        background: var(--primary-dark) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(0, 168, 89, 0.23) !important;
     }
     div.stButton > button:not([kind="primary"]) {
         border: 1px solid var(--info);
@@ -469,557 +316,93 @@ st.markdown("""
         color: var(--on-surface-variant) !important;
         transition: all 0.15s ease;
     }
-    div[class*="st-key-sugestao_"] button:hover {
-        background: var(--primary-fixed) !important;
-        border-color: var(--primary) !important;
-        color: var(--primary) !important;
-    }
-
-    /* ── Chat bubbles ── */
-    /* Make the inner containers transparent to let our chat bubble backgrounds show through */
-    div[data-testid="stChatMessage"] div[data-testid="stVerticalBlockBorderWrapper"],
-    div[data-testid="stChatMessage"] div[data-testid="stChatMessageContent"],
-    div[data-testid="stChatMessage"] .stChatMessageContent {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    /* User Message Bubble */
-    div[data-testid="stChatMessage"][aria-label*="user"] {
-        background-color: #00A859 !important;
-        border: 1px solid #007A40 !important;
-        border-radius: 12px 12px 0 12px !important;
-        margin-left: auto !important;
-        margin-right: 0 !important;
-        width: fit-content !important;
-        max-width: 80% !important;
-        box-shadow: var(--shadow-sm) !important;
-    }
-    /* Force white text color on user message */
-    div[data-testid="stChatMessage"][aria-label*="user"] [data-testid="stMarkdownContainer"] {
-        color: white !important;
-    }
-    div[data-testid="stChatMessage"][aria-label*="user"] [data-testid="stMarkdownContainer"] *:not(a) {
-        color: inherit !important;
-    }
-
-    /* Assistant Message Bubble */
-    div[data-testid="stChatMessage"][aria-label*="assistant"] {
-        background-color: var(--surface-container) !important;
+    /* ── Alerts ── */
+    .stAlert { 
         border: 1px solid var(--outline-variant) !important;
-        border-radius: 12px 12px 12px 0 !important;
-        margin-left: 0 !important;
-        margin-right: auto !important;
-        width: fit-content !important;
-        max-width: 80% !important;
-        box-shadow: var(--shadow-sm) !important;
+        border-radius: var(--radius-md) !important;
+        background: white !important;
     }
-    /* Force dark color on assistant message */
-    div[data-testid="stChatMessage"][aria-label*="assistant"] [data-testid="stMarkdownContainer"] {
-        color: var(--on-surface) !important;
-    }
-    div[data-testid="stChatMessage"][aria-label*="assistant"] [data-testid="stMarkdownContainer"] *:not(a) {
-        color: inherit !important;
-    }
-
-    div[data-testid="stChatInput"] textarea {
-        border-radius: var(--radius-lg);
-        border: 1px solid var(--outline-variant);
-        font-size: 0.9rem;
-    }
-    div[data-testid="stChatInput"] textarea:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 2px rgba(0, 168, 89, 0.25);
-    }
-    div[data-testid="stChatInputButton"] button {
-        background: var(--primary);
-    }
-
-    /* ── Selectbox / Inputs ── */
-    div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="textarea"] > div {
-        border-radius: var(--radius-lg);
-        border-color: var(--outline-variant);
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-    div[data-baseweb="select"] > div:focus-within, div[data-baseweb="input"] > div:focus-within {
-        border-color: var(--primary) !important;
-        box-shadow: 0 0 0 3px rgba(0, 168, 89, 0.25) !important;
+    
+    div[data-testid="stAlert"] {
+        padding: 1rem !important;
     }
 
     /* ── Tables ── */
     table {
         width: 100% !important;
-        border-collapse: collapse !important;
-        margin: 1rem 0 !important;
-        font-size: 0.9rem !important;
-        border-radius: 8px !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        margin: 1.5rem 0 !important;
+        border: 1px solid var(--outline-variant) !important;
+        border-radius: var(--radius-md) !important;
         overflow: hidden !important;
-        border: 1px solid #E9EEF6 !important;
     }
+    
     th {
-        background-color: var(--primary) !important;
-        color: white !important;
-        font-weight: 600 !important;
-        padding: 12px 14px !important;
-        text-align: left !important;
-    }
-    td {
-        padding: 10px 14px !important;
-        border-bottom: 1px solid #E9EEF6 !important;
+        background-color: var(--surface-container-high, #f0f4f8) !important;
         color: var(--on-surface) !important;
+        font-weight: 700 !important;
+        padding: 1rem !important;
+        text-align: left !important;
+        border-bottom: 2px solid var(--outline-variant) !important;
     }
-    tr:last-child td {
-        border-bottom: none !important;
-    }
-    tr:hover {
-        background-color: rgba(0, 168, 89, 0.04) !important;
+    
+    td {
+        padding: 0.85rem 1rem !important;
+        border-bottom: 1px solid var(--outline-variant) !important;
+        color: var(--on-surface-variant) !important;
     }
 
     /* ── Expander ── */
     div[data-testid="stExpander"] {
-        border: 1px solid var(--outline-variant);
-        border-radius: var(--radius-lg);
-        background: var(--surface-container-lowest);
-        box-shadow: var(--ambient-shadow);
-        margin: 0.5rem 0;
-    }
-    div[data-testid="stExpander"] summary {
-        font-weight: 500;
-        color: var(--on-surface-variant);
-    }
-
-    /* ── Progress ── */
-    div[data-testid="stProgress"] > div {
-        background: var(--surface-container-high);
-        border-radius: 999px;
-    }
-    div[data-testid="stProgress"] > div > div {
-        background: linear-gradient(90deg, var(--primary), var(--primary-dark));
-        border-radius: 999px;
-        transition: width 0.3s ease;
-    }
-
-    /* ── Divider ── */
-    hr.stAppDivider {
-        border-color: var(--outline-variant);
-        margin: 1.25rem 0;
-    }
-
-    /* ── Popover ── */
-    div[data-testid="stPopover"] button {
-        font-size: 0.85rem;
-        border-radius: var(--radius-sm);
-    }
-    div[data-testid="stPopoverBody"] {
-        border-radius: var(--radius-lg);
+        border: 1px solid var(--outline-variant) !important;
+        border-radius: var(--radius-md) !important;
+        background: white !important;
+        margin-bottom: 1rem !important;
     }
 
     /* ── Footer ── */
     .app-footer {
         text-align: center;
         color: var(--on-surface-variant);
-        font-size: 0.75rem;
-        padding: 2rem 0 1rem;
-        border-top: 1px solid var(--outline-variant);
-        margin-top: 2rem;
+        font-size: 0.85rem;
+        padding: 3rem 0 2rem;
+        opacity: 0.7;
     }
 
-    /* ── Spinner ── */
-    .stSpinner > div > div {
-        border-color: var(--primary) transparent transparent transparent !important;
+    /* ── Status Pulse ── */
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(0, 168, 89, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 168, 89, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 168, 89, 0); }
     }
-
-    /* ── File Uploader ── */
-    div[data-testid="stFileUploader"] {
-        border: 2px dashed var(--outline-variant);
-        border-radius: var(--radius-lg);
-        padding: 1rem;
-        background: var(--surface-container-low);
-        transition: all 0.2s ease;
-    }
-    div[data-testid="stFileUploader"]:hover {
-        border-color: var(--primary);
-        background: var(--primary-fixed);
-    }
-    div[data-testid="stFileUploader"] section { padding: 0; }
-    div[data-testid="stFileUploader"] button {
+    
+    .status-pulse {
+        width: 10px;
+        height: 10px;
         background: var(--primary);
-        color: white;
-        border: none;
-        font-weight: 500;
-        border-radius: var(--radius-sm);
-        font-size: 0.85rem;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+        animation: pulse 2s infinite;
     }
 
-    /* ── MultiSelect / remaining selects ── */
-    div[data-testid="stSelectbox"] label p, div[data-testid="stTextInput"] label p, div[data-testid="stNumberInput"] label p {
-        font-weight: 500;
-        font-size: 0.85rem;
-        color: var(--on-surface-variant);
-    }
-
-    /* ── Status / Spinner messages ── */
-    div[data-testid="stStatusWidget"] {
-        background-color: var(--surface-container-high) !important;
-        border-radius: var(--radius-lg) !important;
-        border: 1px solid var(--outline-variant) !important;
-    }
-    div[data-testid="stStatusWidget"] summary {
-        color: var(--on-surface) !important;
-    }
-    div[data-testid="stStatusWidget"] summary * {
-        color: var(--on-surface) !important;
-    }
-
-    .stMainBlockContainer {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0.5rem 1rem;
-    }
-
-    @media (display-mode: standalone) {
-        .stApp {
-            padding-top: var(--safe-top);
-            padding-bottom: var(--safe-bottom);
-        }
-        div[data-testid="stTabs"] {
-            padding-bottom: calc(0.25rem + var(--safe-bottom));
-        }
-    }
-
+    /* ── Mobile Optimization ── */
     @media (max-width: 640px) {
-        p, span, div, label, .stMarkdown {
-            line-height: 1.5 !important;
-        }
-        .stMainBlockContainer { padding: 0.75rem 0.5rem !important; }
-        .stColumn > div { min-width: 100% !important; }
-        div[data-testid="column"] { width: 100% !important; flex: 0 0 100% !important; }
-        .stChatMessage { font-size: 0.85rem !important; }
-        section[data-testid="stSidebar"] .stSidebarContent { padding: 0.75rem; }
-        button[kind="primary"] { width: 100% !important; min-height: var(--touch-target-min) !important; font-size: 0.85rem !important; }
-        button[kind="secondary"] { min-height: var(--touch-target-min) !important; font-size: 0.85rem !important; }
-        .app-header { padding: 0.75rem 1rem; }
-        .app-title { font-size: 1rem !important; }
-        .app-card { padding: 0.75rem !important; border-radius: var(--radius-md) !important; }
-        .app-card h3 { font-size: 1rem !important; }
-        .app-card p { font-size: 0.85rem !important; }
-        div[data-testid="stMetric"] { padding: 0.75rem 1rem; }
-        .stTabs [role="tablist"] { gap: 0; padding: 0.25rem; }
-        .stTabs [role="tab"] { font-size: 0.75rem; padding: 0.25rem 0.5rem; min-height: var(--touch-target-min) !important; }
-
-        /* ── Premium Top Navigation Bar ── */
-        .st-key-main_tabs {
-            /* container stays in normal flow */
-        }
-        .st-key-main_tabs div[role="tablist"] {
-            position: relative !important;
-            z-index: 99 !important;
-            background: var(--surface-container) !important;
-            border: 1px solid var(--outline-variant) !important;
-            border-radius: var(--radius-lg) !important;
-            padding: 6px !important;
-            margin-bottom: 1rem !important;
-            box-shadow: var(--shadow-sm) !important;
-            display: flex !important;
-            flex-direction: row !important;
+        .stMainBlockContainer { padding: 1rem !important; }
+        .app-header { padding: 1.25rem !important; }
+        .app-title { font-size: 1.25rem !important; }
+        .metric-card-val { font-size: 2rem !important; }
+        
+        .stTabs [role="tablist"] {
             flex-wrap: nowrap !important;
-            justify-content: flex-start !important;
-            align-items: center !important;
-            gap: 8px !important;
-            height: auto !important;
             overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-            scrollbar-width: none !important; /* Firefox */
+            padding: 0.25rem !important;
         }
-        .st-key-main_tabs div[role="tablist"]::-webkit-scrollbar {
-            display: none !important; /* Safari/Chrome */
-        }
-        .st-key-main_tabs button[role="tab"] {
-            padding: 8px 16px !important;
-            min-width: auto !important;
-            flex: 0 0 auto !important;
-            display: inline-flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 6px !important;
-            border-radius: 12px !important;
-            background: transparent !important;
-            border: none !important;
-            color: var(--on-surface-variant) !important;
-            font-weight: 500 !important;
+        
+        .stTabs [role="tab"] {
+            padding: 0.5rem 1rem !important;
             font-size: 0.8rem !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            margin: 0 !important;
-            white-space: nowrap !important;
-        }
-        .st-key-main_tabs button[role="tab"][aria-selected="true"] {
-            color: white !important;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
-            font-weight: 600 !important;
-            box-shadow: 0 2px 8px rgba(0, 168, 89, 0.2) !important;
-            transform: scale(1.02) !important;
-        }
-        .st-key-main_tabs button[role="tab"][aria-selected="true"] * {
-            color: white !important;
-        }
-        .st-key-main_tabs [data-baseweb="tab-highlight"],
-        .st-key-main_tabs [data-baseweb="tab-border"] {
-            display: none !important;
-        }
-        .stMainBlockContainer {
-            padding-bottom: calc(100px + var(--safe-bottom)) !important;
-        }
-
-        /* ── Premium Segmented Control for mobile upload aba ── */
-        div[class*="st-key-mobile_aba"] [role="radiogroup"] {
-            display: flex !important;
-            flex-direction: row !important;
-            flex-wrap: wrap !important;
-            gap: 6px !important;
-            padding: 4px !important;
-        }
-        div[class*="st-key-mobile_aba"] [role="radiogroup"] label {
-            background: var(--surface-container-low) !important;
-            border: 1px solid var(--outline-variant) !important;
-            border-radius: 20px !important;
-            padding: 6px 14px !important;
-            font-size: 0.8rem !important;
-            font-weight: 500 !important;
-            color: var(--on-surface-variant) !important;
-            cursor: pointer !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            margin: 0 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        div[class*="st-key-mobile_aba"] [role="radiogroup"] label:hover {
-            border-color: var(--primary) !important;
-            color: var(--primary) !important;
-        }
-        div[class*="st-key-mobile_aba"] [role="radiogroup"] label:has(input:checked) {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
-            border-color: var(--primary) !important;
-            color: white !important;
-            font-weight: 600 !important;
-            box-shadow: 0 4px 10px rgba(0, 168, 89, 0.2) !important;
-            transform: translateY(-1px) !important;
-        }
-        div[class*="st-key-mobile_aba"] [role="radiogroup"] label > div:first-child {
-            display: none !important;
-        }
-
-        /* ── Premium Suggestions Shelf (Horizontal Carousel) ── */
-        div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-sugestao_"]) {
-            display: flex !important;
-            flex-direction: row !important;
-            overflow-x: auto !important;
-            flex-wrap: nowrap !important;
-            gap: 8px !important;
-            padding: 6px 4px 12px 4px !important;
-            -webkit-overflow-scrolling: touch !important;
-            scroll-snap-type: x mandatory !important;
-        }
-        div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-sugestao_"]) > div[data-testid="column"] {
-            flex: 0 0 75% !important;
-            width: 75% !important;
-            min-width: 220px !important;
-            max-width: 75% !important;
-            scroll-snap-align: start !important;
-        }
-        div[class*="st-key-sugestao_"] button {
-            height: 100% !important;
-            white-space: normal !important;
-            box-shadow: var(--shadow-sm) !important;
-            border-radius: var(--radius-md) !important;
-        }
-
-        /* ── Premium Sidebar Controls on Mobile ── */
-        button[data-testid="collapsedControl"] {
-            background: rgba(255, 255, 255, 0.85) !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(0, 168, 89, 0.2) !important;
-            border-radius: 50% !important;
-            width: 42px !important;
-            height: 42px !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-            top: 16px !important;
-            left: 16px !important;
-            z-index: 9999 !important;
-            transition: all 0.2s ease !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        button[data-testid="collapsedControl"] svg {
-            color: var(--primary) !important;
-            fill: var(--primary) !important;
-        }
-
-        /* ── Sidebar mobile ── */
-        section[data-testid="stSidebar"] {
-            position: fixed !important;
-            width: 85vw !important;
-            max-width: 320px !important;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-            z-index: 10000;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            height: 100% !important;
-        }
-        section[data-testid="stSidebar"][aria-expanded="true"] {
-            transform: translateX(0);
-        }
-        body.sidebar-open section[data-testid="stSidebar"] {
-            transform: translateX(0);
-        }
-        section[data-testid="stSidebar"]::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.4);
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-        section[data-testid="stSidebar"][aria-expanded="true"]::after,
-        body.sidebar-open section[data-testid="stSidebar"]::after {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        body.sidebar-open {
-            overflow: hidden;
-        }
-        section[data-testid="stSidebar"] .stSidebarContent {
-            background: linear-gradient(180deg, var(--sidebar-gradient-start, #003F20), var(--sidebar-gradient-end, #007A40));
-            height: 100%;
-            overflow-y: auto;
-        }
-
-        /* ── Forms & inputs full-width ── */
-        div[data-testid="stSelectbox"], div[data-testid="stTextInput"],
-        div[data-testid="stNumberInput"], div[data-testid="stDateInput"],
-        div[data-testid="stMultiselect"], div[data-testid="stFileUploader"] {
-            width: 100% !important;
-            min-width: 0 !important;
-        }
-        div[data-testid="stSelectbox"] input, div[data-testid="stTextInput"] input,
-        div[data-testid="stNumberInput"] input, div[data-testid="stDateInput"] input {
-            min-height: var(--touch-target-min) !important;
-            font-size: 0.85rem !important;
-        }
-
-        /* ── Tables scrollable ── */
-        div[data-testid="stTable"], div[data-testid="stDataFrame"] {
-            font-size: 0.75rem !important;
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* ── Touch targets ── */
-        button, a, select, input, textarea,
-        [role="button"], [role="tab"], [role="radio"],
-        [role="checkbox"], [data-testid="stExpander"] summary,
-        .stDownloadButton button {
-            min-height: var(--touch-target-min) !important;
-        }
-        [data-testid="stExpander"] summary {
-            padding: 0.75rem 0.75rem !important;
-            font-size: 0.85rem !important;
-        }
-
-        /* ── Loading / Empty states ── */
-        div[data-testid="stStatusWidget"] {
-            font-size: 0.85rem !important;
-            padding: 0.5rem 0.75rem !important;
-        }
-        div.stSpinner {
-            font-size: 0.85rem !important;
-        }
-
-        /* ── Animations ── */
-        .stTabs, .stMainBlockContainer {
-            animation: fadeSlideIn 0.25s ease-out;
-        }
-        @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        button:active {
-            transform: scale(0.97);
-        }
-    }
-
-    @media (max-width: 480px) {
-        /* ── Header stacking ── */
-        .app-header-content {
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 0.5rem !important;
-        }
-        .app-header-content > div:first-child {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 0.25rem !important;
-        }
-        .app-header img {
-            height: 48px !important;
-            max-width: 200px !important;
-        }
-        .app-subtitle {
-            font-size: 0.75rem !important;
-        }
-        .app-header-content > div:last-child {
-            font-size: 0.75rem !important;
-            padding: 4px 12px !important;
-            align-self: flex-start;
-        }
-
-        /* ── Metric cards 2×2 ── */
-        .metric-card {
-            padding: 0.75rem !important;
-        }
-        .metric-card-val {
-            font-size: 1.6rem !important;
-        }
-        .metric-card-label {
-            font-size: 0.75rem !important;
-        }
-        div.row-widget.stColumns > div[data-testid="column"] {
-            flex: 0 0 50% !important;
-            max-width: 50% !important;
-            min-width: 0 !important;
-            padding: 4px;
-        }
-
-        /* ── Chat bubbles ── */
-        div[data-testid="stChatMessage"] {
-            max-width: 92% !important;
-            padding: 0.5rem 0.75rem !important;
-        }
-        div[data-testid="stChatInput"] {
-            position: fixed !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            z-index: 999 !important;
-            padding: 10px 12px calc(10px + var(--safe-bottom)) 12px !important;
-            background: white !important;
-            border-top: 1px solid var(--outline-variant) !important;
-            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05) !important;
-        }
-        div[data-testid="stChatInput"] textarea {
-            font-size: 0.85rem !important;
-            min-height: var(--touch-target-min) !important;
         }
     }
 </style>
@@ -1084,16 +467,17 @@ def _load_svg_as_base64(path):
 logo_img = f'<img src="{_load_svg_as_base64("assets/logo.svg")}" alt="PlanejadorPV" style="height:80px;width:auto;max-width:380px;display:block;" />'
 
 st.markdown(f"""
-<div class="app-header">
+<div class="app-header animate-in">
     <div class="app-header-content" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <div style="display: flex; align-items: center; gap: 1.25rem;">
-            <div style="flex-shrink:0;">{logo_img}</div>
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <div style="flex-shrink:0; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">{logo_img}</div>
             <div>
-                <div class="app-title" style="font-weight: 800; font-size: 1.6rem; color: white;">PlanejadorPV</div>
-                <div class="app-subtitle" style="font-size: 0.85rem; opacity: 0.9; color: white;">Marketing Planner — Ensina Mais Turma da Mônica · Unidade Tatuapé</div>
+                <div class="app-title" style="font-weight: 800; font-size: 1.8rem; color: white; letter-spacing: -0.5px;">Marketing Planner</div>
+                <div class="app-subtitle" style="font-size: 0.9rem; opacity: 0.9; color: rgba(255,255,255,0.9); font-weight: 500;">Ensina Mais Turma da Mônica · Unidade Tatuapé</div>
             </div>
         </div>
-        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 0.6rem 1.25rem; border-radius: 100px; font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm);">
+            <span class="status-pulse"></span>
             Olá, Gestor! 👋
         </div>
     </div>
@@ -2001,11 +1385,12 @@ with st.container(key="main_tabs"):
     )
 
 with tab_dash:
+    st.markdown('<div class="animate-in">', unsafe_allow_html=True)
     st.markdown(
-        '<div class="app-card">'
-        '<h2>📊 Dashboard — Marketing Planner</h2>'
-        '<p style="color: var(--on-surface-variant); margin: 0;">'
-        'Visão geral das fontes carregadas e conteúdos gerados.</p>'
+        '<div class="app-card" style="margin-bottom: 2rem;">'
+        '<h2 style="margin:0; color: var(--primary);">📊 Visão Geral do Painel</h2>'
+        '<p style="color: var(--on-surface-variant); margin-top: 0.5rem; font-size: 0.95rem;">'
+        'Acompanhe o status da sua base de conhecimento e as atividades recentes.</p>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -2024,30 +1409,34 @@ with tab_dash:
 
     col1, col2, col3, col4 = st.columns(4)
     col1.markdown(
-        f'<div class="metric-card metric-green">'
+        f'<div class="metric-card metric-green animate-in" style="animation-delay: 0.1s;">'
+        f'<div class="metric-card-label">📁 Fontes Ativas</div>'
         f'<div class="metric-card-val">{total_fontes}</div>'
-        f'<div class="metric-card-label">📁 Fontes carregadas</div>'
+        f'<div style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">↑ Pronto para consulta</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
     col2.markdown(
-        f'<div class="metric-card metric-blue">'
+        f'<div class="metric-card metric-blue animate-in" style="animation-delay: 0.15s;">'
+        f'<div class="metric-card-label">📄 Fragmentos (RAG)</div>'
         f'<div class="metric-card-val">{total_chunks}</div>'
-        f'<div class="metric-card-label">📄 Documentos na base</div>'
+        f'<div style="font-size: 0.75rem; color: var(--secondary); font-weight: 700;">Conhecimento indexado</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
     col3.markdown(
-        f'<div class="metric-card metric-yellow">'
+        f'<div class="metric-card metric-yellow animate-in" style="animation-delay: 0.2s;">'
+        f'<div class="metric-card-label">💬 Interações</div>'
         f'<div class="metric-card-val">{total_perguntas}</div>'
-        f'<div class="metric-card-label">💬 Perguntas feitas</div>'
+        f'<div style="font-size: 0.75rem; color: var(--tertiary-dark); font-weight: 700;">Perguntas respondidas</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
     col4.markdown(
-        f'<div class="metric-card metric-red">'
+        f'<div class="metric-card metric-red animate-in" style="animation-delay: 0.25s;">'
+        f'<div class="metric-card-label">✨ Ativos Criados</div>'
         f'<div class="metric-card-val">{total_conteudos}</div>'
-        f'<div class="metric-card-label">📊 Conteúdos gerados</div>'
+        f'<div style="font-size: 0.75rem; color: var(--danger); font-weight: 700;">Conteúdos gerados</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -2055,50 +1444,50 @@ with tab_dash:
     col_chart1, col_chart2 = st.columns(2)
     with col_chart1:
         st.markdown(
-            f'<div class="app-card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;padding:1.5rem;margin:1rem 0;">'
-            f'<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: #343A40; width:100%; font-weight:700;">📊 Distribuição das Fontes</h3>'
+            f'<div class="app-card animate-in" style="animation-delay: 0.3s; display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;padding:1.75rem;">'
+            f'<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: var(--on-surface); width:100%; font-weight:700;">📊 Distribuição das Fontes</h3>'
             f'<img src="{_load_svg_as_base64("assets/pizza_chart.svg")}" alt="Distribuição por categoria" style="max-width:100%;height:auto;max-height:220px;display:block;margin:auto;" />'
             f'</div>',
             unsafe_allow_html=True,
         )
     with col_chart2:
         st.markdown(
-            f'<div class="app-card" style="display:flex;flex-direction:column;justify-content:center;height:100%;padding:1.5rem;margin:1rem 0;">'
-            f'<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: #343A40; font-weight:700;">📈 Conteúdos por Categoria</h3>'
+            f'<div class="app-card animate-in" style="animation-delay: 0.35s; display:flex;flex-direction:column;justify-content:center;height:100%;padding:1.75rem;">'
+            f'<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: var(--on-surface); font-weight:700;">📈 Conteúdos por Categoria</h3>'
             f'<div style="margin-bottom: 1rem;">'
-            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">'
+            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--on-surface-variant);">'
             f'<span>📅 Calendários</span>'
             f'<span>42%</span>'
             f'</div>'
-            f'<div style="background: #F8F9FA; border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
-            f'<div style="background: linear-gradient(90deg, #00A859, #007A40); width: 42%; height: 100%; border-radius: 6px;"></div>'
+            f'<div style="background: var(--primary-container); border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
+            f'<div style="background: linear-gradient(90deg, var(--primary), var(--primary-dark)); width: 42%; height: 100%; border-radius: 6px;"></div>'
             f'</div>'
             f'</div>'
             f'<div style="margin-bottom: 1rem;">'
-            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">'
+            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--on-surface-variant);">'
             f'<span>📢 Campanhas</span>'
             f'<span>28%</span>'
             f'</div>'
-            f'<div style="background: #F8F9FA; border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
-            f'<div style="background: linear-gradient(90deg, #005CAA, #003F7A); width: 28%; height: 100%; border-radius: 6px;"></div>'
+            f'<div style="background: var(--secondary-container); border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
+            f'<div style="background: linear-gradient(90deg, var(--secondary), var(--secondary-dark)); width: 28%; height: 100%; border-radius: 6px;"></div>'
             f'</div>'
             f'</div>'
             f'<div style="margin-bottom: 1rem;">'
-            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">'
+            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--on-surface-variant);">'
             f'<span>📸 Legendas</span>'
             f'<span>18%</span>'
             f'</div>'
-            f'<div style="background: #F8F9FA; border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
-            f'<div style="background: linear-gradient(90deg, #F7B731, #E09E1A); width: 18%; height: 100%; border-radius: 6px;"></div>'
+            f'<div style="background: var(--tertiary-container); border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
+            f'<div style="background: linear-gradient(90deg, var(--tertiary), var(--tertiary-dark)); width: 18%; height: 100%; border-radius: 6px;"></div>'
             f'</div>'
             f'</div>'
             f'<div style="margin-bottom: 0.5rem;">'
-            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">'
+            f'<div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--on-surface-variant);">'
             f'<span>📋 Análises</span>'
             f'<span>12%</span>'
             f'</div>'
-            f'<div style="background: #F8F9FA; border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
-            f'<div style="background: linear-gradient(90deg, #E84C3D, #C0392B); width: 12%; height: 100%; border-radius: 6px;"></div>'
+            f'<div style="background: var(--danger-container); border-radius: 6px; height: 12px; overflow: hidden; width: 100%;">'
+            f'<div style="background: linear-gradient(90deg, var(--danger), var(--danger-dark)); width: 12%; height: 100%; border-radius: 6px;"></div>'
             f'</div>'
             f'</div>'
             f'</div>',
@@ -2107,7 +1496,7 @@ with tab_dash:
 
     if st.session_state.documentos:
         st.markdown(
-            '<h3 style="margin-bottom:1rem;">📂 Fontes carregadas</h3>',
+            '<h3 style="margin-bottom:1rem; margin-top: 2rem; color: var(--on-surface);">📂 Fontes carregadas</h3>',
             unsafe_allow_html=True,
         )
         cols = st.columns(2)
@@ -2124,11 +1513,11 @@ with tab_dash:
                 elif "posts" in meta:
                     extra = f" · {meta['posts']} posts"
                 elif "url" in meta:
-                    extra = f" · url"
+                    extra = f" · URL"
                 cols[i % 2].markdown(
-                    f'<div class="app-card" style="padding:0.75rem 1rem;">'
-                    f'<strong>{icone} {nome}</strong><br>'
-                    f'<small style="color:var(--on-surface-variant);">'
+                    f'<div class="app-card animate-in" style="animation-delay: {0.4 + i*0.05}s; padding:1rem 1.25rem; margin: 0.5rem 0;">'
+                    f'<strong style="color: var(--on-surface);">{icone} {nome}</strong><br>'
+                    f'<small style="color:var(--on-surface-variant); font-size: 0.8rem;">'
                     f'{meta.get("chunks", "?")} chunks · {meta.get("caracteres", 0):,} caracteres{extra}'
                     f'</small></div>',
                     unsafe_allow_html=True,
@@ -2137,25 +1526,25 @@ with tab_dash:
                 cols[i % 2].markdown(f"- {chave}")
     else:
         st.markdown(
-            '<div class="app-card-empty" style="padding: 3.5rem 1.5rem; text-align: center; border-radius: 12px; border: 2px dashed #00A859; background: #F8F9FA; margin: 1rem 0;">'
-            '<div style="font-size: 4rem; margin-bottom: 1rem; display: inline-block;">🎈📚✨</div>'
-            '<h3 style="color: #343A40; margin-top: 0.5rem; margin-bottom: 0.5rem; font-weight:700;">Nenhuma fonte carregada</h3>'
-            '<p style="color: #6C757D; font-size: 0.95rem; margin: 0;">'
-            'Nenhuma fonte carregada — use a barra lateral para adicionar PDFs, URLs e mais'
+            '<div class="app-card-empty animate-in" style="animation-delay: 0.4s; padding: 3.5rem 1.5rem; text-align: center; border-radius: var(--radius-lg); border: 2px dashed var(--outline-variant); background: white; margin: 1.5rem 0;">'
+            '<div style="font-size: 4rem; margin-bottom: 1rem; display: inline-block;">📚</div>'
+            '<h3 style="color: var(--on-surface); margin-top: 0.5rem; margin-bottom: 0.5rem; font-weight:700;">Nenhuma fonte carregada</h3>'
+            '<p style="color: var(--on-surface-variant); font-size: 0.95rem; margin: 0;">'
+            'Use a barra lateral para adicionar PDFs, URLs, HTMLs, perfis de Instagram, textos ou planilhas e comece a analisar!'
             '</p>'
             '</div>',
             unsafe_allow_html=True,
         )
 
     st.markdown(
-        '<div class="app-card" style="padding:1rem 1.25rem;">'
+        '<div class="app-card animate-in" style="animation-delay: 0.45s; padding:1rem 1.25rem; margin-top: 2rem;">'
         '<div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">'
         '<span style="font-size:1.5rem;">💡</span>'
         '<span style="font-size:0.9rem;color:var(--on-surface-variant);">'
-        'Use as abas <strong>💬 Chat</strong> para conversar com seus documentos, '
-        '<strong>📅 Calendário</strong> para gerar um plano mensal, '
-        '<strong>📢 Campanhas</strong> para campanhas completas, '
-        'ou <strong>📸 Legendas</strong> para criar legendas a partir de imagens.'
+        'Explore as abas <strong>💬 Chat</strong> para interagir com seus documentos, '
+        '<strong>📅 Calendário</strong> para organizar suas ações mensais, '
+        '<strong>📢 Campanhas</strong> para criar estratégias completas, '
+        'ou <strong>📸 Legendas</strong> para gerar conteúdo visual para o Instagram.'
         '</span></div></div>',
         unsafe_allow_html=True,
     )
@@ -2167,36 +1556,38 @@ with tab_dash:
         )
         aba_mobile = st.radio("Tipo", ["PDF", "URL", "HTML", "Instagram", "Texto", "Planilha"], key="mobile_aba")
         _render_upload_tab(st, aba_mobile, key_prefix="mob_")
+st.markdown('</div>', unsafe_allow_html=True)
 
 with tab_assistente:
+    st.markdown('<div class="animate-in">', unsafe_allow_html=True)
     col_titulo, col_limpar = st.columns([0.85, 0.15])
     with col_titulo:
         st.markdown(
-            '<div class="app-card">'
-            '<h2>💬 Assistente — Marketing para Franquias</h2>'
-            '<p style="color: var(--on-surface-variant); margin: 0;">'
-            'Carregue informações na barra lateral e faça perguntas sobre o conteúdo.</p>'
+            '<div class="app-card" style="margin-bottom: 2rem;">'
+            '<h2 style="margin:0; color: var(--primary);">💬 Assistente de Marketing</h2>'
+            '<p style="color: var(--on-surface-variant); margin-top: 0.5rem; font-size: 0.95rem;">'
+            'Carregue informações na barra lateral e faça perguntas sobre o conteúdo para gerar insights e materiais.</p>'
             '</div>',
             unsafe_allow_html=True,
         )
     with col_limpar:
         if st.session_state.mensagens:
-            if st.button("🗑️ Limpar conversa", use_container_width=True):
+            if st.button("🗑️ Limpar conversa", use_container_width=True, help="Apaga todo o histórico da conversa atual."):
                 st.session_state.mensagens = []
                 st.session_state.sugestoes_usadas = False
                 st.rerun()
 
     if not st.session_state.mensagens and not st.session_state.sugestoes_usadas:
-        with st.container(border=True):
+        with st.container(border=False):
             st.markdown(
-                '<h3 style="margin-bottom:0.5rem;">💡 Sugestões de perguntas</h3>'
-                '<p style="color:var(--on-surface-variant);margin:0 0 1rem 0;">'
-                'Clique em uma pergunta abaixo para começar:</p>',
+                '<h3 style="margin-bottom:0.75rem; color: var(--on-surface);">💡 Sugestões de perguntas</h3>'
+                '<p style="color:var(--on-surface-variant);margin:0 0 1.5rem 0; font-size: 0.95rem;">'
+                'Clique em uma pergunta abaixo para começar uma conversa:</p>',
                 unsafe_allow_html=True,
             )
 
             for idx_cat, grupo in enumerate(PERGUNTAS_SUGERIDAS):
-                st.markdown(f"**{grupo['categoria']}**")
+                st.markdown(f"<h4 style=\"margin-top: 1.5rem; margin-bottom: 0.75rem; color: var(--on-surface);\">{grupo['categoria']}</h4>", unsafe_allow_html=True)
                 cols = st.columns(3)
                 for i, pergunta in enumerate(grupo["perguntas"]):
                     with cols[i % 3]:
@@ -2219,6 +1610,55 @@ with tab_assistente:
                                 "fontes": resultado["fontes"],
                             })
                             st.rerun()
+
+    for i, msg in enumerate(st.session_state.mensagens):
+        with st.chat_message(msg["role"]):
+            st.markdown(f'<div class="animate-in" style="animation-delay: {0.1 + i*0.05}s;">'{msg["content']}</div>', unsafe_allow_html=True)
+            if msg["role"] == "assistant" and msg.get("fontes"):
+                exibir_fontes(msg["fontes"])
+            if msg["role"] == "assistant" and i == len(st.session_state.mensagens) - 1:
+                col_exp, col_base = st.columns(2)
+                with col_exp:
+                    docx_bytes = exportar_markdown_docx(msg["content"])
+                    st.download_button(
+                        "📥 Baixar DOCX",
+                        data=docx_bytes,
+                        file_name="resposta_assistente.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True,
+                        key=f"exp_msg_{i}",
+                    )
+                with col_base:
+                    if st.button("📚 Incluir na base", key=f"inc_msg_{i}", use_container_width=True):
+                        with st.spinner("Adicionando à base de conhecimento..."):
+                            proc = processar_texto(
+                                msg["content"],
+                                titulo=f"Resposta do assistente #{i}",
+                            )
+                        if proc["status"] == "ok":
+                            st.success(f"✅ Adicionado ({proc['total_chunks']} chunks).")
+                        else:
+                            st.error(f"❌ {proc['mensagem']}")
+                with st.expander("📋 Copiar resposta — clique para ver e copiar o texto", expanded=False):
+                    st.code(msg["content"], language="markdown")
+
+    if prompt := st.chat_input("Faça uma pergunta sobre os documentos..."):
+        st.session_state.mensagens.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(f'<div class="animate-in">'{prompt}</div>', unsafe_allow_html=True)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Consultando fontes..."):
+                resultado = perguntar(prompt)
+            st.markdown(f'<div class="animate-in">'{resultado["resposta']}</div>', unsafe_allow_html=True)
+            if resultado["fontes"]:
+                exibir_fontes(resultado["fontes"])
+        st.session_state.mensagens.append({
+            "role": "assistant", "content": resultado["resposta"],
+            "fontes": resultado["fontes"],
+        })
+st.markdown('</div>', unsafe_allow_html=True)
+
 
     for i, msg in enumerate(st.session_state.mensagens):
         with st.chat_message(msg["role"]):
@@ -2268,17 +1708,19 @@ with tab_assistente:
         })
 
 with tab_calendario:
+    st.markdown('<div class="animate-in">', unsafe_allow_html=True)
     st.markdown(
-        '<div class="app-card">'
-        '<h2>📅 Calendário Editorial</h2>'
-        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        '<div class="app-card" style="margin-bottom: 2rem;">'
+        '<h2 style="margin:0; color: var(--primary);">📅 Calendário Editorial</h2>'
+        '<p style="color: var(--on-surface-variant); margin-top: 0.5rem; font-size: 0.95rem;">'
         'Gere um plano mensal de ações de marketing personalizado '
         'para a unidade Tatuapé.</p>'
         '</div>',
         unsafe_allow_html=True,
     )
 
-    with st.container(border=True):
+    with st.container(border=False):
+        st.markdown('<div class="app-card" style="margin-bottom: 1.5rem;">', unsafe_allow_html=True)
         hoje = date.today()
         col_mes, col_ano = st.columns(2)
         with col_mes:
@@ -2306,13 +1748,14 @@ with tab_calendario:
                 st.error(f"❌ Não foi possível gerar o calendário: {resultado['mensagem']}")
             st.session_state.processing = False
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Display generated calendar if available
     if st.session_state.get("ultimo_calendario"):
         st.divider()
         st.markdown(
-            '<div class="app-card">'
-            '<h3>📝 Calendário Planejado</h3>'
+            '<div class="app-card" style="margin-top: 2rem;">'
+            '<h3 style="margin-top:0; color: var(--primary);">📝 Calendário Planejado</h3>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -2331,18 +1774,21 @@ with tab_calendario:
             key="cal_copy",
             label="Copiar Calendário",
         )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with tab_campanhas:
+    st.markdown('<div class="animate-in">', unsafe_allow_html=True)
     st.markdown(
-        '<div class="app-card">'
-        '<h2>📢 Gerador de Campanhas</h2>'
-        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        '<div class="app-card" style="margin-bottom: 2rem;">'
+        '<h2 style="margin:0; color: var(--primary);">📢 Gerador de Campanhas</h2>'
+        '<p style="color: var(--on-surface-variant); margin-top: 0.5rem; font-size: 0.95rem;">'
         'Crie uma campanha de marketing completa para a unidade Tatuapé.</p>'
         '</div>',
         unsafe_allow_html=True,
     )
 
-    with st.container(border=True):
+    with st.container(border=False):
+        st.markdown('<div class="app-card" style="margin-bottom: 1.5rem;">', unsafe_allow_html=True)
         col_c1, col_c2 = st.columns(2)
         with col_c1:
             nome_campanha = st.text_input("Nome da Campanha (opcional)", placeholder="Ex: Campanha Volta às Aulas 2026")
@@ -2388,13 +1834,14 @@ with tab_campanhas:
                 st.error(f"❌ Não foi possível gerar a campanha: {resultado['mensagem']}")
             st.session_state.processing = False
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Display generated campaign if available
     if st.session_state.get("ultima_campanha"):
         st.divider()
         st.markdown(
-            '<div class="app-card">'
-            '<h3>📝 Detalhes da Campanha</h3>'
+            '<div class="app-card" style="margin-top: 2rem;">'
+            '<h3 style="margin-top:0; color: var(--primary);">📝 Detalhes da Campanha</h3>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -2424,12 +1871,14 @@ with tab_campanhas:
             key="camp_copy",
             label="Copiar Campanha",
         )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with tab_relatorio:
+    st.markdown('<div class="animate-in">', unsafe_allow_html=True)
     st.markdown(
-        '<div class="app-card">'
-        '<h2>📋 Relatório de Conteúdo Ingerido</h2>'
-        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        '<div class="app-card" style="margin-bottom: 2rem;">'
+        '<h2 style="margin:0; color: var(--primary);">📋 Relatório de Conteúdo Ingerido</h2>'
+        '<p style="color: var(--on-surface-variant); margin-top: 0.5rem; font-size: 0.95rem;">'
         'Visão detalhada de todo o conteúdo gerado e das fontes carregadas.</p>'
         '</div>',
         unsafe_allow_html=True,
@@ -2438,9 +1887,9 @@ with tab_relatorio:
     # Database RAG status section
     st.divider()
     st.markdown(
-        '<div class="app-card">'
-        '<h3>📁 Base de Dados & Fontes Ingeridas (RAG)</h3>'
-        '<p style="color: var(--on-surface-variant); margin: 0;">'
+        '<div class="app-card" style="margin-top: 2rem; margin-bottom: 2rem;">'
+        '<h3 style="margin-top:0; color: var(--on-surface);">📁 Base de Dados & Fontes Ingeridas (RAG)</h3>'
+        '<p style="color: var(--on-surface-variant); margin-top: 0.5rem; font-size: 0.95rem;">'
         'Abaixo você confere o status e detalhamento dos arquivos importados na base vetorial (Chroma).</p>'
         '</div>',
         unsafe_allow_html=True,
@@ -2451,41 +1900,47 @@ with tab_relatorio:
 
     if relatorio["total_chunks"] == 0:
         st.markdown(
-            '<div class="app-card-empty">'
-            "📂 <strong>Nenhuma fonte na base de conhecimento (RAG)</strong><br>"
-            "Carregue fontes pela barra lateral ou pelo Dashboard para personalizar os conteúdos."
-            "</div>",
+            '<div class="app-card-empty animate-in" style="padding: 3.5rem 1.5rem; text-align: center; border-radius: var(--radius-lg); border: 2px dashed var(--outline-variant); background: white; margin: 1.5rem 0;">'
+            '<div style="font-size: 4rem; margin-bottom: 1rem; display: inline-block;">📂</div>'
+            '<h3 style="color: var(--on-surface); margin-top: 0.5rem; margin-bottom: 0.5rem; font-weight:700;">Nenhuma fonte na base de conhecimento (RAG)</h3>'
+            '<p style="color: var(--on-surface-variant); font-size: 0.95rem; margin: 0;">'
+            'Carregue fontes pela barra lateral ou pelo Dashboard para personalizar os conteúdos.'
+            '</p>'
+            '</div>',
             unsafe_allow_html=True,
         )
     else:
         col1, col2, col3 = st.columns(3)
-        col1.markdown(
-            f'<div class="app-card" style="text-align:center;padding:1.25rem 1rem;">'
-            f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
-            f'{relatorio["total_chunks"]}</div>'
-            f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
-            f'📄 Total de chunks</div></div>',
-            unsafe_allow_html=True,
-        )
-        col2.markdown(
-            f'<div class="app-card" style="text-align:center;padding:1.25rem 1rem;">'
-            f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
-            f'{relatorio["total_caracteres"]:,}</div>'
-            f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
-            f'📏 Total de caracteres</div></div>',
-            unsafe_allow_html=True,
-        )
-        col3.markdown(
-            f'<div class="app-card" style="text-align:center;padding:1.25rem 1rem;">'
-            f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
-            f'{len(relatorio["por_fonte"])}</div>'
-            f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
-            f'🗂️ Tipos de fonte</div></div>',
-            unsafe_allow_html=True,
-        )
+        with col1:
+            st.markdown(
+                f'<div class="app-card animate-in" style="animation-delay: 0.1s; text-align:center;padding:1.25rem 1rem;">'
+                f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
+                f'{relatorio["total_chunks"]}</div>'
+                f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
+                f'📄 Total de chunks</div></div>',
+                unsafe_allow_html=True,
+            )
+        with col2:
+            st.markdown(
+                f'<div class="app-card animate-in" style="animation-delay: 0.15s; text-align:center;padding:1.25rem 1rem;">'
+                f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
+                f'{relatorio["total_caracteres"]:,}</div>'
+                f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
+                f'📏 Total de caracteres</div></div>',
+                unsafe_allow_html=True,
+            )
+        with col3:
+            st.markdown(
+                f'<div class="app-card animate-in" style="animation-delay: 0.2s; text-align:center;padding:1.25rem 1rem;">'
+                f'<div style="font-size:2.2rem;font-weight:800;color:var(--primary);">'
+                f'{len(relatorio["por_fonte"])}</div>'
+                f'<div style="font-size:0.85rem;color:var(--on-surface-variant);font-weight:500;">'
+                f'🗂️ Tipos de fonte</div></div>',
+                unsafe_allow_html=True,
+            )
 
         st.markdown(
-            '<h4 style="margin-bottom:1rem;font-weight:700;">📊 Distribuição por tipo de fonte</h4>',
+            '<h4 style="margin-top: 2rem; margin-bottom:1rem;font-weight:700; color: var(--on-surface);">📊 Distribuição por tipo de fonte</h4>',
             unsafe_allow_html=True,
         )
 
@@ -2498,7 +1953,7 @@ with tab_relatorio:
                 icone = icones_f.get(fonte, "📄")
                 nome = nomes_f.get(fonte, fonte.capitalize())
                 st.markdown(
-                    f'<div class="app-card" style="text-align:center;padding:1rem;">'
+                    f'<div class="app-card animate-in" style="animation-delay: {0.25 + idx*0.05}s; text-align:center;padding:1rem;">'
                     f'<div style="font-size:1.4rem;font-weight:800;color:var(--primary);">'
                     f'{dados["chunks"]}</div>'
                     f'<div style="font-size:0.8rem;color:var(--on-surface-variant);font-weight:500;">'
@@ -2509,7 +1964,7 @@ with tab_relatorio:
                 )
 
         st.markdown(
-            '<h4 style="margin-bottom:1rem;font-weight:700;">📋 Detalhamento por documento</h4>',
+            '<h4 style="margin-top: 2rem; margin-bottom:1rem;font-weight:700; color: var(--on-surface);">📋 Detalhamento por documento</h4>',
             unsafe_allow_html=True,
         )
 
@@ -2523,7 +1978,7 @@ with tab_relatorio:
             c1, c2 = st.columns([5, 1])
             with c1:
                 st.markdown(
-                    f'<div class="app-card" style="padding: 0.75rem 1rem;">'
+                    f'<div class="app-card animate-in" style="animation-delay: {0.35 + item["idx"]*0.05}s; padding: 0.75rem 1rem;">'
                     f'<span style="font-size: 1.1rem; font-weight: 600;">{item["icone"]} {item["titulo"]}</span><br>'
                     f'<span style="color: var(--on-surface-variant); font-size: 0.85rem;">'
                     f'{item["chunks"]} chunks · {item["caracteres"]:,} caracteres'
@@ -2546,9 +2001,10 @@ with tab_relatorio:
                             break
                     st.rerun()
 
-        with st.container(border=True):
+        with st.container(border=False):
+            st.markdown('<div class="app-card" style="margin-top: 2rem;">', unsafe_allow_html=True)
             st.markdown(
-                '<h4 style="margin-bottom:1rem;font-weight:700;">📥 Exportar relatório da base</h4>',
+                '<h4 style="margin-top:0; margin-bottom:1rem;font-weight:700; color: var(--on-surface);">📥 Exportar relatório da base</h4>',
                 unsafe_allow_html=True,
             )
             csv_data = exportar_relatorio_csv(relatorio)
@@ -2560,6 +2016,8 @@ with tab_relatorio:
                 use_container_width=True,
                 key="btn_exportar_relatorio",
             )
+            st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with tab_legendas:
     st.markdown(
