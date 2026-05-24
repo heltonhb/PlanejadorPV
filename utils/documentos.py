@@ -138,6 +138,7 @@ def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
         if modelo is None:
             logger.warning("modelo OCR português não disponível")
             return None, 0
+        logger.info("OCR usando modelo: %s", modelo)
         
         doc = fitz.open(tmp_path)
         paginas = len(doc)
@@ -437,6 +438,37 @@ def salvar_resumo_documento(documento_id: str, resumo: str):
         logger.debug(f"Erro ao salvar resumo no ChromaDB: {e}")
 
 
+def _diagnosticar_ocr() -> str:
+    """Retorna diagnóstico do estado do OCR."""
+    diag = []
+    # Verificar se tesserocr está instalado
+    try:
+        import tesserocr
+        diag.append(f"tesserocr OK (versão {getattr(tesserocr, '__version__', '?')})")
+    except Exception as e:
+        diag.append(f"tesserocr AUSENTE: {e}")
+        return "; ".join(diag)
+    
+    # Verificar modelo
+    from PIL import Image
+    modelo = _encontrar_modelo_ocr()
+    if modelo:
+        diag.append(f"modelo OK: {modelo}")
+    else:
+        diag.append("modelo AUSENTE")
+    
+    # Verificar se PyTessBaseAPI funciona
+    try:
+        from tesserocr import PyTessBaseAPI
+        api = PyTessBaseAPI(lang="por", path=str(modelo.parent) if modelo else "")
+        api.End()
+        diag.append("PyTessBaseAPI OK")
+    except Exception as e:
+        diag.append(f"PyTessBaseAPI ERRO: {e}")
+    
+    return "; ".join(diag)
+
+
 def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
     """Processa um documento PDF: extrai texto, cria chunks e salva."""
     resultado_extracao = extrair_texto(pdf_bytes)
@@ -454,7 +486,8 @@ def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
         if metodo.startswith("erro:"):
             msg += f" Detalhes: {metodo[5:]}"
         elif metodo == "ocr":
-            msg += " O PDF pode ser um documento escaneado (imagem) e o OCR não está disponível neste ambiente."
+            ocr_diag = _diagnosticar_ocr()
+            msg += f" Diagnóstico OCR: {ocr_diag}"
         return {
             "status": "erro",
             "mensagem": msg,
