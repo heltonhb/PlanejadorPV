@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 # gemini-2.0-flash: free tier = 30 RPM (1 req a cada 2s)
 # gemini-2.5-flash: free tier = 10 RPM (1 req a cada 6s) — maior qualidade
 MODELO_PADRAO = "gemini-2.5-flash"
+MODELOS_FALLBACK = [
+    "gemini-2.5-flash",   # primeira escolha (melhor qualidade, 10 RPM, 1.500 RPD)
+    "gemini-1.5-flash",   # fallback (mais cotas: 30 RPM, 1.500 RPD)
+    "gemini-2.0-flash",   # último fallback (30 RPM, cota separada)
+]
 MAX_RETRIES = 3
 BACKOFF_BASE = 2  # segundos
 CACHE_SIZE = 256  # número de entradas no cache LRU
@@ -107,8 +112,9 @@ def _gerar_cache_key(modelo: str, conteudo: str) -> str:
 _ultima_req: float = 0.0
 _rate_lock = threading.Lock()
 
-# Cache de bloqueio por quota diária — evita tentativas em vão por 1h
-_quota_blocked_until: float = 0.0
+# Cache de bloqueio por quota diária POR MODELO — evita tentativas em vão por 1h
+# Ex: {"gemini-2.5-flash": 1234567890.0}
+_quota_blocked: dict[str, float] = {}
 _quota_lock = threading.Lock()
 
 
@@ -125,34 +131,38 @@ def _aguardar_rate_limit():
         _ultima_req = time.time()
 
 
-def _verificar_quota_block():
+def _verificar_quota_block(modelo: str):
     """
-    Verifica se há um bloqueio ativo de quota diária.
-    Se sim, levanta GeminiDailyQuotaError imediatamente sem chamar a API.
+    Verifica se há bloqueio de quota diária para o modelo especificado.
     """
-    global _quota_blocked_until
     with _quota_lock:
-        if time.time() < _quota_blocked_until:
-            raise GeminiDailyQuotaError()
+        expira = _quota_blocked.get(modelo, 0.0)
+        if time.time() < expira:
+            raise GeminiDailyQuotaError(
+                f"Limite diário excedido para {modelo}. "
+                f"Tente outro modelo ou aguarde."
+            )
 
 
-def _ativar_quota_block(tempo_bloqueio: int = 3600):
+def _ativar_quota_block(modelo: str, tempo_bloqueio: int = 3600):
     """
-    Ativa bloqueio de quota diária para evitar chamadas desnecessárias.
-    Default: 1 hora.
+    Ativa bloqueio de quota diária para um modelo específico.
     """
-    global _quota_blocked_until
     with _quota_lock:
-        _quota_blocked_until = time.time() + tempo_bloqueio
-        logger.warning(f"🔒 Bloqueio de quota diária ativado por {tempo_bloqueio // 60}min")
+        _quota_blocked[modelo] = time.time() + tempo_bloqueio
+        logger.warning(f"🔒 Bloqueio de quota diária para {modelo} por {tempo_bloqueio // 60}min")
 
 
-def _limpar_quota_block():
-    """Limpa o bloqueio de quota diária manualmente."""
-    global _quota_blocked_until
+def _limpar_quota_block(modelo: Optional[str] = None):
+    """Limpa bloqueio de quota diária."""
+    global _quota_blocked
     with _quota_lock:
-        _quota_blocked_until = 0.0
-        logger.info("🔓 Bloqueio de quota diária removido")
+        if modelo:
+            _quota_blocked.pop(modelo, None)
+            logger.info(f"🔓 Bloqueio removido para {modelo}")
+        else:
+            _quota_blocked.clear()
+            logger.info("🔓 Todos os bloqueios de quota removidos")
 
 
 class GeminiClient:
@@ -171,12 +181,18 @@ class GeminiClient:
         self,
         api_key: Optional[str] = None,
         modelo: str = MODELO_PADRAO,
+        modelos_fallback: Optional[list[str]] = None,
         max_retries: int = MAX_RETRIES,
         cache_size: int = CACHE_SIZE,
         enable_cache: bool = True,
     ):
         self._api_key = api_key or _get_gemini_key()
-        self.modelo = modelo
+        self.modelos = modelos_fallback or MODELOS_FALLBACK
+        # Se o modelo passado não estiver na lista, coloca como primeiro
+        if modelo and modelo not in self.modelos:
+            self.modelos.insert(0, modelo)
+        self.modelo_atual_idx = 0
+        self.modelo = self.modelos[0]
         self.max_retries = max_retries
         self._cache: OrderedDict[str, str] = OrderedDict()
         self._cache_size = cache_size
@@ -279,7 +295,23 @@ class GeminiClient:
                 
                 # Se for quota DIÁRIA detectada na mensagem, não adianta retry
                 if isinstance(erro_classificado, GeminiDailyQuotaError):
-                    _ativar_quota_block()
+                    # Bloquear este modelo específico
+                    _ativar_quota_block(self.modelo)
+                    
+                    # Tentar fallback para próximo modelo
+                    if self.modelo_atual_idx < len(self.modelos) - 1:
+                        self.modelo_atual_idx += 1
+                        self.modelo = self.modelos[self.modelo_atual_idx]
+                        logger.warning(
+                            "⚠️ Cota diária esgotada em %s. "
+                            "Fallback para %s",
+                            self.modelos[self.modelo_atual_idx - 1],
+                            self.modelo,
+                        )
+                        # Resetar contadores para o novo modelo
+                        tentativa = 0
+                        todas_quota = True
+                        continue
                     raise erro_classificado
                 
                 # Se NÃO for erro de quota, marca que nem todos são quota
@@ -309,7 +341,7 @@ class GeminiClient:
                 "Todas as tentativas falharam com erro de quota mesmo após backoff. "
                 "Reclassificando como cota DIÁRIA."
             )
-            _ativar_quota_block()
+            _ativar_quota_block(self.modelo)
             raise GeminiDailyQuotaError()
         
         raise self._classificar_erro(ultimo_erro)
@@ -339,9 +371,6 @@ class GeminiClient:
             "temperature": max(0.0, min(1.0, temperatura)),
             "max_output_tokens": max_tokens,
         }
-        
-        # Verifica bloqueio de quota diária antes de qualquer tentativa
-        _verificar_quota_block()
         
         # Rate limiter proativo
         _aguardar_rate_limit()
@@ -373,9 +402,6 @@ class GeminiClient:
             "temperature": max(0.0, min(1.0, temperatura)),
             "max_output_tokens": max_tokens,
         }
-        
-        # Verifica bloqueio de quota diária antes de qualquer tentativa
-        _verificar_quota_block()
         
         # Rate limiter proativo
         _aguardar_rate_limit()
