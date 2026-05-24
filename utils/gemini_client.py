@@ -227,7 +227,7 @@ class GeminiClient:
         
         if "api_key" in msg or "not found" in msg or "invalid" in msg:
             return GeminiAPIKeyError()
-        elif "quota" in msg or "rate" in msg or "429" in msg:
+        elif "quota" in msg or "429" in msg or "rate limit" in msg or "rate exceeded" in msg or "too many" in msg:
             # Tenta diferenciar diário de rate limit
             if any(w in msg for w in ["per day", "daily", "per_day", "day"]):
                 return GeminiDailyQuotaError()
@@ -242,7 +242,7 @@ class GeminiClient:
     def _executar_com_retry(
         self,
         contents: list,
-        generation_config: Optional[dict] = None,
+        config: Optional[dict] = None,
     ) -> str:
         """Executa requisição com retry automático com backoff adaptativo para quotas.
         
@@ -266,7 +266,7 @@ class GeminiClient:
                 resposta = client.models.generate_content(
                     model=self.modelo,
                     contents=contents,
-                    generation_config=generation_config,
+                    config=config,
                 )
                 return resposta.text or ""
             
@@ -335,7 +335,7 @@ class GeminiClient:
                 logger.debug(f"Cache hit para prompt: {cache_key[:8]}...")
                 return cached
         
-        generation_config = {
+        config = {
             "temperature": max(0.0, min(1.0, temperatura)),
             "max_output_tokens": max_tokens,
         }
@@ -347,7 +347,7 @@ class GeminiClient:
         _aguardar_rate_limit()
         
         contents = [prompt]
-        resultado = self._executar_com_retry(contents, generation_config)
+        resultado = self._executar_com_retry(contents, config)
         
         if usar_cache:
             self._set_cached(cache_key, resultado)
@@ -369,7 +369,7 @@ class GeminiClient:
         if not prompt or not prompt.strip():
             return ""
         
-        generation_config = {
+        config = {
             "temperature": max(0.0, min(1.0, temperatura)),
             "max_output_tokens": max_tokens,
         }
@@ -381,7 +381,7 @@ class GeminiClient:
         _aguardar_rate_limit()
         
         contents = [prompt, imagem]
-        return self._executar_com_retry(contents, generation_config)
+        return self._executar_com_retry(contents, config)
     
     def limpar_cache(self):
         """Limpa o cache de respostas."""
