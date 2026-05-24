@@ -101,7 +101,7 @@ def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
     try:
         from PIL import Image
         from tesserocr import PyTessBaseAPI
-    except ImportError as e:
+    except Exception as e:
         logger.warning("tesserocr não disponível: %s", e)
         return None, 0
 
@@ -175,7 +175,7 @@ def _extrair_imagem_ocr(tmp_path: str) -> tuple[Optional[str], int]:
     try:
         from PIL import Image
         from tesserocr import PyTessBaseAPI
-    except ImportError as e:
+    except Exception as e:
         logger.warning("tesserocr/PIL não disponível: %s", e)
         return None, 0
 
@@ -230,8 +230,63 @@ def _extrair_texto_worker(pdf_bytes: bytes) -> dict:
 
 
 def extrair_texto(pdf_bytes: bytes) -> dict:
-    """Extrai texto de bytes de PDF."""
-    return _extrair_texto_worker(pdf_bytes)
+    """Extrai texto de bytes de PDF.
+    
+    Tenta extração inline primeiro. Se falhar com RuntimeError
+    de signal (thread não-principal no Cloud), faz fallback
+    para subprocesso dedicado.
+    """
+    resultado = _extrair_texto_worker(pdf_bytes)
+    
+    # Se método começar com "erro:", verificar se é signal
+    if resultado["metodo"].startswith("erro:") and "signal" in resultado["metodo"]:
+        logger.warning("extração inline falhou por signal, tentando subprocesso")
+        try:
+            resultado = _extrair_subprocesso(pdf_bytes)
+        except Exception as e2:
+            logger.error("subprocesso também falhou: %s", e2)
+            return {
+                "status": "erro",
+                "mensagem": f"Extração falhou mesmo em subprocesso: {e2}",
+                "paginas": 0,
+                "metodo": "erro",
+            }
+    
+    # Converter para formato esperado por processar_documento
+    if resultado.get("status") is None:
+        return resultado
+    return resultado
+
+
+def _extrair_subprocesso(pdf_bytes: bytes) -> dict:
+    """Executa extração de texto em um subprocesso dedicado.
+    
+    Necessário no Streamlit Cloud onde a thread principal
+    pode não estar disponível para signal.signal().
+    """
+    import base64
+    import json
+    import subprocess
+    import sys
+    
+    worker_path = Path(__file__).parent / "_extract_worker.py"
+    payload = {"pdf_b64": base64.b64encode(pdf_bytes).decode("ascii")}
+    
+    proc = subprocess.run(
+        [sys.executable, str(worker_path)],
+        input=json.dumps(payload).encode(),
+        capture_output=True,
+        timeout=120,
+    )
+    
+    if proc.returncode != 0:
+        stderr = proc.stderr.decode(errors="replace")
+        raise RuntimeError(f"worker retornou código {proc.returncode}: {stderr}")
+    
+    try:
+        return json.loads(proc.stdout.decode())
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"resposta inválida do worker: {e}")
 
 
 def extrair_arquivo(bytes_arquivo: bytes, nome_arquivo: str) -> dict:
@@ -357,9 +412,14 @@ def salvar_resumo_documento(documento_id: str, resumo: str):
 def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
     """Processa um documento PDF: extrai texto, cria chunks e salva."""
     resultado_extracao = extrair_texto(pdf_bytes)
-    texto = resultado_extracao["texto"]
-    paginas = resultado_extracao["paginas"]
-    metodo = resultado_extracao["metodo"]
+    
+    # Se extrair_texto já retornou erro formatado (ex: subprocesso falhou)
+    if resultado_extracao.get("status") == "erro":
+        return resultado_extracao
+    
+    texto = resultado_extracao.get("texto", "")
+    paginas = resultado_extracao.get("paginas", 0)
+    metodo = resultado_extracao.get("metodo", "desconhecido")
 
     if not texto.strip():
         msg = f"Nenhum texto extraído do PDF ({paginas} páginas, método: {metodo})."
