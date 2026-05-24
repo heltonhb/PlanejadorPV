@@ -3,7 +3,6 @@ Módulo para processamento e extração de texto de documentos.
 """
 
 import logging
-import concurrent.futures
 import os
 import re
 import tempfile
@@ -97,12 +96,12 @@ def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
         logger.warning("tesserocr não disponível: %s", e)
         return None, 0
 
-    TESSDATA_PATH.mkdir(exist_ok=True)
-    traineddata = TESSDATA_PATH / "por.traineddata"
-    if not traineddata.exists():
-        urllib.request.urlretrieve(TESSDATA_URL, traineddata)
-
     try:
+        TESSDATA_PATH.mkdir(exist_ok=True)
+        traineddata = TESSDATA_PATH / "por.traineddata"
+        if not traineddata.exists():
+            urllib.request.urlretrieve(TESSDATA_URL, traineddata)
+        
         doc = fitz.open(tmp_path)
         paginas = len(doc)
         api = PyTessBaseAPI(lang="por", path=str(TESSDATA_PATH))
@@ -223,14 +222,13 @@ def _extrair_texto_worker(pdf_bytes: bytes) -> dict:
 
 
 def extrair_texto(pdf_bytes: bytes) -> dict:
-    """Extrai texto de bytes de PDF usando thread com timeout."""
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(_extrair_texto_worker, pdf_bytes)
-        try:
-            return future.result(timeout=120)
-        except concurrent.futures.TimeoutError:
-            logger.error("extração excedeu timeout de 120s")
-            return {"texto": "", "metodo": "timeout", "paginas": 0}
+    """Extrai texto de bytes de PDF (thread principal).
+    
+    Executa na thread principal porque bibliotecas como pdfplumber
+    e urllib.request.urlretrieve() usam signal.signal() internamente,
+    que só funciona na thread principal (Python 3.12+).
+    """
+    return _extrair_texto_worker(pdf_bytes)
 
 
 def extrair_arquivo(bytes_arquivo: bytes, nome_arquivo: str) -> dict:
