@@ -244,9 +244,18 @@ class GeminiClient:
         contents: list,
         generation_config: Optional[dict] = None,
     ) -> str:
-        """Executa requisição com retry automático com backoff adaptativo para quotas."""
+        """Executa requisição com retry automático com backoff adaptativo para quotas.
+        
+        Lógica:
+        - Erros de API key ou safety → propaga imediatamente
+        - Erro de cota DIÁRIA detectado → bloqueia 1h e propaga
+        - Erro de rate limit (RPM) → até 6 retries com backoff 5s, 10s, 20s, 40s, 80s, 160s
+        - Se TODOS os retries falharem com erro de quota → reclassifica como diário
+          (pois rate limit por minuto teria sido resolvido em ~5min de espera)
+        """
         client = self._get_client()
         ultimo_erro = None
+        todas_quota = True  # todas as falhas foram erro de quota?
         
         # Se for erro de quota/limite, permitimos mais tentativas com esperas mais longas
         limite_tentativas = self.max_retries
@@ -268,16 +277,20 @@ class GeminiClient:
                 if isinstance(erro_classificado, (GeminiAPIKeyError, GeminiSafetyError)):
                     raise erro_classificado
                 
-                # Se for quota DIÁRIA, não adianta retry — propaga imediatamente
-                # e ativa bloqueio para evitar chamadas desnecessárias
+                # Se for quota DIÁRIA detectada na mensagem, não adianta retry
                 if isinstance(erro_classificado, GeminiDailyQuotaError):
                     _ativar_quota_block()
                     raise erro_classificado
                 
-                # Se for rate limit (RPM), aumenta tentativas com backoff agressivo
-                if isinstance(erro_classificado, GeminiQuotaError):
-                    limite_tentativas = max(limite_tentativas, 6)
-                    wait_time = 5 * (BACKOFF_BASE ** tentativa)  # 5s, 10s, 20s, 40s, 80s, 160s
+                # Se NÃO for erro de quota, marca que nem todos são quota
+                if not isinstance(erro_classificado, GeminiQuotaError):
+                    todas_quota = False
+                    wait_time = BACKOFF_BASE ** tentativa  # 1s, 2s, 4s...
+                else:
+                    # Rate limit (RPM): algumas tentativas com backoff
+                    # Se após 3 tentativas (~35s) ainda falhar, é cota diária
+                    limite_tentativas = max(limite_tentativas, 3)
+                    wait_time = 5 * (BACKOFF_BASE ** tentativa)  # 5s, 10s, 20s
                 
                 if tentativa < limite_tentativas - 1:
                     logger.warning(
@@ -288,6 +301,16 @@ class GeminiClient:
                     tentativa += 1
                 else:
                     break
+        
+        # Se TODAS as tentativas falharam com erro de quota (429) mesmo após ~5min de espera,
+        # é quase certeza que é limite DIÁRIO, não rate limit por minuto
+        if todas_quota:
+            logger.warning(
+                "Todas as tentativas falharam com erro de quota mesmo após backoff. "
+                "Reclassificando como cota DIÁRIA."
+            )
+            _ativar_quota_block()
+            raise GeminiDailyQuotaError()
         
         raise self._classificar_erro(ultimo_erro)
     
