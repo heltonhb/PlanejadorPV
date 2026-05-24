@@ -85,14 +85,23 @@ class GeminiServerError(GeminiError):
 def _get_gemini_key() -> Optional[str]:
     """
     Obtém a chave da API Gemini de variáveis de ambiente ou secrets do Streamlit.
-    
-    Returns:
-        A chave da API ou None se não encontrada.
     """
+    # 1. Variável de ambiente
     key = os.getenv("GEMINI_API_KEY")
     if key:
         return key
     
+    # 2. .env (útil em deploy manual mesmo estando no .gitignore)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        key = os.getenv("GEMINI_API_KEY")
+        if key:
+            return key
+    except Exception:
+        pass
+    
+    # 3. Streamlit Secrets (Cloud)
     try:
         import streamlit as st
         return st.secrets.get("GEMINI_API_KEY")
@@ -100,6 +109,31 @@ def _get_gemini_key() -> Optional[str]:
         pass
     
     return None
+
+
+def _diagnosticar_chave() -> str:
+    """Retorna diagnóstico sobre de onde a chave está sendo lida."""
+    partes = []
+    
+    env = os.getenv("GEMINI_API_KEY")
+    partes.append(f"GEMINI_API_KEY env={'✅' if env else '❌'}")
+    
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        env2 = os.getenv("GEMINI_API_KEY")
+        partes.append(f".env={'✅' if env2 else '❌'}")
+    except Exception as e:
+        partes.append(f".env=❌({e})")
+    
+    try:
+        import streamlit as st
+        sec = st.secrets.get("GEMINI_API_KEY")
+        partes.append(f"st.secrets={'✅' if sec else '❌'}")
+    except Exception as e:
+        partes.append(f"st.secrets=❌({e})")
+    
+    return " | ".join(partes)
 
 
 def _gerar_cache_key(modelo: str, conteudo: str) -> str:
@@ -268,7 +302,8 @@ class GeminiClient:
         """Obtém ou cria o cliente Gemini."""
         if self._client is None:
             if not self._api_key:
-                raise GeminiAPIKeyError()
+                diag = _diagnosticar_chave()
+                raise GeminiAPIKeyError(f"GEMINI_API_KEY não configurada. {diag}")
             self._client = genai.Client(api_key=self._api_key)
         return self._client
     
@@ -419,7 +454,8 @@ class GeminiClient:
     ) -> str:
         """Gera texto a partir de um prompt."""
         if not self._api_key:
-            raise GeminiAPIKeyError()
+            diag = _diagnosticar_chave()
+            raise GeminiAPIKeyError(f"GEMINI_API_KEY não configurada. {diag}")
         
         if not prompt or not prompt.strip():
             return ""
