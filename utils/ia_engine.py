@@ -18,14 +18,76 @@ from utils.gemini_client import (
 logger = logging.getLogger(__name__)
 
 MODELO = "gemini-2.5-flash"
-TOP_K = 5
+TOP_K = 12
 
 
 def buscar_contexto(pergunta: str, top_k: int = TOP_K) -> tuple[str, list[dict]]:
+    """Busca chunks relevantes, com expansão de consulta para melhor recall."""
     collection = _get_collection()
-    resultados = collection.query(
-        query_texts=[pergunta], n_results=top_k, include=["documents", "metadatas", "distances"],
-    )
+    
+    # Expansão de consulta: busca com múltiplas variações da pergunta
+    variacoes = [pergunta]
+    
+    # Extrair palavras-chave e criar variações
+    palavras = pergunta.lower().split()
+    nome_rede = [p for p in palavras if 'ensina' in p or 'mais' in p or 'mônica' in p or 'turma' in p]
+    
+    if "diferencial" in palavras or "competitivo" in palavras or "vantagem" in palavras:
+        # Pergunta sobre diferenciais - buscar também por benefícios/programas
+        if nome_rede:
+            variacoes.append(f"programas educacionais {' '.join(nome_rede)}")
+            variacoes.append(f"benefícios ensino {' '.join(nome_rede)}")
+    
+    if "metodologia" in palavras or "ensino" in palavras:
+        if nome_rede:
+            variacoes.append(f"{' '.join(nome_rede)} robótica tecnologia apoio escolar")
+    
+    # Executar busca com todas as variações
+    todos_textos = []
+    todos_fontes = []
+    vistos = set()
+    
+    for v in variacoes:
+        try:
+            resultados = collection.query(
+                query_texts=[v], n_results=top_k // len(variacoes) + 1,
+                include=["documents", "metadatas", "distances"],
+            )
+        except Exception:
+            continue
+        
+        documentos = resultados.get("documents", [[]])
+        metadatas = resultados.get("metadatas", [[]])
+        distances = resultados.get("distances", [[]])
+        
+        if not documentos or not documentos[0]:
+            continue
+        
+        for doc, md, dist in zip(documentos[0], (metadatas[0] if metadatas and metadatas[0] else []), (distances[0] if distances and distances[0] else [])):
+            # Dedicar snippet como chave
+            chave = doc[:100]
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            todos_textos.append(doc)
+            fonte = {"fonte": md.get("fonte", "desconhecida"), "relevancia": round(1 - dist, 3)}
+            for k in ("arquivo", "url", "perfil", "titulo"):
+                if md.get(k):
+                    fonte[k] = md[k]
+            todos_fontes.append(fonte)
+    
+    # Limitar ao top_k mais relevantes
+    combinados = list(zip(todos_textos, todos_fontes))
+    combinados.sort(key=lambda x: -x[1]["relevancia"])
+    combinados = combinados[:top_k]
+    
+    if not combinados:
+        return "", []
+    
+    textos = [t for t, _ in combinados]
+    fontes = [f for _, f in combinados]
+    
+    return "\n\n".join(textos), fontes
     documentos = resultados.get("documents", [[]])
     metadatas = resultados.get("metadatas", [[]])
     distances = resultados.get("distances", [[]])
