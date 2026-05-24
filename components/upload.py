@@ -251,24 +251,36 @@ def sidebar_upload():
                     st.session_state.documentos_meta.pop(chave, None)
                     remover_fonte_meta(chave)
                     st.rerun()
-        with st.sidebar.popover("Limpar tudo", use_container_width=True):
-            st.warning("Isso vai apagar **todas as fontes** e o **histórico de conversa**. Não é possível desfazer.")
-            if st.button("Sim, apagar tudo", type="primary", use_container_width=True):
-                try:
-                    _get_docs_collection().delete(where={})
-                except Exception:
-                    pass
-                try:
-                    from utils.firebase_store import limpar_firestore
-                    limpar_firestore()
-                except Exception:
-                    pass
-                st.session_state.documentos = []
-                st.session_state.documentos_meta = {}
-                st.session_state.mensagens = []
-                st.session_state.sugestoes_usadas = False
-                st.session_state.calendarios_gerados = 0
-                st.session_state.campanhas_geradas = 0
+        if "confirmar_limpeza" not in st.session_state:
+            st.session_state.confirmar_limpeza = False
+        if st.sidebar.button("🗑️ Limpar tudo", use_container_width=True, type="secondary", help="Apaga todas as fontes e histórico"):
+            st.session_state.confirmar_limpeza = True
+            st.rerun()
+        if st.session_state.get("confirmar_limpeza"):
+            st.sidebar.warning("⚠️ Isso vai apagar **todas as fontes** e o **histórico**. Não é possível desfazer.")
+            c1, c2 = st.sidebar.columns(2)
+            with c1:
+                if st.button("✅ Sim, apagar", type="primary", use_container_width=True):
+                    try:
+                        _get_docs_collection().delete(where={})
+                    except Exception:
+                        pass
+                    try:
+                        from utils.firebase_store import limpar_firestore
+                        limpar_firestore()
+                    except Exception:
+                        pass
+                    st.session_state.documentos = []
+                    st.session_state.documentos_meta = {}
+                    st.session_state.mensagens = []
+                    st.session_state.sugestoes_usadas = False
+                    st.session_state.calendarios_gerados = 0
+                    st.session_state.campanhas_geradas = 0
+                st.session_state.confirmar_limpeza = False
                 st.rerun()
+            with c2:
+                if st.button("❌ Cancelar", use_container_width=True):
+                    st.session_state.confirmar_limpeza = False
+                    st.rerun()
     else:
         st.sidebar.markdown("*Nenhuma fonte carregada.*")
