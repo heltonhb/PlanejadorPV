@@ -194,21 +194,32 @@ def _extrair_texto_worker(pdf_bytes: bytes) -> dict:
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         tmp.write(pdf_bytes)
         tmp_path = tmp.name
+    
+    erros = []
     try:
         texto, paginas = _extrair_pdfplumber(tmp_path)
         metodo = "pdfplumber"
         if not texto or not texto.strip():
+            logger.info("pdfplumber não extraiu texto, tentando pymupdf")
             texto, paginas = _extrair_pymupdf(tmp_path)
             metodo = "pymupdf"
         if not texto or not texto.strip():
+            logger.info("pymupdf não extraiu texto, tentando OCR")
             texto, paginas = _extrair_ocr(tmp_path)
             metodo = "ocr"
+        
+        if not texto or not texto.strip():
+            logger.warning("nenhum método extraiu texto do PDF (%d páginas)", paginas)
+        
         return {"texto": texto or "", "metodo": metodo, "paginas": paginas}
-    except Exception:
-        logger.error("extração falhou:\n%s", traceback.format_exc())
-        return {"texto": "", "metodo": "erro", "paginas": 0}
+    except Exception as e:
+        logger.error("extração falhou: %s\n%s", e, traceback.format_exc())
+        return {"texto": "", "metodo": f"erro: {e}", "paginas": 0}
     finally:
-        os.unlink(tmp_path)
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
 
 
 def extrair_texto(pdf_bytes: bytes) -> dict:
@@ -350,9 +361,14 @@ def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
     metodo = resultado_extracao["metodo"]
 
     if not texto.strip():
+        msg = f"Nenhum texto extraído do PDF ({paginas} páginas, método: {metodo})."
+        if metodo.startswith("erro:"):
+            msg += f" Detalhes: {metodo[5:]}"
+        elif metodo == "ocr":
+            msg += " O PDF pode ser um documento escaneado (imagem) e o OCR não está disponível neste ambiente."
         return {
             "status": "erro",
-            "mensagem": f"Nenhum texto extraído do PDF ({paginas} páginas, método: {metodo}).",
+            "mensagem": msg,
             "paginas": paginas,
             "metodo": metodo,
         }
