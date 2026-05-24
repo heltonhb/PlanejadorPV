@@ -7,7 +7,6 @@ import os
 import re
 import tempfile
 import traceback
-import urllib.request
 from pathlib import Path
 from typing import Optional
 
@@ -27,6 +26,16 @@ CHUNK_OVERLAP = 50
 
 TESSDATA_PATH = Path("tessdata")
 TESSDATA_URL = "https://github.com/tesseract-ocr/tessdata/raw/main/por.traineddata"
+
+
+def _baixar_modelo_ocr(caminho: Path) -> None:
+    """Baixa o modelo OCR por.traineddata usando requests (não usa signal.signal)."""
+    import requests as req
+    logger.info("Baixando modelo OCR português...")
+    r = req.get(TESSDATA_URL, timeout=30)
+    r.raise_for_status()
+    caminho.write_bytes(r.content)
+    logger.info("Modelo OCR baixado: %s", caminho)
 
 EXTENSOES_SUPORTADAS = {
     ".pdf": "pdf",
@@ -100,7 +109,7 @@ def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
         TESSDATA_PATH.mkdir(exist_ok=True)
         traineddata = TESSDATA_PATH / "por.traineddata"
         if not traineddata.exists():
-            urllib.request.urlretrieve(TESSDATA_URL, traineddata)
+            _baixar_modelo_ocr(traineddata)
         
         doc = fitz.open(tmp_path)
         paginas = len(doc)
@@ -170,12 +179,11 @@ def _extrair_imagem_ocr(tmp_path: str) -> tuple[Optional[str], int]:
         logger.warning("tesserocr/PIL não disponível: %s", e)
         return None, 0
 
-    TESSDATA_PATH.mkdir(exist_ok=True)
-    traineddata = TESSDATA_PATH / "por.traineddata"
-    if not traineddata.exists():
-        urllib.request.urlretrieve(TESSDATA_URL, traineddata)
-
     try:
+        TESSDATA_PATH.mkdir(exist_ok=True)
+        traineddata = TESSDATA_PATH / "por.traineddata"
+        if not traineddata.exists():
+            _baixar_modelo_ocr(traineddata)
         img = Image.open(tmp_path)
         api = PyTessBaseAPI(lang="por", path=str(TESSDATA_PATH))
         api.SetImage(img)
@@ -222,12 +230,7 @@ def _extrair_texto_worker(pdf_bytes: bytes) -> dict:
 
 
 def extrair_texto(pdf_bytes: bytes) -> dict:
-    """Extrai texto de bytes de PDF (thread principal).
-    
-    Executa na thread principal porque bibliotecas como pdfplumber
-    e urllib.request.urlretrieve() usam signal.signal() internamente,
-    que só funciona na thread principal (Python 3.12+).
-    """
+    """Extrai texto de bytes de PDF."""
     return _extrair_texto_worker(pdf_bytes)
 
 
