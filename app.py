@@ -11,6 +11,7 @@ st.set_page_config(
 from dotenv import load_dotenv
 from utils.documentos import _get_collection as _get_docs_collection
 from utils.firebase_store import carregar_fontes_meta
+from utils.relatorios import resumo_conteudo
 from components import inject_css_and_theme, render_header, sidebar_upload
 from tabs import (
     render_dashboard,
@@ -66,6 +67,27 @@ if not st.session_state.documentos_meta:
         if _meta_restaurado:
             st.session_state.documentos_meta = _meta_restaurado
             st.session_state.documentos = list(_meta_restaurado.keys())
+    except Exception:
+        pass
+
+# Fallback: se ainda está vazio mas o ChromaDB tem dados, reconstroi do próprio banco
+if not st.session_state.documentos_meta:
+    try:
+        _rel = resumo_conteudo()
+        if _rel["fontes_detalhadas"]:
+            _meta_rebuild = {}
+            for item in _rel["fontes_detalhadas"]:
+                chave = item["titulo"]
+                _meta_rebuild[chave] = {
+                    "fonte": item["fonte"],
+                    "nome": item["titulo"],
+                    "chunks": item["chunks"],
+                    "caracteres": item["caracteres"],
+                    "documento_id": item.get("documento_id", ""),
+                }
+            if _meta_rebuild:
+                st.session_state.documentos_meta = _meta_rebuild
+                st.session_state.documentos = list(_meta_rebuild.keys())
     except Exception:
         pass
 if "ultimo_calendario" not in st.session_state:
