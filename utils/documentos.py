@@ -27,15 +27,43 @@ CHUNK_OVERLAP = 50
 TESSDATA_PATH = Path("tessdata")
 TESSDATA_URL = "https://github.com/tesseract-ocr/tessdata/raw/main/por.traineddata"
 
+# Caminhos do sistema onde o tesseract-ocr-por pode estar instalado
+_CAMINHOS_SISTEMA_OCR = [
+    Path("/usr/share/tesseract-ocr/5/tessdata"),
+    Path("/usr/share/tesseract-ocr/4/tessdata"),
+    Path("/usr/share/tesseract-ocr/3/tessdata"),
+    Path("/usr/local/share/tessdata"),
+    Path("/usr/share/tessdata"),
+]
 
-def _baixar_modelo_ocr(caminho: Path) -> None:
-    """Baixa o modelo OCR por.traineddata usando requests (não usa signal.signal)."""
-    import requests as req
-    logger.info("Baixando modelo OCR português...")
-    r = req.get(TESSDATA_URL, timeout=30)
-    r.raise_for_status()
-    caminho.write_bytes(r.content)
-    logger.info("Modelo OCR baixado: %s", caminho)
+
+def _encontrar_modelo_ocr() -> Optional[Path]:
+    """Procura o modelo OCR por.traineddata, baixa se necessário."""
+    # 1. Procurar primeiro no diretório local (download prévio)
+    local = TESSDATA_PATH / "por.traineddata"
+    if local.exists():
+        return local
+    
+    # 2. Procurar nos caminhos do sistema (instalado via apt)
+    for p in _CAMINHOS_SISTEMA_OCR:
+        modelo = p / "por.traineddata"
+        if modelo.exists():
+            logger.info("Modelo OCR encontrado em: %s", modelo)
+            return modelo
+    
+    # 3. Não encontrou — baixar
+    TESSDATA_PATH.mkdir(parents=True, exist_ok=True)
+    try:
+        import requests as req
+        logger.info("Baixando modelo OCR português...")
+        r = req.get(TESSDATA_URL, timeout=30)
+        r.raise_for_status()
+        local.write_bytes(r.content)
+        logger.info("Modelo OCR baixado: %s", local)
+        return local
+    except Exception as e:
+        logger.warning("não foi possível baixar modelo OCR: %s", e)
+        return None
 
 EXTENSOES_SUPORTADAS = {
     ".pdf": "pdf",
@@ -106,14 +134,14 @@ def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
         return None, 0
 
     try:
-        TESSDATA_PATH.mkdir(exist_ok=True)
-        traineddata = TESSDATA_PATH / "por.traineddata"
-        if not traineddata.exists():
-            _baixar_modelo_ocr(traineddata)
+        modelo = _encontrar_modelo_ocr()
+        if modelo is None:
+            logger.warning("modelo OCR português não disponível")
+            return None, 0
         
         doc = fitz.open(tmp_path)
         paginas = len(doc)
-        api = PyTessBaseAPI(lang="por", path=str(TESSDATA_PATH))
+        api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
         textos = []
         for page in doc:
             pix = page.get_pixmap(dpi=200)
@@ -180,12 +208,12 @@ def _extrair_imagem_ocr(tmp_path: str) -> tuple[Optional[str], int]:
         return None, 0
 
     try:
-        TESSDATA_PATH.mkdir(exist_ok=True)
-        traineddata = TESSDATA_PATH / "por.traineddata"
-        if not traineddata.exists():
-            _baixar_modelo_ocr(traineddata)
+        modelo = _encontrar_modelo_ocr()
+        if modelo is None:
+            logger.warning("modelo OCR português não disponível")
+            return None, 0
         img = Image.open(tmp_path)
-        api = PyTessBaseAPI(lang="por", path=str(TESSDATA_PATH))
+        api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
         api.SetImage(img)
         texto = api.GetUTF8Text()
         api.End()
