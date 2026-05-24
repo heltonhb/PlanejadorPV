@@ -125,37 +125,54 @@ def _extrair_pymupdf(tmp_path: str) -> tuple[Optional[str], int]:
 
 
 def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
-    """Extrai texto de PDF usando OCR (Tesseract)."""
+    """Extrai texto de PDF usando OCR (Tesseract).
+    
+    Tenta tesserocr primeiro (nativo, rápido). Se falhar no import
+    (ex: signal.signal em thread não-principal), usa pytesseract
+    como fallback (subprocesso, sem signal).
+    """
+    from PIL import Image
+    
+    # Tentar tesserocr (C native, mas falha em thread não-principal)
     try:
-        from PIL import Image
         from tesserocr import PyTessBaseAPI
-    except Exception as e:
-        logger.warning("tesserocr não disponível: %s", e)
-        return None, 0
-
-    try:
         modelo = _encontrar_modelo_ocr()
-        if modelo is None:
-            logger.warning("modelo OCR português não disponível")
-            return None, 0
-        logger.info("OCR usando modelo: %s", modelo)
-        
+        if modelo:
+            doc = fitz.open(tmp_path)
+            paginas = len(doc)
+            api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
+            textos = []
+            for page in doc:
+                pix = page.get_pixmap(dpi=200)
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                api.SetImage(img)
+                t = api.GetUTF8Text()
+                if t:
+                    textos.append(t.strip())
+            api.End()
+            doc.close()
+            if textos:
+                return "\n\n".join(textos), paginas
+    except Exception as e:
+        logger.warning("tesserocr falhou: %s", e)
+    
+    # Fallback: pytesseract (subprocesso, funciona em qualquer thread)
+    logger.info("usando pytesseract como fallback")
+    try:
+        import pytesseract
         doc = fitz.open(tmp_path)
         paginas = len(doc)
-        api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
         textos = []
         for page in doc:
             pix = page.get_pixmap(dpi=200)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            api.SetImage(img)
-            t = api.GetUTF8Text()
-            if t:
+            t = pytesseract.image_to_string(img, lang="por")
+            if t and t.strip():
                 textos.append(t.strip())
-        api.End()
         doc.close()
         return "\n\n".join(textos), paginas
-    except Exception:
-        logger.warning("ocr falhou:\n%s", traceback.format_exc())
+    except Exception as e:
+        logger.warning("pytesseract falhou: %s", e)
         return None, 0
 
 
@@ -201,27 +218,33 @@ def _extrair_texto_puro(tmp_path: str) -> tuple[str, int]:
 
 def _extrair_imagem_ocr(tmp_path: str) -> tuple[Optional[str], int]:
     """Extrai texto de imagens usando OCR."""
+    from PIL import Image
+    
+    # Tentar tesserocr
     try:
-        from PIL import Image
         from tesserocr import PyTessBaseAPI
-    except Exception as e:
-        logger.warning("tesserocr/PIL não disponível: %s", e)
-        return None, 0
-
-    try:
         modelo = _encontrar_modelo_ocr()
-        if modelo is None:
-            logger.warning("modelo OCR português não disponível")
-            return None, 0
+        if modelo:
+            img = Image.open(tmp_path)
+            api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
+            api.SetImage(img)
+            texto = api.GetUTF8Text()
+            api.End()
+            img.close()
+            if texto and texto.strip():
+                return texto.strip(), 1
+    except Exception as e:
+        logger.warning("tesserocr imagem falhou: %s", e)
+    
+    # Fallback: pytesseract
+    try:
+        import pytesseract
         img = Image.open(tmp_path)
-        api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
-        api.SetImage(img)
-        texto = api.GetUTF8Text()
-        api.End()
+        texto = pytesseract.image_to_string(img, lang="por")
         img.close()
         return texto.strip(), 1
-    except Exception:
-        logger.warning("imagem OCR falhou:\n%s", traceback.format_exc())
+    except Exception as e:
+        logger.warning("pytesseract imagem falhou: %s", e)
         return None, 0
 
 
@@ -441,30 +464,39 @@ def salvar_resumo_documento(documento_id: str, resumo: str):
 def _diagnosticar_ocr() -> str:
     """Retorna diagnóstico do estado do OCR."""
     diag = []
-    # Verificar se tesserocr está instalado
+    
+    # Verificar tesserocr
     try:
         import tesserocr
-        diag.append(f"tesserocr OK (versão {getattr(tesserocr, '__version__', '?')})")
+        diag.append(f"tesserocr OK (v{getattr(tesserocr, '__version__', '?')})")
+        modelo = _encontrar_modelo_ocr()
+        if modelo:
+            diag.append(f"modelo OK")
+            try:
+                from tesserocr import PyTessBaseAPI
+                api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
+                api.End()
+                diag.append("PyTessBaseAPI OK")
+            except Exception as e2:
+                diag.append(f"PyTessBaseAPI ERRO: {e2}")
+        else:
+            diag.append("modelo AUSENTE")
     except Exception as e:
         diag.append(f"tesserocr AUSENTE: {e}")
-        return "; ".join(diag)
     
-    # Verificar modelo
-    from PIL import Image
-    modelo = _encontrar_modelo_ocr()
-    if modelo:
-        diag.append(f"modelo OK: {modelo}")
-    else:
-        diag.append("modelo AUSENTE")
-    
-    # Verificar se PyTessBaseAPI funciona
+    # Verificar pytesseract (fallback)
     try:
-        from tesserocr import PyTessBaseAPI
-        api = PyTessBaseAPI(lang="por", path=str(modelo.parent) if modelo else "")
-        api.End()
-        diag.append("PyTessBaseAPI OK")
+        import pytesseract
+        v = pytesseract.__version__ if hasattr(pytesseract, '__version__') else '?'
+        diag.append(f"pytesseract OK (v{v})")
+        # Testar se o binário tesseract está acessível
+        try:
+            pytesseract.get_tesseract_version()
+            diag.append("tesseract bin OK")
+        except Exception as e2:
+            diag.append(f"tesseract bin ERRO: {e2}")
     except Exception as e:
-        diag.append(f"PyTessBaseAPI ERRO: {e}")
+        diag.append(f"pytesseract AUSENTE: {e}")
     
     return "; ".join(diag)
 
