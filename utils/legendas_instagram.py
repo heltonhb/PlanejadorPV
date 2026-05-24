@@ -10,6 +10,7 @@ from utils.gemini_client import (
     GeminiAPIKeyError,
     GeminiSafetyError,
     GeminiQuotaError,
+    GeminiDailyQuotaError,
     GeminiServerError,
     get_cliente,
 )
@@ -125,6 +126,13 @@ def gerar_legenda(
         return {
             "status": "erro",
             "mensagem": "A imagem foi bloqueada pelas políticas de segurança do Gemini. Tente outra imagem.",
+            "legendas": [],
+            "hashtags": [],
+        }
+    except GeminiDailyQuotaError:
+        return {
+            "status": "erro",
+            "mensagem": "⚠️ Limite **diário** de requisições excedido. O Google Gemini resetará a cota — você poderá usar o app novamente amanhã.",
             "legendas": [],
             "hashtags": [],
         }

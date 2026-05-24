@@ -50,10 +50,17 @@ class GeminiAPIKeyError(GeminiError):
 
 
 class GeminiQuotaError(GeminiError):
-    """Limite de requisições excedido."""
+    """Limite de requisições excedido (rate limit por minuto)."""
     
-    def __init__(self, message: str = "Limite de requisições excedido. Aguarde e tente novamente."):
+    def __init__(self, message: str = "Limite de requisições excedido. Aguarde alguns minutos e tente novamente."):
         super().__init__(message, code="QUOTA_EXCEEDED")
+
+
+class GeminiDailyQuotaError(GeminiError):
+    """Limite diário de requisições excedido — só resetará no próximo dia."""
+    
+    def __init__(self, message: str = "Limite diário de requisições excedido. O limite será resetado automaticamente — volte a usar amanhã."):
+        super().__init__(message, code="DAILY_QUOTA_EXCEEDED")
 
 
 class GeminiSafetyError(GeminiError):
@@ -100,6 +107,10 @@ def _gerar_cache_key(modelo: str, conteudo: str) -> str:
 _ultima_req: float = 0.0
 _rate_lock = threading.Lock()
 
+# Cache de bloqueio por quota diária — evita tentativas em vão por 1h
+_quota_blocked_until: float = 0.0
+_quota_lock = threading.Lock()
+
 
 def _aguardar_rate_limit():
     """Aguarda o intervalo mínimo entre requisições (rate limiter proativo)."""
@@ -112,6 +123,36 @@ def _aguardar_rate_limit():
             logger.info(f"⏳ Rate limiter: aguardando {espera:.1f}s (última req há {desde_ultima:.1f}s)")
             time.sleep(espera)
         _ultima_req = time.time()
+
+
+def _verificar_quota_block():
+    """
+    Verifica se há um bloqueio ativo de quota diária.
+    Se sim, levanta GeminiDailyQuotaError imediatamente sem chamar a API.
+    """
+    global _quota_blocked_until
+    with _quota_lock:
+        if time.time() < _quota_blocked_until:
+            raise GeminiDailyQuotaError()
+
+
+def _ativar_quota_block(tempo_bloqueio: int = 3600):
+    """
+    Ativa bloqueio de quota diária para evitar chamadas desnecessárias.
+    Default: 1 hora.
+    """
+    global _quota_blocked_until
+    with _quota_lock:
+        _quota_blocked_until = time.time() + tempo_bloqueio
+        logger.warning(f"🔒 Bloqueio de quota diária ativado por {tempo_bloqueio // 60}min")
+
+
+def _limpar_quota_block():
+    """Limpa o bloqueio de quota diária manualmente."""
+    global _quota_blocked_until
+    with _quota_lock:
+        _quota_blocked_until = 0.0
+        logger.info("🔓 Bloqueio de quota diária removido")
 
 
 class GeminiClient:
@@ -175,12 +216,21 @@ class GeminiClient:
             self._cache.popitem(last=False)
     
     def _classificar_erro(self, erro: Exception) -> GeminiError:
-        """Classifica o erro e retorna exceção apropriada."""
+        """Classifica o erro e retorna exceção apropriada.
+        
+        Tenta diferenciar entre:
+        - Cota diária excedida (RPD) → GeminiDailyQuotaError
+        - Rate limit por minuto (RPM) → GeminiQuotaError
+        - Outros erros → classes específicas
+        """
         msg = str(erro).lower()
         
         if "api_key" in msg or "not found" in msg or "invalid" in msg:
             return GeminiAPIKeyError()
         elif "quota" in msg or "rate" in msg or "429" in msg:
+            # Tenta diferenciar diário de rate limit
+            if any(w in msg for w in ["per day", "daily", "per_day", "day"]):
+                return GeminiDailyQuotaError()
             return GeminiQuotaError()
         elif "safety" in msg or "blocked" in msg or "harm" in msg:
             return GeminiSafetyError()
@@ -218,8 +268,13 @@ class GeminiClient:
                 if isinstance(erro_classificado, (GeminiAPIKeyError, GeminiSafetyError)):
                     raise erro_classificado
                 
-                # Se detectarmos erro de limite de requisições, aumentamos as tentativas
-                # e aplicamos uma espera progressiva maior (backoff exponencial agressivo)
+                # Se for quota DIÁRIA, não adianta retry — propaga imediatamente
+                # e ativa bloqueio para evitar chamadas desnecessárias
+                if isinstance(erro_classificado, GeminiDailyQuotaError):
+                    _ativar_quota_block()
+                    raise erro_classificado
+                
+                # Se for rate limit (RPM), aumenta tentativas com backoff agressivo
                 if isinstance(erro_classificado, GeminiQuotaError):
                     limite_tentativas = max(limite_tentativas, 6)
                     wait_time = 5 * (BACKOFF_BASE ** tentativa)  # 5s, 10s, 20s, 40s, 80s, 160s
@@ -262,6 +317,9 @@ class GeminiClient:
             "max_output_tokens": max_tokens,
         }
         
+        # Verifica bloqueio de quota diária antes de qualquer tentativa
+        _verificar_quota_block()
+        
         # Rate limiter proativo
         _aguardar_rate_limit()
         
@@ -292,6 +350,9 @@ class GeminiClient:
             "temperature": max(0.0, min(1.0, temperatura)),
             "max_output_tokens": max_tokens,
         }
+        
+        # Verifica bloqueio de quota diária antes de qualquer tentativa
+        _verificar_quota_block()
         
         # Rate limiter proativo
         _aguardar_rate_limit()

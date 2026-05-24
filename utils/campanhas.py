@@ -9,6 +9,7 @@ from utils.gemini_client import (
     GeminiError,
     GeminiAPIKeyError,
     GeminiQuotaError,
+    GeminiDailyQuotaError,
     GeminiServerError,
     GeminiSafetyError,
     get_cliente,
@@ -137,6 +138,12 @@ def gerar_campanha(
         return {
             "status": "erro",
             "mensagem": "Chave da API Gemini inválida ou não encontrada.",
+            "conteudo": "",
+        }
+    except GeminiDailyQuotaError:
+        return {
+            "status": "erro",
+            "mensagem": "⚠️ Limite **diário** de requisições excedido. O Google Gemini resetará a cota — você poderá usar o app novamente amanhã.",
             "conteudo": "",
         }
     except GeminiQuotaError:

@@ -9,6 +9,7 @@ from utils.gemini_client import (
     GeminiError,
     GeminiAPIKeyError,
     GeminiQuotaError,
+    GeminiDailyQuotaError,
     GeminiServerError,
     GeminiSafetyError,
     get_cliente,
@@ -95,6 +96,11 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
 
     except GeminiAPIKeyError:
         return {"resposta": "Erro: GEMINI_API_KEY não configurada.", "fontes": []}
+    except GeminiDailyQuotaError:
+        return {
+            "resposta": "⚠️ Limite **diário** de requisições excedido. O Google Gemini resetará a cota automaticamente — você poderá usar o app novamente amanhã.",
+            "fontes": [],
+        }
     except GeminiQuotaError:
         return {
             "resposta": "Limite de requisições excedido. Aguarde alguns minutos e tente novamente.",
