@@ -156,8 +156,8 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
         )
         return {"resposta": resposta, "fontes": fontes}
 
-    except GeminiAPIKeyError:
-        return {"resposta": "Erro: GEMINI_API_KEY não configurada.", "fontes": []}
+    except GeminiAPIKeyError as e:
+        return {"resposta": f"Erro: {e}", "fontes": []}
     except GeminiDailyQuotaError:
         return {
             "resposta": "⚠️ Limite **diário** de requisições excedido. O Google Gemini resetará a cota automaticamente — você poderá usar o app novamente amanhã.",
