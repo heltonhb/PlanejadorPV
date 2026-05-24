@@ -12,6 +12,7 @@ import hashlib
 import logging
 import os
 import time
+from collections import OrderedDict
 from typing import Optional
 
 from google import genai
@@ -110,8 +111,7 @@ class GeminiClient:
         self._api_key = api_key or _get_gemini_key()
         self.modelo = modelo
         self.max_retries = max_retries
-        self._cache: dict[str, str] = {}
-        self._cache_order: list[str] = []
+        self._cache: OrderedDict[str, str] = OrderedDict()
         self._cache_size = cache_size
         self._enable_cache = enable_cache
         self._client: Optional[genai.Client] = None
@@ -133,19 +133,20 @@ class GeminiClient:
         """Obtém resposta do cache se disponível."""
         if not self._enable_cache:
             return None
-        return self._cache.get(cache_key)
+        if cache_key in self._cache:
+            self._cache.move_to_end(cache_key)
+            return self._cache[cache_key]
+        return None
     
     def _set_cached(self, cache_key: str, value: str):
         """Armazena resposta no cache com política LRU."""
         if not self._enable_cache:
             return
-        
-        if len(self._cache) >= self._cache_size and self._cache_order:
-            oldest = self._cache_order.pop(0)
-            self._cache.pop(oldest, None)
-        
+        if cache_key in self._cache:
+            self._cache.move_to_end(cache_key)
         self._cache[cache_key] = value
-        self._cache_order.append(cache_key)
+        if len(self._cache) > self._cache_size:
+            self._cache.popitem(last=False)
     
     def _classificar_erro(self, erro: Exception) -> GeminiError:
         """Classifica o erro e retorna exceção apropriada."""
@@ -257,7 +258,6 @@ class GeminiClient:
     def limpar_cache(self):
         """Limpa o cache de respostas."""
         self._cache.clear()
-        self._cache_order.clear()
         logger.info("Cache do GeminiClient limpo")
 
 
@@ -272,7 +272,7 @@ def get_cliente(
     """Obtém instância singleton do cliente Gemini."""
     global _cliente_global
     
-    if _cliente_global is None:
+    if _cliente_global is None or _cliente_global.modelo != modelo:
         _cliente_global = GeminiClient(
             api_key=api_key,
             modelo=modelo,

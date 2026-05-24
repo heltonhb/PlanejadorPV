@@ -4,10 +4,7 @@ Módulo principal do motor RAG — consulta a base vetorial e gera respostas com
 
 import logging
 
-from chromadb import PersistentClient
-from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
-
-from utils.documentos import CHROMA_PATH, COLLECTION_NAME
+from utils.documentos import _get_collection
 from utils.gemini_client import (
     GeminiError,
     GeminiAPIKeyError,
@@ -21,15 +18,6 @@ logger = logging.getLogger(__name__)
 
 MODELO = "gemini-2.5-flash"
 TOP_K = 5
-
-
-def _get_collection():
-    CHROMA_PATH.mkdir(exist_ok=True)
-    client = PersistentClient(str(CHROMA_PATH))
-    return client.get_or_create_collection(
-        name=COLLECTION_NAME,
-        embedding_function=DefaultEmbeddingFunction(),
-    )
 
 
 def buscar_contexto(pergunta: str, top_k: int = TOP_K) -> tuple[str, list[dict]]:

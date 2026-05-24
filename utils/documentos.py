@@ -3,7 +3,7 @@ Módulo para processamento e extração de texto de documentos.
 """
 
 import logging
-import multiprocessing as mp
+import concurrent.futures
 import os
 import re
 import tempfile
@@ -189,8 +189,8 @@ def _extrair_imagem_ocr(tmp_path: str) -> tuple[Optional[str], int]:
         return None, 0
 
 
-def _extrair_em_processo(pdf_bytes: bytes, queue: mp.Queue):
-    """Executado em processo filho para extração de PDF."""
+def _extrair_texto_worker(pdf_bytes: bytes) -> dict:
+    """Worker function para extração de texto de PDF."""
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         tmp.write(pdf_bytes)
         tmp_path = tmp.name
@@ -203,25 +203,23 @@ def _extrair_em_processo(pdf_bytes: bytes, queue: mp.Queue):
         if not texto or not texto.strip():
             texto, paginas = _extrair_ocr(tmp_path)
             metodo = "ocr"
-        queue.put({"texto": texto or "", "metodo": metodo, "paginas": paginas})
+        return {"texto": texto or "", "metodo": metodo, "paginas": paginas}
     except Exception:
-        logger.error("extração em processo falhou:\n%s", traceback.format_exc())
-        queue.put({"texto": "", "metodo": "erro", "paginas": 0})
+        logger.error("extração falhou:\n%s", traceback.format_exc())
+        return {"texto": "", "metodo": "erro", "paginas": 0}
     finally:
         os.unlink(tmp_path)
 
 
 def extrair_texto(pdf_bytes: bytes) -> dict:
-    """Extrai texto de bytes de PDF usando multiprocessamento."""
-    queue: mp.Queue = mp.Queue()
-    proc = mp.Process(target=_extrair_em_processo, args=(pdf_bytes, queue))
-    proc.start()
-    proc.join(timeout=120)
-    if proc.is_alive():
-        proc.terminate()
-        logger.error("extração excedeu timeout de 120s")
-        return {"texto": "", "metodo": "timeout", "paginas": 0}
-    return queue.get()
+    """Extrai texto de bytes de PDF usando thread com timeout."""
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(_extrair_texto_worker, pdf_bytes)
+        try:
+            return future.result(timeout=120)
+        except concurrent.futures.TimeoutError:
+            logger.error("extração excedeu timeout de 120s")
+            return {"texto": "", "metodo": "timeout", "paginas": 0}
 
 
 def extrair_arquivo(bytes_arquivo: bytes, nome_arquivo: str) -> dict:

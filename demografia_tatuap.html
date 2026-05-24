@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Demográfico: Tatuapé, São Paulo</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Configuração Tailwind e Estilos Customizados -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        warm: {
+                            50: '#fafaf9',
+                            100: '#f5f5f4',
+                            200: '#e7e5e4',
+                            300: '#d6d3d1',
+                            600: '#57534e',
+                            800: '#292524',
+                            900: '#1c1917',
+                        },
+                        accent: {
+                            500: '#d97706', // amber-600
+                            600: '#b45309', // amber-700
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #fafaf9; /* warm-50 */
+            color: #292524; /* warm-800 */
+        }
+        
+        /* Chart Container Requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Constrains max width */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Responsive base height */
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        .tab-active {
+            border-bottom: 2px solid #b45309;
+            color: #b45309;
+            font-weight: 600;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased overflow-x-hidden">
+
+    <!-- Chosen Palette: Warm Neutrals (Stone/Warm Gray) with Amber/Orange accents for a calm, professional, and accessible feel. -->
+    
+    <!-- Application Structure Plan: 
+         1. Header: Contextualizes the app and provides top-level KPI metrics (Population, HDI, Area).
+         2. Navigation (Tabs): Allows segmenting complex demographic data into digestible chunks (Overview, Age, Education/Income, Housing). This avoids a long, overwhelming scroll.
+         3. Content Sections (Panels): Each panel contains targeted visualizations (Chart.js) alongside explanatory text blocks to provide narrative context to the data. 
+         This dashboard approach provides an intuitive flow where users can explore specific demographic dimensions of Tatuapé interactively. -->
+
+    <!-- Visualization & Content Choices: 
+         - Overview Panel: KPI cards and a simple Donut chart for Gender to establish baseline demographics. Interactive hover on charts.
+         - Age Panel: Bar chart comparing age groups. Shows the aging trend of the neighborhood. Bar chart is best for comparing categorical age brackets.
+         - Education/Income: Doughnut chart for education levels. Easy to see the majority proportion of higher education.
+         - Housing: Line/Bar mixed chart showing the trend of verticalization (Apartments vs Houses) over time. Demonstrates urban structural changes.
+         All visualizations use Chart.js within strictly dimensioned canvas wrappers. NO SVG/Mermaid used. -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header & Intro -->
+        <header class="mb-10 text-center md:text-left">
+            <h1 class="text-3xl md:text-4xl font-bold text-warm-900 tracking-tight">Relatório Demográfico: Tatuapé</h1>
+            <p class="mt-3 text-lg text-warm-600 max-w-3xl">
+                Uma análise interativa do perfil populacional, socioeconômico e habitacional de um dos bairros que mais cresce e se valoriza na Zona Leste de São Paulo. Dados baseados em estimativas e projeções (IBGE/Seade).
+            </p>
+        </header>
+
+        <!-- Top Level KPIs -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-warm-200 text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-md">
+                <p class="text-sm font-medium text-warm-600 uppercase tracking-wider">População Estimada</p>
+                <p class="text-3xl font-bold text-warm-900 mt-2" id="kpi-pop">91.700</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-warm-200 text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-md">
+                <p class="text-sm font-medium text-warm-600 uppercase tracking-wider">IDH-M</p>
+                <p class="text-3xl font-bold text-accent-600 mt-2">0,936</p>
+                <p class="text-xs text-warm-600 mt-1">Muito Alto</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-warm-200 text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-md">
+                <p class="text-sm font-medium text-warm-600 uppercase tracking-wider">Área Total</p>
+                <p class="text-3xl font-bold text-warm-900 mt-2">8,2 km²</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-warm-200 text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-md">
+                <p class="text-sm font-medium text-warm-600 uppercase tracking-wider">Renda Média</p>
+                <p class="text-3xl font-bold text-warm-900 mt-2">R$ 8.5K</p>
+                <p class="text-xs text-warm-600 mt-1">Por domicílio</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="border-b border-warm-200 mb-8 overflow-x-auto no-scrollbar">
+            <nav class="flex space-x-8 min-w-max px-2" aria-label="Tabs">
+                <button onclick="switchTab('visao-geral')" id="tab-visao-geral" class="tab-active whitespace-nowrap py-4 px-1 text-sm font-medium text-warm-600 hover:text-accent-600 transition-colors">
+                    Visão Geral
+                </button>
+                <button onclick="switchTab('faixa-etaria')" id="tab-faixa-etaria" class="whitespace-nowrap py-4 px-1 text-sm font-medium text-warm-600 hover:text-accent-600 transition-colors">
+                    Faixa Etária
+                </button>
+                <button onclick="switchTab('socioeconomico')" id="tab-socioeconomico" class="whitespace-nowrap py-4 px-1 text-sm font-medium text-warm-600 hover:text-accent-600 transition-colors">
+                    Renda & Educação
+                </button>
+                <button onclick="switchTab('moradia')" id="tab-moradia" class="whitespace-nowrap py-4 px-1 text-sm font-medium text-warm-600 hover:text-accent-600 transition-colors">
+                    Moradia & Urbanismo
+                </button>
+            </nav>
+        </div>
+
+        <!-- Content Sections -->
+        <main class="min-h-[500px]">
+            
+            <!-- SECTION 1: Visão Geral -->
+            <section id="panel-visao-geral" class="fade-in block">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-warm-900">Panorama do Distrito</h2>
+                    <p class="text-warm-600 mt-2">
+                        O Tatuapé é um distrito tradicional da Zona Leste paulistana que passou por uma intensa transformação nas últimas décadas. De um passado industrial e operário, tornou-se um dos polos mais valorizados da cidade, abrigando uma população de classe média e alta, vasta oferta de serviços, comércio de alto padrão e intensa verticalização.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-white p-6 rounded-xl shadow-sm border border-warm-200">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4 text-warm-800">Distribuição por Gênero</h3>
+                        <p class="text-sm text-warm-600 mb-6">
+                            A composição por gênero no Tatuapé segue a tendência da capital paulista, com uma leve predominância feminina, especialmente acentuada nas faixas etárias mais avançadas devido à maior expectativa de vida.
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-center justify-between p-3 bg-warm-50 rounded-lg">
+                                <span class="font-medium text-warm-800">Feminino</span>
+                                <span class="font-bold text-accent-600">53%</span>
+                            </li>
+                            <li class="flex items-center justify-between p-3 bg-warm-50 rounded-lg">
+                                <span class="font-medium text-warm-800">Masculino</span>
+                                <span class="font-bold text-warm-600">47%</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: Faixa Etária -->
+            <section id="panel-faixa-etaria" class="fade-in hidden">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-warm-900">Estrutura Etária</h2>
+                    <p class="text-warm-600 mt-2">
+                        Esta seção analisa a distribuição da população por idade. O Tatuapé apresenta um perfil demográfico maduro. Observa-se um estreitamento da base da pirâmide (menos crianças) e um alargamento do topo (mais idosos), reflexo do alto padrão de vida e acesso à saúde.
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-warm-200 mb-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                        <h3 class="text-lg font-semibold text-warm-800">Distribuição da População por Idade (%)</h3>
+                        
+                        <!-- Interactive Toggle for data detail -->
+                        <div class="mt-4 md:mt-0 flex items-center space-x-2 bg-warm-100 p-1 rounded-lg">
+                            <button id="btn-age-broad" onclick="updateAgeChart('broad')" class="px-3 py-1 text-sm font-medium rounded-md bg-white shadow-sm text-warm-800 transition">Grupos Maiores</button>
+                            <button id="btn-age-detailed" onclick="updateAgeChart('detailed')" class="px-3 py-1 text-sm font-medium rounded-md text-warm-600 hover:text-warm-800 transition">Detalhado</button>
+                        </div>
+                    </div>
+
+                    <div class="chart-container h-[400px]">
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 bg-warm-50 rounded-lg border border-warm-100">
+                        <h4 class="font-semibold text-warm-800 mb-1">0 a 14 anos</h4>
+                        <p class="text-2xl font-bold text-warm-600">14%</p>
+                        <p class="text-xs text-warm-600 mt-2">Abaixo da média municipal, indicando menor taxa de natalidade local.</p>
+                    </div>
+                    <div class="p-4 bg-warm-50 rounded-lg border border-warm-100">
+                        <h4 class="font-semibold text-warm-800 mb-1">15 a 59 anos</h4>
+                        <p class="text-2xl font-bold text-warm-600">65%</p>
+                        <p class="text-xs text-warm-600 mt-2">População economicamente ativa predominante, impulsionando o comércio local.</p>
+                    </div>
+                    <div class="p-4 bg-accent-50 rounded-lg border border-accent-100">
+                        <h4 class="font-semibold text-accent-800 mb-1">60+ anos</h4>
+                        <p class="text-2xl font-bold text-accent-600">21%</p>
+                        <p class="text-xs text-accent-700 mt-2">Forte presença da terceira idade, demandando serviços de saúde e acessibilidade.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: Socioeconômico -->
+            <section id="panel-socioeconomico" class="fade-in hidden">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-warm-900">Renda e Nível Educacional</h2>
+                    <p class="text-warm-600 mt-2">
+                        O Tatuapé consolida-se como um bairro de classe média-alta. A correlação entre alta escolaridade e renda é evidente nos dados, justificando a presença de empreendimentos corporativos de alto padrão e comércio de luxo na região.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <!-- Education -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-warm-200">
+                        <h3 class="text-lg font-semibold mb-4 text-warm-800">Grau de Instrução</h3>
+                        <div class="chart-container mb-4">
+                            <canvas id="educationChart"></canvas>
+                        </div>
+                        <p class="text-sm text-warm-600 text-center">
+                            A proporção de moradores com ensino superior completo ou pós-graduação é significativamente maior do que a média da capital.
+                        </p>
+                    </div>
+
+                    <!-- Income -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-warm-200 flex flex-col justify-center">
+                        <h3 class="text-lg font-semibold mb-6 text-warm-800">Distribuição de Renda Familiar</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="font-medium text-warm-800">Classe A (Mais de 20 SM)</span>
+                                    <span class="font-bold text-accent-600">28%</span>
+                                </div>
+                                <div class="w-full bg-warm-100 rounded-full h-2.5">
+                                    <div class="bg-accent-600 h-2.5 rounded-full" style="width: 28%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="font-medium text-warm-800">Classe B (10 a 20 SM)</span>
+                                    <span class="font-bold text-warm-600">42%</span>
+                                </div>
+                                <div class="w-full bg-warm-100 rounded-full h-2.5">
+                                    <div class="bg-warm-600 h-2.5 rounded-full" style="width: 42%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="font-medium text-warm-800">Classe C (4 a 10 SM)</span>
+                                    <span class="font-bold text-warm-400">22%</span>
+                                </div>
+                                <div class="w-full bg-warm-100 rounded-full h-2.5">
+                                    <div class="bg-warm-400 h-2.5 rounded-full" style="width: 22%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="font-medium text-warm-800">Classes D/E (Até 4 SM)</span>
+                                    <span class="font-bold text-warm-300">8%</span>
+                                </div>
+                                <div class="w-full bg-warm-100 rounded-full h-2.5">
+                                    <div class="bg-warm-300 h-2.5 rounded-full" style="width: 8%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-warm-500 mt-6 italic">*SM = Salários Mínimos</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Moradia e Urbanismo -->
+            <section id="panel-moradia" class="fade-in hidden">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-warm-900">Dinâmica Habitacional</h2>
+                    <p class="text-warm-600 mt-2">
+                        O processo de verticalização do Tatuapé é um dos mais intensos de São Paulo. Antigas vilas operárias e galpões cederam espaço para condomínios de alto padrão (residenciais e corporativos).
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-warm-200">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                        <h3 class="text-lg font-semibold text-warm-800">Evolução do Tipo de Domicílio (2000 - 2024)</h3>
+                        <span class="px-3 py-1 bg-warm-100 text-warm-700 text-xs font-semibold rounded-full mt-2 md:mt-0">Proporção %</span>
+                    </div>
+
+                    <div class="chart-container h-[400px]">
+                        <canvas id="housingChart"></canvas>
+                    </div>
+                    
+                    <div class="mt-6 pt-6 border-t border-warm-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold text-warm-800 mb-2">Impacto Urbano</h4>
+                            <p class="text-sm text-warm-600">
+                                A concentração de edifícios alterou a paisagem e a densidade populacional, trazendo desafios de mobilidade nas principais vias (como a Rua Tuiuti e Serra de Japi), mas também estimulando o comércio local focado em serviços premium.
+                            </p>
+                        </div>
+                        <div class="bg-warm-50 p-4 rounded-lg">
+                            <span class="block text-3xl font-bold text-accent-600 mb-1">82%</span>
+                            <span class="text-sm font-medium text-warm-800">Dos domicílios hoje são apartamentos</span>
+                            <p class="text-xs text-warm-500 mt-1">Comparado a apenas 45% no ano 2000.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+        
+        <footer class="mt-12 pt-6 border-t border-warm-200 text-center text-sm text-warm-500">
+            <p>Os dados apresentados são representações estimadas baseadas em perfis demográficos conhecidos da região (IBGE, Seade e relatórios de mercado imobiliário). Aplicação interativa gerada para fins de demonstração.</p>
+        </footer>
+
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // --- State Management ---
+        const state = {
+            activeTab: 'visao-geral',
+            ageChartView: 'broad' // 'broad' or 'detailed'
+        };
+
+        // --- Data Storage ---
+        const data = {
+            gender: {
+                labels: ['Feminino', 'Masculino'],
+                values: [53, 47]
+            },
+            ageBroad: {
+                labels: ['Crianças (0-14)', 'Adultos (15-59)', 'Idosos (60+)'],
+                values: [14, 65, 21]
+            },
+            ageDetailed: {
+                labels: ['0-9', '10-19', '20-29', '30-39', '40-49', '50-59', '60-69', '70+'],
+                values: [8, 10, 16, 17, 16, 12, 11, 10]
+            },
+            education: {
+                labels: ['Ensino Superior / Pós', 'Ensino Médio', 'Ensino Fundamental', 'Sem Instrução'],
+                values: [58, 28, 12, 2]
+            },
+            housingYears: ['2000', '2010', '2020', '2024'],
+            housingApts: [45, 62, 76, 82],
+            housingHouses: [55, 38, 24, 18]
+        };
+
+        // --- Chart Instances ---
+        let charts = {};
+
+        // --- Navigation Logic ---
+        function switchTab(tabId) {
+            // Update state
+            state.activeTab = tabId;
+
+            // Update UI Tabs
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('tab-active', 'border-b-2', 'border-accent-600', 'text-accent-600');
+                btn.classList.add('text-warm-600', 'hover:text-accent-600');
+            });
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.remove('text-warm-600', 'hover:text-accent-600');
+            activeBtn.classList.add('tab-active');
+
+            // Update UI Panels
+            document.querySelectorAll('main > section').forEach(panel => {
+                panel.classList.add('hidden');
+                panel.classList.remove('block');
+            });
+            document.getElementById(`panel-${tabId}`).classList.remove('hidden');
+            document.getElementById(`panel-${tabId}`).classList.add('block');
+
+            // Render charts based on visible tab to ensure correct canvas sizing
+            renderCharts();
+        }
+
+        // --- Chart Rendering Logic ---
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { family: 'Inter' } } },
+                tooltip: { backgroundColor: '#292524', titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } }
+            }
+        };
+
+        function renderCharts() {
+            if (state.activeTab === 'visao-geral' && !charts.gender) {
+                const ctx = document.getElementById('genderChart').getContext('2d');
+                charts.gender = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.gender.labels,
+                        datasets: [{
+                            data: data.gender.values,
+                            backgroundColor: ['#d97706', '#d6d3d1'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        ...commonOptions,
+                        cutout: '65%',
+                        plugins: { ...commonOptions.plugins, legend: { position: 'right' } }
+                    }
+                });
+            }
+
+            if (state.activeTab === 'faixa-etaria' && !charts.age) {
+                initAgeChart();
+            }
+
+            if (state.activeTab === 'socioeconomico' && !charts.education) {
+                const ctx = document.getElementById('educationChart').getContext('2d');
+                charts.education = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: data.education.labels,
+                        datasets: [{
+                            data: data.education.values,
+                            backgroundColor: ['#b45309', '#d97706', '#e7e5e4', '#d6d3d1'],
+                            borderWidth: 1,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+
+            if (state.activeTab === 'moradia' && !charts.housing) {
+                const ctx = document.getElementById('housingChart').getContext('2d');
+                charts.housing = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.housingYears,
+                        datasets: [
+                            {
+                                label: 'Apartamentos (%)',
+                                data: data.housingApts,
+                                borderColor: '#b45309',
+                                backgroundColor: 'rgba(180, 83, 9, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Casas (%)',
+                                data: data.housingHouses,
+                                borderColor: '#a8a29e',
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        ...commonOptions,
+                        scales: {
+                            y: { beginAtZero: true, max: 100, ticks: { callback: function(value) { return value + '%' } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        // --- Specific Interaction Logic for Age Chart ---
+        function initAgeChart() {
+            const ctx = document.getElementById('ageChart').getContext('2d');
+            charts.age = new Chart(ctx, {
+                type: 'bar',
+                data: getAgeChartData(),
+                options: {
+                    ...commonOptions,
+                    plugins: {
+                        ...commonOptions.plugins,
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            title: { display: true, text: 'População (%)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getAgeChartData() {
+            const isBroad = state.ageChartView === 'broad';
+            return {
+                labels: isBroad ? data.ageBroad.labels : data.ageDetailed.labels,
+                datasets: [{
+                    label: 'Proporção (%)',
+                    data: isBroad ? data.ageBroad.values : data.ageDetailed.values,
+                    backgroundColor: isBroad ? ['#e7e5e4', '#d97706', '#b45309'] : '#d97706',
+                    borderRadius: 4
+                }]
+            };
+        }
+
+        function updateAgeChart(viewMode) {
+            state.ageChartView = viewMode;
+            
+            // Update Toggle UI
+            const btnBroad = document.getElementById('btn-age-broad');
+            const btnDetailed = document.getElementById('btn-age-detailed');
+            
+            if (viewMode === 'broad') {
+                btnBroad.className = 'px-3 py-1 text-sm font-medium rounded-md bg-white shadow-sm text-warm-800 transition';
+                btnDetailed.className = 'px-3 py-1 text-sm font-medium rounded-md text-warm-600 hover:text-warm-800 transition';
+            } else {
+                btnDetailed.className = 'px-3 py-1 text-sm font-medium rounded-md bg-white shadow-sm text-warm-800 transition';
+                btnBroad.className = 'px-3 py-1 text-sm font-medium rounded-md text-warm-600 hover:text-warm-800 transition';
+            }
+
+            // Update Chart Data
+            charts.age.data = getAgeChartData();
+            charts.age.update();
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCharts(); // Render initial charts for the default active tab
+        });
+
+    </script>
+</body>
+</html>

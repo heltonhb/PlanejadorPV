@@ -77,8 +77,76 @@ def limpar_firestore():
         return
     from firebase_admin import firestore
     db = firestore.client()
+    # Limpar chunks
     batch = db.batch()
     docs = db.collection("chunks").list_documents()
     for doc in docs:
         batch.delete(doc)
     batch.commit()
+    # Limpar metadados de fontes
+    batch2 = db.batch()
+    meta_docs = db.collection("fontes_meta").list_documents()
+    for doc in meta_docs:
+        batch2.delete(doc)
+    batch2.commit()
+
+
+def salvar_fonte_meta(chave: str, meta: dict) -> bool:
+    """Salva metadados de uma fonte no Firestore para persistência."""
+    if not init_firebase():
+        return False
+    try:
+        from firebase_admin import firestore
+        db = firestore.client()
+        # Sanitizar a chave para usar como document ID
+        import re
+        doc_id = re.sub(r'[^a-zA-Z0-9_\-.:]+', '_', chave)[:200]
+        db.collection("fontes_meta").document(doc_id).set({
+            "chave_original": chave,
+            "meta": meta,
+        })
+        return True
+    except Exception as e:
+        logger.debug("Erro ao salvar fonte_meta no Firestore: %s", e)
+        return False
+
+
+def remover_fonte_meta(chave: str) -> bool:
+    """Remove metadados de uma fonte do Firestore."""
+    if not init_firebase():
+        return False
+    try:
+        from firebase_admin import firestore
+        import re
+        db = firestore.client()
+        doc_id = re.sub(r'[^a-zA-Z0-9_\-.:]+', '_', chave)[:200]
+        db.collection("fontes_meta").document(doc_id).delete()
+        return True
+    except Exception as e:
+        logger.debug("Erro ao remover fonte_meta do Firestore: %s", e)
+        return False
+
+
+def carregar_fontes_meta() -> dict[str, dict]:
+    """Carrega todos os metadados de fontes do Firestore.
+
+    Returns:
+        dict mapeando chave_original -> meta dict
+    """
+    if not init_firebase():
+        return {}
+    try:
+        from firebase_admin import firestore
+        db = firestore.client()
+        docs = db.collection("fontes_meta").stream()
+        resultado = {}
+        for doc in docs:
+            data = doc.to_dict()
+            chave = data.get("chave_original", doc.id)
+            meta = data.get("meta", {})
+            resultado[chave] = meta
+        return resultado
+    except Exception as e:
+        logger.debug("Erro ao carregar fontes_meta do Firestore: %s", e)
+        return {}
+
