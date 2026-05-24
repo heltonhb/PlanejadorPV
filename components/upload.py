@@ -218,10 +218,36 @@ def _render_upload_tab(container, aba, key_prefix=""):
                 container.info("Planilha já processada.")
 
 
+def _render_quota_status():
+    """Renderiza indicador de cota diária restante na sidebar."""
+    try:
+        from utils.gemini_client import obter_status_quota
+        status = obter_status_quota()
+        if not status:
+            return
+        
+        st.sidebar.divider()
+        st.sidebar.markdown("### 📊 Cota diária")
+        for modelo, info in status.items():
+            rest = info["restantes"]
+            limite = info["limite"]
+            bloqueado = info["bloqueado"]
+            nome = modelo.replace("gemini-", "").replace("-flash", "").replace("-2.0", " 2.0")
+            if bloqueado:
+                st.sidebar.markdown(f"🔴 **{nome}**: esgotada")
+            elif rest < 50:
+                st.sidebar.markdown(f"🟡 **{nome}**: {rest}/{limite}")
+            else:
+                st.sidebar.markdown(f"🟢 **{nome}**: {rest}/{limite}")
+    except Exception:
+        pass
+
+
 def sidebar_upload():
     st.sidebar.title("Fontes de informação")
     aba = st.sidebar.radio("Tipo de fonte", ["PDF", "URL", "HTML", "Instagram", "Texto", "Planilha"], key="sidebar_aba")
     _render_upload_tab(st.sidebar, aba, key_prefix="side_")
+    _render_quota_status()
 
     st.sidebar.divider()
     st.sidebar.markdown("### Fontes carregadas")

@@ -117,6 +117,66 @@ _rate_lock = threading.Lock()
 _quota_blocked: dict[str, float] = {}
 _quota_lock = threading.Lock()
 
+# ── Contador de requisições por modelo (janela deslizante 24h) ──
+# Ex: {"gemini-2.5-flash": [1234567890.0, 1234567897.0, ...]}
+_request_log: dict[str, list[float]] = {}
+_request_log_lock = threading.Lock()
+
+# Limites diários conhecidos (RPD) por modelo
+_LIMITES_RPD: dict[str, int] = {
+    "gemini-2.5-flash": 1500,
+    "gemini-1.5-flash": 1500,
+    "gemini-2.0-flash": 1500,
+}
+
+
+def _registrar_requisicao(modelo: str):
+    """Registra timestamp de uma requisição para contagem de cota."""
+    with _request_log_lock:
+        if modelo not in _request_log:
+            _request_log[modelo] = []
+        _request_log[modelo].append(time.time())
+        # Podar registros com mais de 24h
+        corte = time.time() - 86400
+        _request_log[modelo] = [t for t in _request_log[modelo] if t > corte]
+
+
+def obter_status_quota() -> dict[str, dict]:
+    """Retorna status de cota de todos os modelos.
+    
+    Exemplo:
+    {
+        "gemini-2.5-flash": {
+            "usadas": 42,
+            "limite": 1500,
+            "restantes": 1458,
+            "bloqueado_ate": None | float,
+        },
+        ...
+    }
+    """
+    from collections import OrderedDict
+    status = OrderedDict()
+    agora = time.time()
+    
+    with _request_log_lock, _quota_lock:
+        for modelo in MODELOS_FALLBACK:
+            registros = _request_log.get(modelo, [])
+            # Contar requisições nas últimas 24h
+            corte = agora - 86400
+            usadas = sum(1 for t in registros if t > corte)
+            limite = _LIMITES_RPD.get(modelo, 1500)
+            bloqueado_ate = _quota_blocked.get(modelo, 0.0)
+            
+            status[modelo] = {
+                "usadas": usadas,
+                "limite": limite,
+                "restantes": max(0, limite - usadas),
+                "bloqueado": agora < bloqueado_ate,
+                "bloqueado_ate": bloqueado_ate if agora < bloqueado_ate else None,
+            }
+    return status
+
 
 def _aguardar_rate_limit():
     """Aguarda o intervalo mínimo entre requisições (rate limiter proativo)."""
@@ -284,6 +344,7 @@ class GeminiClient:
                     contents=contents,
                     config=config,
                 )
+                _registrar_requisicao(self.modelo)
                 return resposta.text or ""
             
             except Exception as e:
