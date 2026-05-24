@@ -11,6 +11,7 @@ Fornece:
 import hashlib
 import logging
 import os
+import threading
 import time
 from collections import OrderedDict
 from typing import Optional
@@ -20,10 +21,16 @@ from google import genai
 logger = logging.getLogger(__name__)
 
 # Configurações
+# gemini-2.0-flash: free tier = 30 RPM (1 req a cada 2s)
+# gemini-2.5-flash: free tier = 10 RPM (1 req a cada 6s) — maior qualidade
 MODELO_PADRAO = "gemini-2.5-flash"
 MAX_RETRIES = 3
 BACKOFF_BASE = 2  # segundos
-CACHE_SIZE = 128  # número de entradas no cache LRU
+CACHE_SIZE = 256  # número de entradas no cache LRU
+
+# Rate limiter global — proativo para evitar 429
+# Usamos 7s para ficar abaixo do limite de 10 RPM do gemini-2.5-flash free tier
+MIN_INTERVALO_REQ = 7  # segundos entre requisições
 
 
 class GeminiError(Exception):
@@ -89,13 +96,32 @@ def _gerar_cache_key(modelo: str, conteudo: str) -> str:
     return hashlib.sha256(dados.encode()).hexdigest()[:32]
 
 
+# ── Rate limiter thread-safe ──
+_ultima_req: float = 0.0
+_rate_lock = threading.Lock()
+
+
+def _aguardar_rate_limit():
+    """Aguarda o intervalo mínimo entre requisições (rate limiter proativo)."""
+    global _ultima_req
+    with _rate_lock:
+        agora = time.time()
+        desde_ultima = agora - _ultima_req
+        if desde_ultima < MIN_INTERVALO_REQ:
+            espera = MIN_INTERVALO_REQ - desde_ultima
+            logger.info(f"⏳ Rate limiter: aguardando {espera:.1f}s (última req há {desde_ultima:.1f}s)")
+            time.sleep(espera)
+        _ultima_req = time.time()
+
+
 class GeminiClient:
     """
     Cliente para comunicação com a API Gemini.
     
     Features:
     - Retry automático com backoff exponencial
-    - Cache de respostas em memória
+    - Cache de respostas em memória com política LRU
+    - Rate limiter proativo entre requisições
     - Tratamento de erros estruturado
     - Validação de entrada
     """
@@ -193,12 +219,10 @@ class GeminiClient:
                     raise erro_classificado
                 
                 # Se detectarmos erro de limite de requisições, aumentamos as tentativas
-                # e aplicamos uma espera progressiva maior
+                # e aplicamos uma espera progressiva maior (backoff exponencial agressivo)
                 if isinstance(erro_classificado, GeminiQuotaError):
-                    limite_tentativas = max(limite_tentativas, 5)
-                    wait_time = (tentativa + 1) * 5  # 5s, 10s, 15s, 20s
-                else:
-                    wait_time = BACKOFF_BASE ** tentativa
+                    limite_tentativas = max(limite_tentativas, 6)
+                    wait_time = 5 * (BACKOFF_BASE ** tentativa)  # 5s, 10s, 20s, 40s, 80s, 160s
                 
                 if tentativa < limite_tentativas - 1:
                     logger.warning(
@@ -238,6 +262,9 @@ class GeminiClient:
             "max_output_tokens": max_tokens,
         }
         
+        # Rate limiter proativo
+        _aguardar_rate_limit()
+        
         contents = [prompt]
         resultado = self._executar_com_retry(contents, generation_config)
         
@@ -265,6 +292,9 @@ class GeminiClient:
             "temperature": max(0.0, min(1.0, temperatura)),
             "max_output_tokens": max_tokens,
         }
+        
+        # Rate limiter proativo
+        _aguardar_rate_limit()
         
         contents = [prompt, imagem]
         return self._executar_com_retry(contents, generation_config)
