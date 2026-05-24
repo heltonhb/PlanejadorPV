@@ -168,11 +168,15 @@ class GeminiClient:
         contents: list,
         generation_config: Optional[dict] = None,
     ) -> str:
-        """Executa requisição com retry automático."""
+        """Executa requisição com retry automático com backoff adaptativo para quotas."""
         client = self._get_client()
         ultimo_erro = None
         
-        for tentativa in range(self.max_retries):
+        # Se for erro de quota/limite, permitimos mais tentativas com esperas mais longas
+        limite_tentativas = self.max_retries
+        
+        tentativa = 0
+        while tentativa < limite_tentativas:
             try:
                 resposta = client.models.generate_content(
                     model=self.modelo,
@@ -188,13 +192,23 @@ class GeminiClient:
                 if isinstance(erro_classificado, (GeminiAPIKeyError, GeminiSafetyError)):
                     raise erro_classificado
                 
-                if tentativa < self.max_retries - 1:
+                # Se detectarmos erro de limite de requisições, aumentamos as tentativas
+                # e aplicamos uma espera progressiva maior
+                if isinstance(erro_classificado, GeminiQuotaError):
+                    limite_tentativas = max(limite_tentativas, 5)
+                    wait_time = (tentativa + 1) * 5  # 5s, 10s, 15s, 20s
+                else:
                     wait_time = BACKOFF_BASE ** tentativa
+                
+                if tentativa < limite_tentativas - 1:
                     logger.warning(
-                        f"Tentativa {tentativa + 1} falhou: {e}. "
+                        f"Tentativa {tentativa + 1}/{limite_tentativas} falhou: {e}. "
                         f"Retry em {wait_time}s..."
                     )
                     time.sleep(wait_time)
+                    tentativa += 1
+                else:
+                    break
         
         raise self._classificar_erro(ultimo_erro)
     

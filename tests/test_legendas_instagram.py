@@ -19,15 +19,12 @@ class TestGerarLegenda:
 
         resultado = gerar_legenda(
             image=b"fake_image_bytes",
-            tom="inspirador",
+            tom="Inspiracional",
             tema="motivacional",
-            palavras_chave="sucesso, foco",
-            publico_alvo="jovens",
-            incluir_hashtags=True,
         )
         assert isinstance(resultado, dict)
-        assert "legenda" in resultado
-        assert len(resultado["legenda"]) > 0
+        assert "conteudo" in resultado
+        assert len(resultado["conteudo"]) > 0
 
     @patch("utils.legendas_instagram._get_collection")
     @patch("google.genai.Client")
@@ -44,11 +41,11 @@ class TestGerarLegenda:
 
         resultado = gerar_legenda(
             image=b"fake_image_bytes",
-            tom="divertido",
+            tom="Humor",
             tema="cotidiano",
         )
         assert isinstance(resultado, dict)
-        assert "legenda" in resultado
+        assert "conteudo" in resultado
 
     @patch("utils.legendas_instagram._get_collection")
     @patch("google.genai.Client")

@@ -26,15 +26,15 @@ def gerar_resumo(texto: str, fonte: str = "documento") -> str:
         fonte: Nome/fonte do documento para contexto.
         
     Returns:
-        Resumo gerado ou string vazia em caso de erro.
+        Resumo gerado ou mensagem de erro.
     """
     if not texto or not texto.strip():
         logger.debug("Texto vazio fornecido para resumo")
-        return ""
+        return "Erro: texto vazio"
     
     texto_cortado = texto[:TAMANHO_MAXIMO_TEXTO]
     if not texto_cortado.strip():
-        return ""
+        return "Erro: texto vazio"
     
     prompt = (
         f"Leia o texto abaixo e escreva UMA frase curta (máximo 25 palavras) "
@@ -57,10 +57,10 @@ def gerar_resumo(texto: str, fonte: str = "documento") -> str:
     
     except GeminiAPIKeyError:
         logger.warning("GEMINI_API_KEY não configurada")
-        return ""
-    except GeminiError as e:
+        return "Erro: GEMINI_API_KEY não configurada"
+    except Exception as e:
         logger.error(f"Erro ao gerar resumo: {e}")
-        return ""
+        return f"Erro ao gerar resumo: {str(e)}"
 
 
 def gerar_resumo_batch(textos: list[str], fontes: list[str] = None) -> list[str]:

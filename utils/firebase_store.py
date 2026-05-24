@@ -1,13 +1,20 @@
 import logging
 
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+except ImportError:
+    firebase_admin = None
+    credentials = None
+    firestore = None
+
+from utils.documentos import _get_collection
+
 logger = logging.getLogger(__name__)
 
 
 def init_firebase():
-    try:
-        import firebase_admin
-        from firebase_admin import credentials
-    except ImportError:
+    if firebase_admin is None or credentials is None:
         logger.warning("firebase-admin não instalado")
         return False
 
@@ -34,7 +41,6 @@ def init_firebase():
 def salvar_chunks_firestore(ids: list[str], textos: list[str], metadatas: list[dict]) -> int:
     if not init_firebase():
         return 0
-    from firebase_admin import firestore
     db = firestore.client()
     saved = 0
     for i, doc_id in enumerate(ids):
@@ -47,14 +53,12 @@ def salvar_chunks_firestore(ids: list[str], textos: list[str], metadatas: list[d
 
 
 def recarregar_chunks() -> int:
-    from utils.documentos import _get_collection
     collection = _get_collection()
 
     if not init_firebase():
         logger.warning("Firebase não disponível para recarregar")
         return 0
 
-    from firebase_admin import firestore
     db = firestore.client()
     docs = db.collection("chunks").stream()
     ids, textos, metadatas = [], [], []
@@ -75,7 +79,6 @@ def recarregar_chunks() -> int:
 def limpar_firestore():
     if not init_firebase():
         return
-    from firebase_admin import firestore
     db = firestore.client()
     # Limpar chunks
     batch = db.batch()
@@ -96,7 +99,6 @@ def salvar_fonte_meta(chave: str, meta: dict) -> bool:
     if not init_firebase():
         return False
     try:
-        from firebase_admin import firestore
         db = firestore.client()
         # Sanitizar a chave para usar como document ID
         import re
@@ -116,7 +118,6 @@ def remover_fonte_meta(chave: str) -> bool:
     if not init_firebase():
         return False
     try:
-        from firebase_admin import firestore
         import re
         db = firestore.client()
         doc_id = re.sub(r'[^a-zA-Z0-9_\-.:]+', '_', chave)[:200]
@@ -136,7 +137,6 @@ def carregar_fontes_meta() -> dict[str, dict]:
     if not init_firebase():
         return {}
     try:
-        from firebase_admin import firestore
         db = firestore.client()
         docs = db.collection("fontes_meta").stream()
         resultado = {}

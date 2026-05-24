@@ -7,6 +7,8 @@ import pytest
 @pytest.fixture(autouse=True)
 def env_setup():
     os.environ.setdefault("GEMINI_API_KEY", "test-key")
+    from utils.gemini_client import reset_cliente
+    reset_cliente()
 
 
 @pytest.fixture

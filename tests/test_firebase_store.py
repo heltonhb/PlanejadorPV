@@ -21,9 +21,8 @@ class TestSalvarChunksFirestore:
     @patch("utils.firebase_store.firestore")
     def test_init_falha_nao_salva(self, mock_firestore, mock_init):
         mock_init.return_value = False
-        chunks = [{"texto": "teste", "metadata": {}}]
-        resultado = salvar_chunks_firestore(chunks, "doc")
-        assert resultado is None or resultado is False
+        resultado = salvar_chunks_firestore(["doc_1"], ["teste"], [{}])
+        assert resultado == 0
 
 
 class TestRecarregarChunks:
@@ -56,11 +55,11 @@ class TestLimparFirestore:
         mock_init.return_value = True
         mock_db = MagicMock()
         mock_firestore.client.return_value = mock_db
+        mock_batch = MagicMock()
+        mock_db.batch.return_value = mock_batch
         doc_snapshot = MagicMock()
-        doc_snapshot.id = "doc_a"
-        collection_snapshot = MagicMock()
-        collection_snapshot.stream.return_value = [doc_snapshot]
-        mock_db.collection.return_value = collection_snapshot
+        mock_db.collection.return_value.list_documents.return_value = [doc_snapshot]
 
-        limpar_firestore("testes")
-        doc_snapshot.reference.delete.assert_called()
+        limpar_firestore()
+        mock_batch.delete.assert_called()
+        mock_batch.commit.assert_called()
