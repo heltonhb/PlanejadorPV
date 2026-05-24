@@ -77,7 +77,7 @@ if "ultima_campanha" not in st.session_state:
 sidebar_upload()
 
 # Abas Principais
-with st.container(key="main_tabs"):
+with st.container():
     tab_dash, tab_assistente, tab_calendario, tab_campanhas, tab_relatorio, tab_legendas = st.tabs(
         ["📊 Painel", "💬 Chat", "📅 Calendário", "📢 Campanhas", "📋 Relatórios", "📸 Legendas"],
     )
