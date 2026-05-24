@@ -320,92 +320,95 @@ class GeminiClient:
         contents: list,
         config: Optional[dict] = None,
     ) -> str:
-        """Executa requisição com retry automático com backoff adaptativo para quotas.
+        """Executa requisição com retry automático e fallback entre modelos.
         
         Lógica:
-        - Erros de API key ou safety → propaga imediatamente
-        - Erro de cota DIÁRIA detectado → bloqueia 1h e propaga
-        - Erro de rate limit (RPM) → até 6 retries com backoff 5s, 10s, 20s, 40s, 80s, 160s
-        - Se TODOS os retries falharem com erro de quota → reclassifica como diário
-          (pois rate limit por minuto teria sido resolvido em ~5min de espera)
+        1. Tenta cada modelo na lista de fallback
+        2. Para cada modelo, faz retries com backoff
+        3. Se cota diária detectada (direta ou após retries), pula para próximo modelo
+        4. Se TODOS os modelos falharem, propaga erro
         """
         client = self._get_client()
-        ultimo_erro = None
-        todas_quota = True  # todas as falhas foram erro de quota?
         
-        # Se for erro de quota/limite, permitimos mais tentativas com esperas mais longas
-        limite_tentativas = self.max_retries
+        # Loop externo: fallback entre modelos
+        modelo_inicial_idx = self.modelo_atual_idx
         
-        tentativa = 0
-        while tentativa < limite_tentativas:
-            try:
-                resposta = client.models.generate_content(
-                    model=self.modelo,
-                    contents=contents,
-                    config=config,
-                )
-                _registrar_requisicao(self.modelo)
-                return resposta.text or ""
+        for idx in range(modelo_inicial_idx, len(self.modelos)):
+            self.modelo_atual_idx = idx
+            self.modelo = self.modelos[idx]
             
-            except Exception as e:
-                ultimo_erro = e
-                erro_classificado = self._classificar_erro(e)
-                
-                if isinstance(erro_classificado, (GeminiAPIKeyError, GeminiSafetyError)):
-                    raise erro_classificado
-                
-                # Se for quota DIÁRIA detectada na mensagem, não adianta retry
-                if isinstance(erro_classificado, GeminiDailyQuotaError):
-                    # Bloquear este modelo específico
-                    _ativar_quota_block(self.modelo)
-                    
-                    # Tentar fallback para próximo modelo
-                    if self.modelo_atual_idx < len(self.modelos) - 1:
-                        self.modelo_atual_idx += 1
-                        self.modelo = self.modelos[self.modelo_atual_idx]
-                        logger.warning(
-                            "⚠️ Cota diária esgotada em %s. "
-                            "Fallback para %s",
-                            self.modelos[self.modelo_atual_idx - 1],
-                            self.modelo,
-                        )
-                        # Resetar contadores para o novo modelo
-                        tentativa = 0
-                        todas_quota = True
-                        continue
-                    raise erro_classificado
-                
-                # Se NÃO for erro de quota, marca que nem todos são quota
-                if not isinstance(erro_classificado, GeminiQuotaError):
-                    todas_quota = False
-                    wait_time = BACKOFF_BASE ** tentativa  # 1s, 2s, 4s...
-                else:
-                    # Rate limit (RPM): algumas tentativas com backoff
-                    # Se após 3 tentativas (~35s) ainda falhar, é cota diária
-                    limite_tentativas = max(limite_tentativas, 3)
-                    wait_time = 5 * (BACKOFF_BASE ** tentativa)  # 5s, 10s, 20s
-                
-                if tentativa < limite_tentativas - 1:
-                    logger.warning(
-                        f"Tentativa {tentativa + 1}/{limite_tentativas} falhou: {e}. "
-                        f"Retry em {wait_time}s..."
+            if idx > modelo_inicial_idx:
+                logger.warning(
+                    "⚠️ Quota esgotada em %s. Fallback para %s",
+                    self.modelos[idx - 1], self.modelo,
+                )
+            
+            ultimo_erro = None
+            todas_quota = True
+            tentativa = 0
+            limite_tentativas = self.max_retries
+            
+            while tentativa < limite_tentativas:
+                try:
+                    resposta = client.models.generate_content(
+                        model=self.modelo,
+                        contents=contents,
+                        config=config,
                     )
-                    time.sleep(wait_time)
-                    tentativa += 1
-                else:
-                    break
+                    _registrar_requisicao(self.modelo)
+                    return resposta.text or ""
+                
+                except Exception as e:
+                    ultimo_erro = e
+                    erro_classificado = self._classificar_erro(e)
+                    
+                    # Erros fatais: propaga imediatamente
+                    if isinstance(erro_classificado, (GeminiAPIKeyError, GeminiSafetyError)):
+                        raise erro_classificado
+                    
+                    # Erro de cota DIÁRIA → bloqueia modelo e vai para o próximo
+                    if isinstance(erro_classificado, GeminiDailyQuotaError):
+                        _ativar_quota_block(self.modelo)
+                        break  # Sai do while, vai para o próximo modelo
+                    
+                    # Erro de rate limit (RPM) ou outro → retry com backoff
+                    if not isinstance(erro_classificado, GeminiQuotaError):
+                        todas_quota = False
+                        wait_time = BACKOFF_BASE ** tentativa
+                    else:
+                        limite_tentativas = max(limite_tentativas, 3)
+                        wait_time = 5 * (BACKOFF_BASE ** tentativa)
+                    
+                    if tentativa < limite_tentativas - 1:
+                        logger.warning(
+                            f"Tentativa {tentativa + 1}/{limite_tentativas} falhou: {e}. "
+                            f"Retry em {wait_time}s..."
+                        )
+                        time.sleep(wait_time)
+                        tentativa += 1
+                    else:
+                        break
+            
+            # Se saiu do while sem sucesso: todas as tentativas falharam
+            if ultimo_erro and todas_quota:
+                # Reclassifica como diário e bloqueia
+                _ativar_quota_block(self.modelo)
+                logger.warning(
+                    "Todas as tentativas falharam com erro de quota em %s. "
+                    "Reclassificando como cota DIÁRIA.", self.modelo,
+                )
+                # Continua para o próximo modelo no loop externo
+                continue
+            
+            if ultimo_erro:
+                # Erro não relacionado a quota - propaga
+                raise self._classificar_erro(ultimo_erro)
         
-        # Se TODAS as tentativas falharam com erro de quota (429) mesmo após ~5min de espera,
-        # é quase certeza que é limite DIÁRIO, não rate limit por minuto
-        if todas_quota:
-            logger.warning(
-                "Todas as tentativas falharam com erro de quota mesmo após backoff. "
-                "Reclassificando como cota DIÁRIA."
-            )
-            _ativar_quota_block(self.modelo)
-            raise GeminiDailyQuotaError()
-        
-        raise self._classificar_erro(ultimo_erro)
+        # Todos os modelos falharam
+        raise GeminiDailyQuotaError(
+            "Todos os modelos disponíveis atingiram a cota diária. "
+            "Aguarde até amanhã ou configure uma nova chave API."
+        )
     
     def gerar_texto(
         self,
