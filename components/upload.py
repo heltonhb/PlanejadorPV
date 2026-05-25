@@ -254,6 +254,17 @@ def sidebar_upload():
 
     st.sidebar.divider()
     st.sidebar.markdown("### Fontes carregadas")
+    
+    # Feedback sobre restauração (aparece após reboot)
+    if st.session_state.documentos:
+        _total_chunks = sum(
+            m.get("chunks", 0) for m in st.session_state.documentos_meta.values()
+        )
+        st.sidebar.caption(
+            f"📦 {len(st.session_state.documentos)} fontes · "
+            f"{_total_chunks} trechos "
+            f"{'🔄 (restaurado do banco)' if st.session_state.get('_fontes_restauradas', False) else '✅'}"
+        )
     if st.session_state.documentos:
         if "renomeando" not in st.session_state:
             st.session_state.renomeando = None

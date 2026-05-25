@@ -1,5 +1,8 @@
+import logging
 import os
 import streamlit as st
+
+logger = logging.getLogger(__name__)
 
 st.set_page_config(
     page_title="Marketing Planner",
@@ -25,13 +28,20 @@ from tabs import (
 load_dotenv()
 
 # Inicialização da coleção ChromaDB
+# No Streamlit Cloud, o disco é efêmero — o ChromaDB morre no reboot.
+# Por isso SEMPRE tentamos recarregar do Firestore.
 try:
     collection = _get_docs_collection()
-    if collection.count() == 0:
+    _total_inicial = collection.count()
+    _recarregou = 0
+    if _total_inicial == 0:
         from utils.firebase_store import recarregar_chunks
-        recarregar_chunks()
-except Exception:
-    pass
+        _recarregou = recarregar_chunks()
+        if _recarregou > 0:
+            logger.info("Firestore → ChromaDB: %d chunks restaurados", _recarregou)
+except Exception as e:
+    logger.warning("Não foi possível recarregar do Firestore: %s", e)
+    _recarregou = 0
 
 # Injetar CSS e configurações visuais
 inject_css_and_theme()
@@ -63,20 +73,28 @@ if "documentos_meta" not in st.session_state:
 # Toda vez que o session_state for recriado (reboot/redeploy),
 # buscamos os metadados reais do banco vetorial.
 # Firestore é complementar: se disponível, usa metadados extras.
+_FONTES_RESTAURADAS = 0
+
 try:
     _rel = resumo_conteudo()
-    if _rel.get("fontes_detalhadas"):
+    _fontes_detalhadas = _rel.get("fontes_detalhadas") or []
+    if _fontes_detalhadas:
         _meta_rebuild = {}
-        for item in _rel["fontes_detalhadas"]:
+        for item in _fontes_detalhadas:
             chave = item["titulo"]
-            _meta_rebuild[chave] = {
-                "fonte": item["fonte"],
-                "nome": item["titulo"],
-                "chunks": item["chunks"],
-                "caracteres": item["caracteres"],
-                "documento_id": item.get("documento_id", ""),
-            }
-        # Mescla com Firestore (sobrescreve se existir)
+            if chave in _meta_rebuild:
+                # Agrupar chunks de mesmo título
+                _meta_rebuild[chave]["chunks"] += item["chunks"]
+                _meta_rebuild[chave]["caracteres"] += item["caracteres"]
+            else:
+                _meta_rebuild[chave] = {
+                    "fonte": item["fonte"],
+                    "nome": item["titulo"],
+                    "chunks": item["chunks"],
+                    "caracteres": item["caracteres"],
+                    "documento_id": item.get("documento_id", ""),
+                }
+        # Mescla com Firestore (metadados extras, se disponível)
         try:
             _meta_firebase = carregar_fontes_meta()
             if _meta_firebase:
@@ -89,13 +107,50 @@ try:
             pass
         st.session_state.documentos_meta = _meta_rebuild
         st.session_state.documentos = list(_meta_rebuild.keys())
-except Exception:
-    # Se ChromaDB falhou, tenta só Firestore
+        st.session_state._fontes_restauradas = True
+        _FONTES_RESTAURADAS = len(_meta_rebuild)
+    elif _recarregou > 0:
+        # ChromaDB recarregou do Firestore mas resumo_conteudo não retornou fontes
+        # Tenta reconstruir manualmente da collection
+        logger.info("Tentando reconstruir metadados diretamente da collection...")
+        try:
+            _data = _get_docs_collection().get(include=["metadatas"])
+            if _data and _data["ids"]:
+                _meta_rebuild = {}
+                for i, md in enumerate(_data["metadatas"]):
+                    if md is None:
+                        continue
+                    titulo = md.get("arquivo") or md.get("url") or md.get("titulo") or f"documento_{i}"
+                    fonte = md.get("fonte", "desconhecido")
+                    if titulo not in _meta_rebuild:
+                        _meta_rebuild[titulo] = {
+                            "fonte": fonte,
+                            "nome": titulo,
+                            "chunks": 0,
+                            "caracteres": 0,
+                            "documento_id": md.get("documento_id", ""),
+                        }
+                    _meta_rebuild[titulo]["chunks"] += 1
+                    _meta_rebuild[titulo]["caracteres"] += len(str(md.get("texto", "")))
+                if _meta_rebuild:
+                    st.session_state.documentos_meta = _meta_rebuild
+                    st.session_state.documentos = list(_meta_rebuild.keys())
+                    st.session_state._fontes_restauradas = True
+                    _FONTES_RESTAURADAS = len(_meta_rebuild)
+                    logger.info("Reconstrução manual: %d fontes", _FONTES_RESTAURADAS)
+        except Exception as e:
+            logger.warning("Reconstrução manual falhou: %s", e)
+except Exception as e:
+    logger.warning("Falha ao reconstruir fontes do ChromaDB: %s", e)
+    _FONTES_RESTAURADAS = 0
+    # Fallback: tenta só Firestore
     try:
         _meta_restaurado = carregar_fontes_meta()
         if _meta_restaurado:
             st.session_state.documentos_meta = _meta_restaurado
             st.session_state.documentos = list(_meta_restaurado.keys())
+            st.session_state._fontes_restauradas = True
+            _FONTES_RESTAURADAS = len(_meta_restaurado)
     except Exception:
         pass
 if "ultimo_calendario" not in st.session_state:
