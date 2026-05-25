@@ -25,10 +25,13 @@ logger = logging.getLogger(__name__)
 # gemini-2.5-flash: free tier = 10 RPM (1 req a cada 6s) — maior qualidade
 MODELO_PADRAO = "gemini-2.5-flash"
 MODELOS_FALLBACK = [
-    "gemini-2.5-flash",   # primeira escolha (melhor qualidade, 10 RPM, 1.500 RPD)
-    "gemini-1.5-flash",   # fallback (mais cotas: 30 RPM, 1.500 RPD)
-    "gemini-2.0-flash",   # último fallback (30 RPM, cota separada)
+    "gemini-2.5-flash",  # 10 RPM, 1.500 RPD — melhor qualidade
+    "gemini-2.0-flash",  # 30 RPM — fallback (compatível google-genai SDK 1.8.0)
 ]
+
+# Modelos que foram testados e NÃO funcionam no SDK 1.8.0 (API v1beta):
+# - gemini-1.5-flash → 404 NOT_FOUND
+# - gemini-2.0-flash-exp → 404 NOT_FOUND
 MAX_RETRIES = 3
 BACKOFF_BASE = 2  # segundos
 CACHE_SIZE = 256  # número de entradas no cache LRU
