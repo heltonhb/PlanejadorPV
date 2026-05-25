@@ -1,7 +1,15 @@
+import re
 import streamlit as st
 from utils.campanhas import gerar_campanha, OBJETIVOS, PUBLICOS, SERVICOS
 from components.cards import render_campaign_result_card
 from components.fontes import render_markdown_with_copy
+
+
+def _sanitizar(texto: str) -> str:
+    """Remove tags HTML que o Gemini insiste em gerar."""
+    texto = re.sub(r'<[^>]*>', '', texto)
+    texto = re.sub(r'\n{3,}', '\n\n', texto)
+    return texto
 
 
 def render():
@@ -46,7 +54,7 @@ def render():
             progress.empty()
             if resultado["status"] == "ok":
                 st.session_state.campanhas_geradas += 1
-                st.session_state.ultima_campanha = resultado["conteudo"]
+                st.session_state.ultima_campanha = _sanitizar(resultado["conteudo"])
                 st.session_state.ultima_campanha_contexto = resultado.get("contexto_usado", False)
                 st.session_state.dados_ultima_campanha = {
                     "nome": nome_campanha,
@@ -65,7 +73,10 @@ def render():
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Display generated campaign if available
-    if st.session_state.get("ultima_campanha"):
+    _conteudo = st.session_state.get("ultima_campanha", "")
+    # Sanitizar HTML residual de cache anterior ao fix
+    _conteudo = _sanitizar(_conteudo)
+    if _conteudo:
         st.divider()
         st.markdown(
             '<div class="app-card" style="margin-top: 2rem;">'
@@ -95,7 +106,7 @@ def render():
             st.markdown(card_html, unsafe_allow_html=True)
             
         render_markdown_with_copy(
-            st.session_state.ultima_campanha,
+            _conteudo,
             key="camp_copy",
             label="Copiar Campanha",
         )
