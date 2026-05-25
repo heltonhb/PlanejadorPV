@@ -255,6 +255,9 @@ def sidebar_upload():
     st.sidebar.divider()
     st.sidebar.markdown("### Fontes carregadas")
     if st.session_state.documentos:
+        if "renomeando" not in st.session_state:
+            st.session_state.renomeando = None
+        
         icones = {"pdf": "📄", "url": "🔗", "html": "🌐", "instagram": "📷", "texto": "📝", "planilha": "📊"}
         for chave in list(st.session_state.documentos):
             meta = st.session_state.documentos_meta.get(chave)
@@ -265,21 +268,55 @@ def sidebar_upload():
             nome = meta.get("nome", chave)
             chunks = meta.get("chunks", "?")
             icone = icones.get(fonte, "📄")
-            col1, col2 = st.sidebar.columns([5, 1])
-            with col1:
-                st.markdown(f"**{icone} {nome}**")
-                st.caption(f"{chunks} trechos")
-            with col2:
-                if st.button("🗑️", key=f"del_{chave}", help="Remover esta fonte"):
-                    colecao = _get_docs_collection()
-                    try:
-                        colecao.delete(where={"documento_id": meta["documento_id"]})
-                    except Exception:
-                        pass
-                    st.session_state.documentos.remove(chave)
-                    st.session_state.documentos_meta.pop(chave, None)
-                    remover_fonte_meta(chave)
-                    st.rerun()
+            
+            # Se está renomeando esta fonte, mostrar input
+            if st.session_state.renomeando == chave:
+                novo_nome = st.sidebar.text_input(
+                    "Novo nome:",
+                    value=nome,
+                    key=f"input_{chave}",
+                    label_visibility="collapsed",
+                )
+                col_salvar, col_cancelar = st.sidebar.columns(2)
+                with col_salvar:
+                    if st.button("💾 Salvar", key=f"save_{chave}", use_container_width=True):
+                        if novo_nome.strip():
+                            st.session_state.documentos_meta[chave]["nome"] = novo_nome.strip()
+                            # Atualizar metadados no ChromaDB também
+                            try:
+                                colecao = _get_docs_collection()
+                                colecao.update(
+                                    where={"documento_id": meta.get("documento_id", "")},
+                                    metadatas={"titulo": novo_nome.strip()},
+                                )
+                            except Exception:
+                                pass
+                            st.session_state.renomeando = None
+                            st.rerun()
+                with col_cancelar:
+                    if st.button("❌", key=f"cancel_{chave}", use_container_width=True):
+                        st.session_state.renomeando = None
+                        st.rerun()
+            else:
+                col1, col2, col3 = st.sidebar.columns([3, 1, 1])
+                with col1:
+                    st.markdown(f"**{icone} {nome}**")
+                    st.caption(f"{chunks} trechos")
+                with col2:
+                    if st.button("✏️", key=f"ren_{chave}", help="Renomear"):
+                        st.session_state.renomeando = chave
+                        st.rerun()
+                with col3:
+                    if st.button("🗑️", key=f"del_{chave}", help="Remover esta fonte"):
+                        colecao = _get_docs_collection()
+                        try:
+                            colecao.delete(where={"documento_id": meta["documento_id"]})
+                        except Exception:
+                            pass
+                        st.session_state.documentos.remove(chave)
+                        st.session_state.documentos_meta.pop(chave, None)
+                        remover_fonte_meta(chave)
+                        st.rerun()
         if "confirmar_limpeza" not in st.session_state:
             st.session_state.confirmar_limpeza = False
         if st.sidebar.button("🗑️ Limpar tudo", use_container_width=True, type="secondary", help="Apaga todas as fontes e histórico"):
