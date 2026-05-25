@@ -35,7 +35,12 @@ def render():
             )
 
             for idx_cat, grupo in enumerate(PERGUNTAS_SUGERIDAS):
-                st.markdown(f"<h4 style=\"margin-top: 1.5rem; margin-bottom: 0.75rem; color: var(--on-surface);\">{grupo['categoria']}</h4>", unsafe_allow_html=True)
+                st.markdown(
+                    f'<h4 style="margin-top: 1.75rem; margin-bottom: 0.75rem; '
+                    f'color: var(--primary-light); font-size: 0.95rem; font-weight: 600;">'
+                    f'{grupo["categoria"]}</h4>',
+                    unsafe_allow_html=True,
+                )
                 cols = st.columns(3)
                 for i, pergunta in enumerate(grupo["perguntas"]):
                     with cols[i % 3]:

@@ -32,27 +32,18 @@ def exibir_fontes(fontes: list[dict]):
         chave = (label, f["fonte"])
         if chave not in seen:
             seen.add(chave)
-            colors = {
-                "pdf": ("#00A859", "#ffffff"),
-                "url": ("#005CAA", "#ffffff"),
-                "html": ("#005CAA", "#ffffff"),
-                "instagram": ("#E84C3D", "#ffffff"),
-                "texto": ("#F7B731", "#343A40"),
-                "planilha": ("#007A40", "#ffffff")
-            }
-            bg, text_color = colors.get(f["fonte"].lower(), ("#6C757D", "#ffffff"))
+            tipo = f["fonte"].lower()
+            badge_class = f"app-badge app-badge-{tipo}"
             chips_html.append(
-                f'<span style="display: inline-block; padding: 4px 10px; border-radius: 20px; '
-                f'background-color: {bg}; color: {text_color}; font-size: 0.75rem; font-weight: 600; '
-                f'margin-right: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">'
-                f'{f["fonte"].upper()}: {label}'
+                f'<span class="{badge_class}">'
+                f'{label}'
                 f'</span>'
             )
             
     if chips_html:
         st.markdown(
             f'<div style="margin-top: 8px; margin-bottom: 12px; display: flex; flex-wrap: wrap; align-items: center;">'
-            f'<span style="font-size: 0.8rem; color: var(--on-surface-variant); margin-right: 8px; font-weight: 600;">Fontes citadas:</span>'
+            f'<span style="font-size: 0.8rem; color: var(--on-surface-variant); margin-right: 8px; font-weight: 600;">📚 Fontes citadas:</span>'
             f'{"".join(chips_html)}'
             f'</div>',
             unsafe_allow_html=True
