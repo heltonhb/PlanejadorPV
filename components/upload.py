@@ -350,3 +350,24 @@ def sidebar_upload():
                     st.rerun()
     else:
         st.sidebar.markdown("*Nenhuma fonte carregada.*")
+        if st.sidebar.button("🔄 Reconstruir lista", use_container_width=True, help="Tenta recuperar a lista de fontes do banco de dados"):
+            try:
+                from utils.relatorios import resumo_conteudo
+                _rel = resumo_conteudo()
+                if _rel.get("fontes_detalhadas"):
+                    _meta_rebuild = {}
+                    for item in _rel["fontes_detalhadas"]:
+                        chave = item["titulo"]
+                        _meta_rebuild[chave] = {
+                            "fonte": item["fonte"],
+                            "nome": item["titulo"],
+                            "chunks": item["chunks"],
+                            "caracteres": item["caracteres"],
+                            "documento_id": item.get("documento_id", ""),
+                        }
+                    if _meta_rebuild:
+                        st.session_state.documentos_meta = _meta_rebuild
+                        st.session_state.documentos = list(_meta_rebuild.keys())
+                        st.rerun()
+            except Exception:
+                pass

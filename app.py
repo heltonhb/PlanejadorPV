@@ -59,35 +59,43 @@ if "legendas_imagens_b64" not in st.session_state:
 if "documentos_meta" not in st.session_state:
     st.session_state.documentos_meta = {}
 
-# Restaurar metadados do Firestore se session_state estiver vazio
-# (acontece quando o Streamlit reinicia/redeploy)
-if not st.session_state.documentos_meta:
+# ── Reconstruir lista de fontes do ChromaDB ──
+# Toda vez que o session_state for recriado (reboot/redeploy),
+# buscamos os metadados reais do banco vetorial.
+# Firestore é complementar: se disponível, usa metadados extras.
+try:
+    _rel = resumo_conteudo()
+    if _rel.get("fontes_detalhadas"):
+        _meta_rebuild = {}
+        for item in _rel["fontes_detalhadas"]:
+            chave = item["titulo"]
+            _meta_rebuild[chave] = {
+                "fonte": item["fonte"],
+                "nome": item["titulo"],
+                "chunks": item["chunks"],
+                "caracteres": item["caracteres"],
+                "documento_id": item.get("documento_id", ""),
+            }
+        # Mescla com Firestore (sobrescreve se existir)
+        try:
+            _meta_firebase = carregar_fontes_meta()
+            if _meta_firebase:
+                for chave, meta in _meta_firebase.items():
+                    if chave in _meta_rebuild:
+                        _meta_rebuild[chave].update(meta)
+                    else:
+                        _meta_rebuild[chave] = meta
+        except Exception:
+            pass
+        st.session_state.documentos_meta = _meta_rebuild
+        st.session_state.documentos = list(_meta_rebuild.keys())
+except Exception:
+    # Se ChromaDB falhou, tenta só Firestore
     try:
         _meta_restaurado = carregar_fontes_meta()
         if _meta_restaurado:
             st.session_state.documentos_meta = _meta_restaurado
             st.session_state.documentos = list(_meta_restaurado.keys())
-    except Exception:
-        pass
-
-# Fallback: se ainda está vazio mas o ChromaDB tem dados, reconstroi do próprio banco
-if not st.session_state.documentos_meta:
-    try:
-        _rel = resumo_conteudo()
-        if _rel["fontes_detalhadas"]:
-            _meta_rebuild = {}
-            for item in _rel["fontes_detalhadas"]:
-                chave = item["titulo"]
-                _meta_rebuild[chave] = {
-                    "fonte": item["fonte"],
-                    "nome": item["titulo"],
-                    "chunks": item["chunks"],
-                    "caracteres": item["caracteres"],
-                    "documento_id": item.get("documento_id", ""),
-                }
-            if _meta_rebuild:
-                st.session_state.documentos_meta = _meta_rebuild
-                st.session_state.documentos = list(_meta_rebuild.keys())
     except Exception:
         pass
 if "ultimo_calendario" not in st.session_state:
