@@ -74,7 +74,7 @@ class GroqClient:
         self,
         prompt: str,
         temperatura: float = 0.7,
-        max_tokens: int = 2048,
+        max_tokens: int = 8192,
     ) -> str:
         """Gera texto usando Groq."""
         if not self._api_key:

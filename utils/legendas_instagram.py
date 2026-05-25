@@ -97,7 +97,7 @@ def gerar_legenda(
             imagem=image,
             usar_cache=False,
             temperatura=0.7,
-            max_tokens=2048,
+            max_tokens=4096,
         )
         
         if not conteudo:

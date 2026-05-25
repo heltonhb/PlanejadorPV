@@ -158,7 +158,7 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
             prompt=prompt,
             usar_cache=True,
             temperatura=0.7,
-            max_tokens=2048,
+            max_tokens=8192,
         )
         return {"resposta": resposta, "fontes": fontes, "provedor": "gemini"}
     except GeminiDailyQuotaError:
@@ -200,7 +200,7 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
         resposta = groq.gerar_texto(
             prompt=prompt,
             temperatura=0.7,
-            max_tokens=2048,
+            max_tokens=8192,
         )
         return {
             "resposta": resposta + "\n\n🤖 *Respondido via Groq (fallback automático)*",

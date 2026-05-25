@@ -484,7 +484,7 @@ class GeminiClient:
         prompt: str,
         usar_cache: bool = True,
         temperatura: float = 0.7,
-        max_tokens: int = 2048,
+        max_tokens: int = 8192,
     ) -> str:
         """Gera texto a partir de um prompt."""
         if not self._api_key:
@@ -523,7 +523,7 @@ class GeminiClient:
         imagem,
         usar_cache: bool = False,
         temperatura: float = 0.7,
-        max_tokens: int = 2048,
+        max_tokens: int = 8192,
     ) -> str:
         """Gera texto a partir de um prompt e uma imagem."""
         if not self._api_key:
