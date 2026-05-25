@@ -12,12 +12,11 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 MODELOS_DISPONIVEIS = [
-    "llama3-70b-8192",    # mais capaz, mais lento
-    "llama3-8b-8192",     # mais rápido, menor qualidade
-    "mixtral-8x7b-32768", # contexto longo
+    "llama-3.3-70b-versatile",  # mais capaz (70B)
+    "llama-3.1-8b-instant",     # mais rápido (8B)
 ]
 
-MODELO_PADRAO = "llama3-8b-8192"
+MODELO_PADRAO = "llama-3.1-8b-instant"
 
 
 def _get_groq_key() -> Optional[str]:
