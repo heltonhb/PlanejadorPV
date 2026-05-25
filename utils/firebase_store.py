@@ -111,6 +111,30 @@ def recarregar_chunks() -> int:
     return len(ids)
 
 
+def sincronizar_chromadb_para_firestore() -> int:
+    """Sincroniza chunks existentes no ChromaDB para o Firestore.
+    
+    Útil quando o Firebase foi configurado depois de já existirem dados
+    no ChromaDB local — migra tudo para o Firestore de uma vez.
+    """
+    from utils.documentos import _get_collection
+    collection = _get_collection()
+    
+    total = collection.count()
+    if total == 0:
+        logger.info("ChromaDB vazio, nada a sincronizar")
+        return 0
+    
+    data = collection.get(include=["documents", "metadatas"])
+    ids = data["ids"]
+    textos = data["documents"]
+    metadatas = data["metadatas"]
+    
+    saved = salvar_chunks_firestore(ids, textos, metadatas)
+    logger.info("Sincronizados %d chunks do ChromaDB para Firestore", saved)
+    return saved
+
+
 def limpar_firestore():
     if not init_firebase():
         return
