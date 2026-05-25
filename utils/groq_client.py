@@ -1,0 +1,117 @@
+"""
+Cliente para API Groq — fallback quando Gemini atinge cota diária.
+
+Groq oferece inferência rápida com modelos como Llama 3, Mixtral, etc.
+Free tier: 30 RPM, sem limite diário conhecido.
+"""
+
+import logging
+import os
+from typing import Optional
+
+logger = logging.getLogger(__name__)
+
+MODELOS_DISPONIVEIS = [
+    "llama3-70b-8192",    # mais capaz, mais lento
+    "llama3-8b-8192",     # mais rápido, menor qualidade
+    "mixtral-8x7b-32768", # contexto longo
+]
+
+MODELO_PADRAO = "llama3-8b-8192"
+
+
+def _get_groq_key() -> Optional[str]:
+    """Obtém chave da API Groq."""
+    # 1. Variável de ambiente
+    key = os.getenv("GROQ_API_KEY")
+    if key:
+        return key
+
+    # 2. .env
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        key = os.getenv("GROQ_API_KEY")
+        if key:
+            return key
+    except Exception:
+        pass
+
+    # 3. Streamlit Secrets
+    try:
+        import streamlit as st
+        return st.secrets.get("GROQ_API_KEY")
+    except Exception:
+        pass
+
+    return None
+
+
+class GroqClient:
+    """Cliente para API Groq com fallbacks e cache."""
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        modelo: str = MODELO_PADRAO,
+    ):
+        self._api_key = api_key or _get_groq_key()
+        self.modelo = modelo
+        self._client = None
+
+    @property
+    def disponivel(self) -> bool:
+        """Verifica se a chave está configurada."""
+        return bool(self._api_key)
+
+    def _get_client(self):
+        """Obtém ou cria o cliente Groq."""
+        if self._client is None:
+            from groq import Groq
+            self._client = Groq(api_key=self._api_key)
+        return self._client
+
+    def gerar_texto(
+        self,
+        prompt: str,
+        temperatura: float = 0.7,
+        max_tokens: int = 2048,
+    ) -> str:
+        """Gera texto usando Groq."""
+        if not self._api_key:
+            raise RuntimeError("GROQ_API_KEY não configurada.")
+
+        client = self._get_client()
+
+        resposta = client.chat.completions.create(
+            model=self.modelo,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Você é um consultor de marketing especializado em "
+                        "franquias educacionais, com foco na rede Ensina Mais "
+                        "Turma da Mônica. Responda em português do Brasil, "
+                        "de forma clara e objetiva, usando APENAS as "
+                        "informações fornecidas nos documentos de referência."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=temperatura,
+            max_tokens=max_tokens,
+        )
+
+        return resposta.choices[0].message.content or ""
+
+
+# Singleton
+_cliente_global: Optional[GroqClient] = None
+
+
+def get_cliente_groq() -> GroqClient:
+    """Obtém instância singleton do cliente Groq."""
+    global _cliente_global
+    if _cliente_global is None:
+        _cliente_global = GroqClient()
+    return _cliente_global

@@ -1,8 +1,12 @@
 """
-Módulo principal do motor RAG — consulta a base vetorial e gera respostas com Gemini.
+Módulo principal do motor RAG — consulta a base vetorial e gera respostas.
+
+Usa Gemini como provedor principal e Groq como fallback automático
+quando a cota diária do Gemini é excedida.
 """
 
 import logging
+import time
 
 from utils.documentos import _get_collection
 from utils.gemini_client import (
@@ -14,6 +18,7 @@ from utils.gemini_client import (
     GeminiSafetyError,
     get_cliente,
 )
+from utils.groq_client import get_cliente_groq
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +151,7 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
         f"Pergunta: {pergunta}"
     )
 
+    # ── Tentar Gemini primeiro ──
     try:
         cliente = get_cliente(modelo=MODELO)
         resposta = cliente.gerar_texto(
@@ -154,33 +160,56 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
             temperatura=0.7,
             max_tokens=2048,
         )
-        return {"resposta": resposta, "fontes": fontes}
-
-    except GeminiAPIKeyError as e:
-        return {"resposta": f"Erro: {e}", "fontes": []}
+        return {"resposta": resposta, "fontes": fontes, "provedor": "gemini"}
     except GeminiDailyQuotaError:
-        return {
-            "resposta": "⚠️ Limite **diário** de requisições excedido. O Google Gemini resetará a cota automaticamente — você poderá usar o app novamente amanhã.",
-            "fontes": [],
-        }
+        logger.warning("Gemini em cota diária, tentando Groq...")
     except GeminiQuotaError:
-        return {
-            "resposta": "Limite de requisições excedido. Aguarde alguns minutos e tente novamente.",
-            "fontes": [],
-        }
+        logger.warning("Gemini em rate limit, tentando Groq...")
+        time.sleep(3)
     except GeminiServerError:
-        return {
-            "resposta": "Servidor do Gemini temporariamente indisponível. Tente novamente em alguns instantes.",
-            "fontes": [],
-        }
+        logger.warning("Gemini indisponível, tentando Groq...")
+    except GeminiAPIKeyError as e:
+        return {"resposta": f"Erro: {e}", "fontes": [], "provedor": ""}
     except GeminiSafetyError:
         return {
             "resposta": "O conteúdo foi bloqueado pelos filtros de segurança do Gemini.",
-            "fontes": [],
+            "fontes": [], "provedor": "",
         }
     except GeminiError as e:
         logger.error(f"Erro Gemini: {e}")
         return {
             "resposta": f"Erro ao comunicar com o Gemini: {e.message[:200]}",
-            "fontes": [],
+            "fontes": [], "provedor": "",
+        }
+    
+    # ── Fallback: Groq ──
+    try:
+        groq = get_cliente_groq()
+        if not groq.disponivel:
+            return {
+                "resposta": (
+                    "⚠️ Gemini está com cota esgotada e o Groq (fallback) "
+                    "não está configurado. Para continuar usando, adicione "
+                    "`GROQ_API_KEY` nos Secrets do Streamlit Cloud ou "
+                    "gere uma nova chave Gemini.\n\n"
+                    "Chave Groq gratuita em: https://console.groq.com"
+                ),
+                "fontes": [], "provedor": "",
+            }
+        
+        resposta = groq.gerar_texto(
+            prompt=prompt,
+            temperatura=0.7,
+            max_tokens=2048,
+        )
+        return {
+            "resposta": resposta + "\n\n🤖 *Respondido via Groq (fallback automático)*",
+            "fontes": fontes,
+            "provedor": "groq",
+        }
+    except Exception as e:
+        logger.error(f"Groq fallback falhou: {e}")
+        return {
+            "resposta": f"Gemini e Groq falharam. Gemini: cota diária excedida. Groq: {str(e)[:100]}.",
+            "fontes": [], "provedor": "",
         }
