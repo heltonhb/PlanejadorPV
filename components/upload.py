@@ -232,12 +232,15 @@ def _render_quota_status():
             rest = info["restantes"]
             limite = info["limite"]
             bloqueado = info["bloqueado"]
+            conhecido = info.get("conhecido", True)
             nome = modelo.replace("gemini-", "").replace("-flash", "").replace("-2.0", " 2.0")
             if bloqueado:
                 st.sidebar.markdown(f"🔴 **{nome}**: esgotada")
-            elif rest < 50:
+            elif not conhecido:
+                st.sidebar.markdown(f"⚪ **{nome}**: ?/{limite} (aguardando)")
+            elif rest is not None and rest < 50:
                 st.sidebar.markdown(f"🟡 **{nome}**: {rest}/{limite}")
-            else:
+            elif rest is not None:
                 st.sidebar.markdown(f"🟢 **{nome}**: {rest}/{limite}")
     except Exception:
         pass

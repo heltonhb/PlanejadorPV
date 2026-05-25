@@ -181,16 +181,8 @@ def _registrar_requisicao(modelo: str):
 def obter_status_quota() -> dict[str, dict]:
     """Retorna status de cota de todos os modelos.
     
-    Exemplo:
-    {
-        "gemini-2.5-flash": {
-            "usadas": 42,
-            "limite": 1500,
-            "restantes": 1458,
-            "bloqueado_ate": None | float,
-        },
-        ...
-    }
+    ATENÇÃO: o contador é local (reseta no reboot do servidor).
+    A cota real do Google pode estar diferente.
     """
     from collections import OrderedDict
     status = OrderedDict()
@@ -199,18 +191,44 @@ def obter_status_quota() -> dict[str, dict]:
     with _request_log_lock, _quota_lock:
         for modelo in MODELOS_FALLBACK:
             registros = _request_log.get(modelo, [])
-            # Contar requisições nas últimas 24h
+            bloqueado_ate = _quota_blocked.get(modelo, 0.0)
+            bloqueado = agora < bloqueado_ate
+            
+            # Se está bloqueado localmente, mostrar esgotado
+            if bloqueado:
+                status[modelo] = {
+                    "usadas": _LIMITES_RPD.get(modelo, 1500),
+                    "limite": _LIMITES_RPD.get(modelo, 1500),
+                    "restantes": 0,
+                    "bloqueado": True,
+                    "bloqueado_ate": bloqueado_ate,
+                    "conhecido": True,
+                }
+                continue
+            
+            # Se nunca fez requisição nesta sessão, status é desconhecido
+            if not registros:
+                status[modelo] = {
+                    "usadas": 0,
+                    "limite": _LIMITES_RPD.get(modelo, 1500),
+                    "restantes": None,  # desconhecido
+                    "bloqueado": False,
+                    "bloqueado_ate": None,
+                    "conhecido": False,
+                }
+                continue
+            
+            # Tem dados locais — mostrar contagem real
             corte = agora - 86400
             usadas = sum(1 for t in registros if t > corte)
             limite = _LIMITES_RPD.get(modelo, 1500)
-            bloqueado_ate = _quota_blocked.get(modelo, 0.0)
-            
             status[modelo] = {
                 "usadas": usadas,
                 "limite": limite,
                 "restantes": max(0, limite - usadas),
-                "bloqueado": agora < bloqueado_ate,
-                "bloqueado_ate": bloqueado_ate if agora < bloqueado_ate else None,
+                "bloqueado": False,
+                "bloqueado_ate": None,
+                "conhecido": True,
             }
     return status
 
