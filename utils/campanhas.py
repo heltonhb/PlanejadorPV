@@ -128,6 +128,12 @@ def gerar_campanha(
                 "conteudo": "",
             }
         
+        # Safety net: remove HTML tags que o Gemini insiste em gerar
+        import re
+        conteudo = re.sub(r'<[^>]*>', '', conteudo)
+        # Remove linhas vazias múltiplas
+        conteudo = re.sub(r'\n{3,}', '\n\n', conteudo)
+        
         return {
             "status": "ok",
             "conteudo": conteudo,
@@ -211,7 +217,7 @@ def _construir_prompt(
         )
     
     prompt += (
-        f"\nFormato da resposta (use Markdown):\n\n"
+        f"\nFormato da resposta (use SOMENTE Markdown, NÃO use HTML):\n\n"
         f"## Nome da Campanha\n"
         f"[nome da campanha]\n\n"
         f"### Descrição\n"
@@ -242,7 +248,8 @@ def _construir_prompt(
         f"1. Seja específico e acionável — o usuário é um franqueado.\n"
         f"2. Adapte a linguagem e os exemplos ao público-alvo informado.\n"
         f"3. Se houver dados dos documentos, use-as.\n"
-        f"4. Mantenha tom profissional mas acessível."
+        f"4. USE SOMENTE Markdown. NÃO use tags HTML como <div>, <span>, <style>.\n"
+        f"5. Mantenha tom profissional mas acessível."
     )
     
     return prompt

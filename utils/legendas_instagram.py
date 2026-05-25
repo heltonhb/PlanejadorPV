@@ -108,6 +108,11 @@ def gerar_legenda(
                 "hashtags": [],
             }
         
+        # Remover HTML que o Gemini insiste em gerar
+        import re
+        conteudo = re.sub(r'<[^>]*>', '', conteudo)
+        conteudo = re.sub(r'\n{3,}', '\n\n', conteudo)
+        
         return {
             "status": "ok",
             "conteudo": conteudo,

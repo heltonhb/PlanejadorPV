@@ -103,6 +103,10 @@ def gerar_calendario(mes: str, ano: int) -> dict:
                 "mensagem": "Gemini retornou uma resposta vazia. Tente novamente.",
                 "conteudo": "",
             }
+        # Remover HTML que o Gemini insiste em gerar
+        import re
+        conteudo = re.sub(r'<[^>]*>', '', conteudo)
+        conteudo = re.sub(r'\n{3,}', '\n\n', conteudo)
         return {
             "status": "ok",
             "conteudo": conteudo,
