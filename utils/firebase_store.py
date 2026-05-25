@@ -13,6 +13,41 @@ from utils.documentos import _get_collection
 logger = logging.getLogger(__name__)
 
 
+def _diagnosticar_chave_firebase() -> str:
+    """Diagnostica problemas com a chave do Firebase."""
+    try:
+        import streamlit as st
+        cred_dict = dict(st.secrets.get("firebase", {}))
+        if not cred_dict:
+            return "Firebase não configurado em st.secrets['firebase']"
+        pk = cred_dict.get("private_key", "")
+        if not pk:
+            return "private_key ausente nas credenciais"
+        if "BEGIN PRIVATE KEY" not in pk:
+            return "private_key não está em formato PEM"
+        # Verificar com OpenSSL
+        import subprocess, tempfile, os
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as f:
+            f.write(pk)
+            pem_path = f.name
+        r = subprocess.run(['openssl', 'pkey', '-in', pem_path, '-check'],
+                          capture_output=True, text=True, timeout=5)
+        os.unlink(pem_path)
+        if r.returncode != 0:
+            stderr = r.stderr[:200]
+            if "p not prime" in stderr:
+                return ("❌ Chave privada CORROMPIDA! Os parâmetros RSA são inválidos. "
+                        "Isso acontece quando o JSON de serviço é copiado incorretamente "
+                        "para o arquivo .streamlit/secrets.toml.\n\n"
+                        "**Solução:** Vá em https://console.cloud.google.com/apis/credentials, "
+                        "gere uma nova chave para a service account, copie o JSON exato "
+                        "(sem modificar quebras de linha) e atualize os secrets.")
+            return f"❌ Chave inválida: {stderr}"
+        return "✅ Chave válida"
+    except Exception as e:
+        return f"Erro ao diagnosticar: {e}"
+
+
 def init_firebase():
     if firebase_admin is None or credentials is None:
         logger.warning("firebase-admin não instalado")

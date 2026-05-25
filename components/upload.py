@@ -361,6 +361,17 @@ def sidebar_upload():
                     st.rerun()
     else:
         st.sidebar.markdown("*Nenhuma fonte carregada.*")
+        
+        # Diagnóstico do Firebase
+        try:
+            from utils.firebase_store import _diagnosticar_chave_firebase
+            _diag = _diagnosticar_chave_firebase()
+            if "corrompida" in _diag or "❌" in _diag:
+                with st.sidebar.expander("⚠️ Firebase com problema", expanded=False):
+                    st.markdown(_diag)
+        except Exception:
+            pass
+        
         if st.sidebar.button("🔄 Reconstruir lista", use_container_width=True, help="Tenta recuperar a lista de fontes do banco de dados"):
             try:
                 from utils.relatorios import resumo_conteudo
