@@ -73,7 +73,9 @@ def render():
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Display generated campaign if available
-    _conteudo = st.session_state.get("ultima_campanha", "")
+    _conteudo = st.session_state.get("ultima_campanha") or ""
+    if not isinstance(_conteudo, str):
+        _conteudo = ""
     # Sanitizar HTML residual de cache anterior ao fix
     _conteudo = _sanitizar(_conteudo)
     if _conteudo:
