@@ -327,28 +327,41 @@ class GeminiClient:
             self._cache.popitem(last=False)
     
     def _classificar_erro(self, erro: Exception) -> GeminiError:
-        """Classifica o erro e retorna exceção apropriada.
-        
-        Tenta diferenciar entre:
-        - Cota diária excedida (RPD) → GeminiDailyQuotaError
-        - Rate limit por minuto (RPM) → GeminiQuotaError
-        - Outros erros → classes específicas
-        """
+        """Classifica o erro e retorna exceção apropriada."""
         msg = str(erro).lower()
         
-        if "api_key" in msg or "not found" in msg or "invalid" in msg:
-            return GeminiAPIKeyError()
-        elif "quota" in msg or "429" in msg or "rate limit" in msg or "rate exceeded" in msg or "too many" in msg:
-            # Tenta diferenciar diário de rate limit
-            if any(w in msg for w in ["per day", "daily", "per_day", "day"]):
+        # 1. QUOTA / RATE LIMIT — verificar PRIMEIRO para evitar
+        #    falso positivo com mensagens que contêm "api_key" + "quota"
+        palavras_quota = ["quota", "429", "rate limit", "rate exceeded", "rate_limit",
+                          "too many", "resource_exhausted", "exhausted",
+                          "per day", "per_day", "daily"]
+        if any(w in msg for w in palavras_quota):
+            if any(w in msg for w in ["per day", "per_day", "daily"]):
                 return GeminiDailyQuotaError()
             return GeminiQuotaError()
-        elif "safety" in msg or "blocked" in msg or "harm" in msg:
-            return GeminiSafetyError()
-        elif any(code in msg for code in ["500", "503", "server", "internal"]):
+        
+        # 2. SERVER ERROR
+        if any(code in msg for code in ["500", "503", "server", "internal", "unavailable"]):
             return GeminiServerError()
-        else:
-            return GeminiError(f"Erro inesperado: {str(erro)[:200]}")
+        
+        # 3. SAFETY
+        if "safety" in msg or "blocked" in msg or "harm" in msg or "safety_ratings" in msg:
+            return GeminiSafetyError()
+        
+        # 4. API KEY — só classifica como erro de chave se for EXPLÍCITO
+        if msg.startswith("api_key") or "api_key_invalid" in msg or "api_key_not" in msg:
+            return GeminiAPIKeyError()
+        if "api key" in msg and ("invalid" in msg or "not found" in msg or "not valid" in msg):
+            # Só se "api key" estiver próximo de "invalid"/"not found"
+            # e NÃO tiver palavras de quota na mensagem
+            if not any(w in msg for w in palavras_quota):
+                return GeminiAPIKeyError()
+        
+        # 5. NOT FOUND — genérico, pode ser modelo ou recurso
+        if "not found" in msg or "not_found" in msg:
+            return GeminiError(f"Recurso não encontrado: {str(erro)[:200]}", code="NOT_FOUND")
+        
+        return GeminiError(f"Erro inesperado: {str(erro)[:200]}")
     
     def _executar_com_retry(
         self,
