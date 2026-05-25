@@ -77,14 +77,17 @@ def salvar_chunks_firestore(ids: list[str], textos: list[str], metadatas: list[d
     if not init_firebase():
         return 0
     db = firestore.client()
-    saved = 0
+    # Usar batch para reduzir de N chamadas para 1
+    batch = db.batch()
     for i, doc_id in enumerate(ids):
-        db.collection("chunks").document(doc_id).set({
+        doc_ref = db.collection("chunks").document(doc_id)
+        batch.set(doc_ref, {
             "texto": textos[i],
             "metadata": metadatas[i],
         })
-        saved += 1
-    return saved
+    batch.commit()
+    logger.info("Salvos %d chunks no Firestore (batch)", len(ids))
+    return len(ids)
 
 
 def recarregar_chunks() -> int:

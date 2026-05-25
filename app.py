@@ -13,8 +13,7 @@ st.set_page_config(
 
 from dotenv import load_dotenv
 from utils.documentos import _get_collection as _get_docs_collection
-from utils.firebase_store import carregar_fontes_meta
-from utils.relatorios import resumo_conteudo
+from utils.restore import reconstruir_fontes
 from components import inject_css_and_theme, render_header, sidebar_upload
 from tabs import (
     render_dashboard,
@@ -72,87 +71,14 @@ if "documentos_meta" not in st.session_state:
 # ── Reconstruir lista de fontes do ChromaDB ──
 # Toda vez que o session_state for recriado (reboot/redeploy),
 # buscamos os metadados reais do banco vetorial.
-# Firestore é complementar: se disponível, usa metadados extras.
-_FONTES_RESTAURADAS = 0
+from utils.restore import reconstruir_fontes
 
-try:
-    _rel = resumo_conteudo()
-    _fontes_detalhadas = _rel.get("fontes_detalhadas") or []
-    if _fontes_detalhadas:
-        _meta_rebuild = {}
-        for item in _fontes_detalhadas:
-            chave = item["titulo"]
-            if chave in _meta_rebuild:
-                # Agrupar chunks de mesmo título
-                _meta_rebuild[chave]["chunks"] += item["chunks"]
-                _meta_rebuild[chave]["caracteres"] += item["caracteres"]
-            else:
-                _meta_rebuild[chave] = {
-                    "fonte": item["fonte"],
-                    "nome": item["titulo"],
-                    "chunks": item["chunks"],
-                    "caracteres": item["caracteres"],
-                    "documento_id": item.get("documento_id", ""),
-                }
-        # Mescla com Firestore (metadados extras, se disponível)
-        try:
-            _meta_firebase = carregar_fontes_meta()
-            if _meta_firebase:
-                for chave, meta in _meta_firebase.items():
-                    if chave in _meta_rebuild:
-                        _meta_rebuild[chave].update(meta)
-                    else:
-                        _meta_rebuild[chave] = meta
-        except Exception:
-            pass
-        st.session_state.documentos_meta = _meta_rebuild
-        st.session_state.documentos = list(_meta_rebuild.keys())
-        st.session_state._fontes_restauradas = True
-        _FONTES_RESTAURADAS = len(_meta_rebuild)
-    elif _recarregou > 0:
-        # ChromaDB recarregou do Firestore mas resumo_conteudo não retornou fontes
-        # Tenta reconstruir manualmente da collection
-        logger.info("Tentando reconstruir metadados diretamente da collection...")
-        try:
-            _data = _get_docs_collection().get(include=["metadatas"])
-            if _data and _data["ids"]:
-                _meta_rebuild = {}
-                for i, md in enumerate(_data["metadatas"]):
-                    if md is None:
-                        continue
-                    titulo = md.get("arquivo") or md.get("url") or md.get("titulo") or f"documento_{i}"
-                    fonte = md.get("fonte", "desconhecido")
-                    if titulo not in _meta_rebuild:
-                        _meta_rebuild[titulo] = {
-                            "fonte": fonte,
-                            "nome": titulo,
-                            "chunks": 0,
-                            "caracteres": 0,
-                            "documento_id": md.get("documento_id", ""),
-                        }
-                    _meta_rebuild[titulo]["chunks"] += 1
-                    _meta_rebuild[titulo]["caracteres"] += len(str(md.get("texto", "")))
-                if _meta_rebuild:
-                    st.session_state.documentos_meta = _meta_rebuild
-                    st.session_state.documentos = list(_meta_rebuild.keys())
-                    st.session_state._fontes_restauradas = True
-                    _FONTES_RESTAURADAS = len(_meta_rebuild)
-                    logger.info("Reconstrução manual: %d fontes", _FONTES_RESTAURADAS)
-        except Exception as e:
-            logger.warning("Reconstrução manual falhou: %s", e)
-except Exception as e:
-    logger.warning("Falha ao reconstruir fontes do ChromaDB: %s", e)
-    _FONTES_RESTAURADAS = 0
-    # Fallback: tenta só Firestore
-    try:
-        _meta_restaurado = carregar_fontes_meta()
-        if _meta_restaurado:
-            st.session_state.documentos_meta = _meta_restaurado
-            st.session_state.documentos = list(_meta_restaurado.keys())
-            st.session_state._fontes_restauradas = True
-            _FONTES_RESTAURADAS = len(_meta_restaurado)
-    except Exception:
-        pass
+_meta_rebuild, _FONTES_RESTAURADAS = reconstruir_fontes(recarregou=_recarregou)
+if _meta_rebuild:
+    st.session_state.documentos_meta = _meta_rebuild
+    st.session_state.documentos = list(_meta_rebuild.keys())
+    st.session_state._fontes_restauradas = True
+
 if "ultimo_calendario" not in st.session_state:
     st.session_state.ultimo_calendario = None
 if "ultima_campanha" not in st.session_state:
