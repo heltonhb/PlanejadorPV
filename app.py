@@ -68,11 +68,11 @@ if "legendas_imagens_b64" not in st.session_state:
 if "documentos_meta" not in st.session_state:
     st.session_state.documentos_meta = {}
 
-# ── Reconstruir lista de fontes do ChromaDB ──
-# Só roda quando o session_state está vazio (reboot/redeploy).
-# Depois que o usuário interage (adiciona/remove), NÃO sobrescrevemos,
-# senão as chaves mudam e os botões de excluir/renomear param de funcionar.
-if not st.session_state.documentos:
+# ── Reconstruir lista de fontes do ChromaDB (apenas no boot) ──
+# Só roda na primeira execução após restart/redeploy.
+# A flag _restauracao_feita impede que o rebuild dispare novamente
+# quando o usuário remove a última fonte (documentos ficaria vazio).
+if not st.session_state.get("_restauracao_feita") and not st.session_state.documentos:
     from utils.restore import reconstruir_fontes
 
     _meta_rebuild, _FONTES_RESTAURADAS = reconstruir_fontes(recarregou=_recarregou)
@@ -80,6 +80,7 @@ if not st.session_state.documentos:
         st.session_state.documentos_meta = _meta_rebuild
         st.session_state.documentos = list(_meta_rebuild.keys())
         st.session_state._fontes_restauradas = True
+    st.session_state._restauracao_feita = True
 
 if "ultimo_calendario" not in st.session_state:
     st.session_state.ultimo_calendario = None
