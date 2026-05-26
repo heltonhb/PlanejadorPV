@@ -4,6 +4,7 @@ Módulo para geração de resumos de documentos usando Gemini.
 
 import logging
 
+from utils.config import MODELO_GEMINI
 from utils.gemini_client import (
     GeminiError,
     GeminiAPIKeyError,
@@ -12,7 +13,7 @@ from utils.gemini_client import (
 
 logger = logging.getLogger(__name__)
 
-MODELO = "gemini-2.5-flash"
+MODELO = MODELO_GEMINI
 TAMANHO_MAXIMO_TEXTO = 8000
 TAMANHO_MAXIMO_RESUMO = 250
 
