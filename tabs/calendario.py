@@ -3,6 +3,7 @@ from datetime import date
 from utils.calendario import gerar_calendario
 from utils.constants import MESES
 from components.fontes import render_markdown_with_copy
+import logging
 
 
 def render():
@@ -31,7 +32,13 @@ def render():
             st.session_state.processing = True
             progress = st.progress(0, text="Iniciando geração do calendário...")
             progress.progress(30, text="Consultando fontes...")
-            resultado = gerar_calendario(mes_selecionado, ano_selecionado)
+            try:
+                resultado = gerar_calendario(mes_selecionado, ano_selecionado)
+            except Exception as e:
+                logging.getLogger(__name__).exception("Erro ao gerar calendário")
+                st.error(f"❌ Erro inesperado ao gerar calendário: {e}")
+                st.session_state.processing = False
+                st.rerun()
             progress.progress(80, text="Estruturando resultado...")
             progress.progress(100, text="Concluído!")
             progress.empty()

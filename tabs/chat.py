@@ -54,7 +54,13 @@ def render():
                                 st.markdown(pergunta)
                             with st.chat_message("assistant"):
                                 with st.spinner("Consultando fontes..."):
-                                    resultado = perguntar(pergunta)
+                                    try:
+                                        resultado = perguntar(pergunta)
+                                    except Exception as e:
+                                        logger = __import__("logging").getLogger(__name__)
+                                        logger.exception("Erro ao consultar fontes")
+                                        st.error(f"❌ Ocorreu um erro ao consultar as fontes: {e}")
+                                        st.rerun()
                                 st.markdown(resultado["resposta"], unsafe_allow_html=True)
                                 if resultado["fontes"]:
                                     exibir_fontes(resultado["fontes"])
@@ -84,10 +90,15 @@ def render():
                 with col_base:
                     if st.button("📚 Incluir na base", key=f"inc_msg_{i}", use_container_width=True):
                         with st.spinner("Adicionando à base de conhecimento..."):
-                            proc = processar_texto(
-                                msg["content"],
-                                titulo=f"Resposta do assistente #{i}",
-                            )
+                            try:
+                                proc = processar_texto(
+                                    msg["content"],
+                                    titulo=f"Resposta do assistente #{i}",
+                                )
+                            except Exception as e:
+                                __import__("logging").getLogger(__name__).exception("Erro ao processar texto")
+                                st.error(f"❌ Erro ao incluir na base: {e}")
+                                st.rerun()
                         if proc["status"] == "ok":
                             st.success(f"✅ Adicionado ({proc['total_chunks']} trechos).")
                         else:

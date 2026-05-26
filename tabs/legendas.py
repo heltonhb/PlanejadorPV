@@ -3,6 +3,7 @@ import streamlit.components.v1 as components
 from utils.legendas_instagram import gerar_legenda
 from utils.constants import TOM_ESTILO
 from components.instagram import parse_instagram_options, render_instagram_mockup
+import logging
 
 
 def render():
@@ -71,12 +72,17 @@ def render():
                     img_b64 = "data:image/jpeg;base64," + base64.b64encode(buffered.getvalue()).decode()
                     
                     with st.spinner("Analisando imagem e gerando legendas..."):
-                        resultado = gerar_legenda(
-                            image=img_pil,
-                            tom=tom,
-                            tema=tema,
-                            instrucoes=instrucoes,
-                        )
+                        try:
+                            resultado = gerar_legenda(
+                                image=img_pil,
+                                tom=tom,
+                                tema=tema,
+                                instrucoes=instrucoes,
+                            )
+                        except Exception as e:
+                            logging.getLogger(__name__).exception("Erro ao gerar legendas")
+                            st.error(f"❌ Erro inesperado ao gerar legendas: {e}")
+                            st.rerun()
                     if resultado["status"] == "ok":
                         st.session_state.legendas_geradas.append(resultado["conteudo"])
                         st.session_state.legendas_imagens_b64.append(img_b64)

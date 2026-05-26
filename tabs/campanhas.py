@@ -4,6 +4,7 @@ from utils.constants import OBJETIVOS, PUBLICOS, SERVICOS
 from utils.helpers import sanitizar_html
 from components.cards import render_campaign_result_card
 from components.fontes import render_markdown_with_copy
+import logging
 
 
 def render():
@@ -39,10 +40,16 @@ def render():
             st.session_state.processing = True
             progress = st.progress(0, text="Iniciando criação da campanha...")
             progress.progress(25, text="Analisando objetivos...")
-            resultado = gerar_campanha(
-                objetivo, publico, servico,
-                nome=nome_campanha, canais=canais, orcamento=orcamento, datas=datas
-            )
+            try:
+                resultado = gerar_campanha(
+                    objetivo, publico, servico,
+                    nome=nome_campanha, canais=canais, orcamento=orcamento, datas=datas
+                )
+            except Exception as e:
+                logging.getLogger(__name__).exception("Erro ao gerar campanha")
+                st.error(f"❌ Erro inesperado ao gerar campanha: {e}")
+                st.session_state.processing = False
+                st.rerun()
             progress.progress(75, text="Montando estrutura da campanha...")
             progress.progress(100, text="Concluído!")
             progress.empty()

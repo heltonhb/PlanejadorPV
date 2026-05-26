@@ -3,6 +3,7 @@ from utils.documentos import _get_collection as _get_docs_collection, deletar_do
 from utils.relatorios import resumo_conteudo
 from utils.exportacao import exportar_relatorio_csv
 from utils.firebase_store import remover_fonte_meta
+import logging
 
 
 def render():
@@ -27,7 +28,13 @@ def render():
         unsafe_allow_html=True,
     )
 
-    relatorio = resumo_conteudo()
+    try:
+        relatorio = resumo_conteudo()
+    except Exception as e:
+        logging.getLogger(__name__).exception("Erro ao carregar relatório")
+        st.error(f"❌ Erro ao carregar relatório da base de dados: {e}")
+        st.markdown('</div>', unsafe_allow_html=True)
+        return
 
     if relatorio["total_chunks"] == 0:
         st.markdown(

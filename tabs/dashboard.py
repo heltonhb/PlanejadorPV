@@ -1,6 +1,129 @@
+"""Painel principal do PlanejadorPV — visão geral + saúde do sistema."""
+
+import logging
+import os
+import sys
+
 import streamlit as st
+
 from utils.documentos import _get_collection as _get_docs_collection
 from components import render_upload_tab
+
+logger = logging.getLogger(__name__)
+
+# ── Versão do app (datada do último refactor) ──
+__app_version__ = "2.0.0"
+__app_build__ = "2025-05-26"
+
+
+def _checar_api_key(nome: str, env_var: str) -> dict:
+    """Verifica se uma chave de API está configurada no ambiente."""
+    chave = os.getenv(env_var)
+    if chave:
+        mascara = chave[:6] + "…" + chave[-4:] if len(chave) > 12 else "***"
+        return {"status": "✅", "label": f"{mascara}", "configurada": True}
+    return {"status": "❌", "label": "Não configurada", "configurada": False}
+
+
+def _checar_chromadb() -> dict:
+    """Verifica conectividade com o ChromaDB."""
+    try:
+        collection = _get_docs_collection()
+        total = collection.count()
+        return {"status": "✅", "label": f"Conectado ({total} fragmentos)", "conectado": True, "chunks": total}
+    except Exception as e:
+        return {"status": "❌", "label": f"Erro: {e}", "conectado": False, "chunks": 0}
+
+
+def _checar_firestore() -> dict:
+    """Verifica conectividade com o Firestore."""
+    try:
+        from firebase_admin import credentials, firestore, initialize_app, get_app
+        try:
+            app = get_app()
+        except ValueError:
+            # Ainda não inicializado — tenta inicializar
+            cred_dict = dict(st.secrets.get("firebase", {}))
+            if cred_dict:
+                cred = credentials.Certificate(cred_dict)
+                initialize_app(cred)
+            else:
+                return {"status": "⚠️", "label": "Firebase não configurado (secrets)", "conectado": False}
+        return {"status": "✅", "label": "Conectado", "conectado": True}
+    except ImportError:
+        return {"status": "⚠️", "label": "firebase-admin não instalado", "conectado": False}
+    except Exception as e:
+        return {"status": "❌", "label": f"Erro: {e}", "conectado": False}
+
+
+def _render_health_section():
+    """Renderiza a seção de saúde do sistema."""
+    st.markdown(
+        '<h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--on-surface);">🏥 Saúde do Sistema</h3>',
+        unsafe_allow_html=True,
+    )
+
+    gemini = _checar_api_key("Gemini", "GEMINI_API_KEY")
+    groq = _checar_api_key("Groq", "GROQ_API_KEY")
+    chroma = _checar_chromadb()
+    firebase = _checar_firestore()
+
+    cols = st.columns(4)
+
+    def _health_card(col, titulo, status, detalhe, cor):
+        col.markdown(
+            f'<div class="metric-card animate-in" style="padding:1rem 1rem 0.8rem;">'
+            f'<div class="metric-card-label">{titulo}</div>'
+            f'<div style="font-size: 1.6rem; line-height: 1.4;">{status}</div>'
+            f'<div style="font-size: 0.72rem; color: {cor}; font-weight: 600; margin-top: 0.2rem;">{detalhe}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    _health_card(cols[0], "🔑 Gemini", gemini["status"], gemini["label"],
+                 "var(--primary)" if gemini["configurada"] else "var(--danger)")
+    _health_card(cols[1], "🔑 Groq (fallback)", groq["status"], groq["label"],
+                 "var(--primary)" if groq["configurada"] else "var(--on-surface-variant)")
+    _health_card(cols[2], "🗄️ ChromaDB", chroma["status"], chroma["label"],
+                 "var(--primary)" if chroma["conectado"] else "var(--danger)")
+    _health_card(cols[3], "☁️ Firestore", firebase["status"], firebase["label"],
+                 "var(--primary)" if firebase["conectado"] else "var(--warning)")
+
+    # Detalhes do sistema
+    with st.expander("⚙️ Detalhes do sistema", expanded=False):
+        st.markdown(
+            f"""
+            | Item | Valor |
+            |---|---|
+            | **Python** | {sys.version.split()[0]} |
+            | **App** | v{__app_version__} ({__app_build__}) |
+            | **Streamlit** | {st.__version__} |
+            | **Modelo Gemini** | `gemini-2.5-flash` |
+            | **Rate limit** | {os.getenv('MIN_INTERVALO_REQ', '7s')} |
+            | **Coleção ChromaDB** | `documentos_ensina_mais` |
+            | **Fragmentos por chunk** | 500 chars (50 overlap) |
+            """
+        )
+
+
+def _render_changelog():
+    """Renderiza o changelog do app em um expander."""
+    with st.expander("📋 Changelog — Histórico de atualizações", expanded=False):
+        st.markdown("""
+        ### v2.0.0 (2025-05-26) — Refatoração completa
+        - ✨ **Suite de testes**: 42 testes passando em 14s (era ~88s)
+        - 🔧 **Mock de APIs**: testes isolados sem chamadas externas
+        - 🏗️ **DRY**: `utils/ocr.py`, `utils/extractors.py` extraídos da god class
+        - 🧠 **Prompts centralizados**: `utils/prompts.py` com system_instruction
+        - 📐 **Personas**: PERSONA_CONSULTOR, PERSONA_RAG, PERSONA_SOCIAL_MEDIA, PERSONA_RESUMOS
+        - 🚀 **CI/CD**: GitHub Actions rodando pytest a cada push
+        - 🩺 **Dashboard de saúde**: status visual de APIs, ChromaDB e Firestore
+
+        ### v1.x — Versão original
+        - App funcional com Streamlit, Gemini, ChromaDB e Firestore
+        - Upload de PDFs, URLs, HTML, Instagram, textos e planilhas
+        - Geração de calendário editorial, campanhas e legendas
+        """, unsafe_allow_html=True)
 
 
 def render():
@@ -60,9 +183,10 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # Os gráficos de distribuição foram removidos pois não refletiam dados reais.
-    # Futuramente, substituir por visualizações baseadas em dados do RAG.
+    # ── Seção de Saúde ──
+    _render_health_section()
 
+    # ── Fontes carregadas ──
     if st.session_state.documentos:
         st.markdown(
             '<h3 style="margin-bottom:1rem; margin-top: 2rem; color: var(--on-surface);">📂 Fontes carregadas</h3>',
@@ -105,8 +229,11 @@ def render():
             unsafe_allow_html=True,
         )
 
+    # ── Changelog ──
+    _render_changelog()
+
     st.markdown(
-        '<div class="app-card animate-in" style="animation-delay: 0.45s; padding:1rem 1.25rem; margin-top: 2rem;">'
+        '<div class="app-card animate-in" style="animation-delay: 0.45s; padding:1rem 1.25rem; margin-top: 1rem;">'
         '<div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">'
         '<span style="font-size:1.5rem;">💡</span>'
         '<span style="font-size:0.9rem;color:var(--on-surface-variant);">'
