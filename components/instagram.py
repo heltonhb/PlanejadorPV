@@ -65,23 +65,45 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
         
     styles = """
     <style>
+        /* ── Tema escuro (padrão) ── */
+        [data-theme="dark"], :root {
+            --insta-on-surface: #E6EDF3;
+            --insta-on-surface-variant: #A0ABB3;
+            --insta-primary: #00A859;
+            --insta-primary-dark: #007A40;
+            --insta-secondary: #3B82F6;
+            --insta-card-bg: #161B22;
+            --insta-outline-variant: #21262D;
+            --insta-shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        /* ── Tema claro ── */
+        [data-theme="light"] {
+            --insta-on-surface: #1A1C1E;
+            --insta-on-surface-variant: #44474E;
+            --insta-primary: #006D38;
+            --insta-primary-dark: #005A2E;
+            --insta-secondary: #005CAA;
+            --insta-card-bg: #FFFFFF;
+            --insta-outline-variant: #C4C6D0;
+            --insta-shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+        }
         .instagram-card {
-            background: var(--card-bg) !important;
-            border: 1px solid var(--outline-variant) !important;
+            background: var(--insta-card-bg) !important;
+            border: 1px solid var(--insta-outline-variant) !important;
             border-radius: 12px !important;
             max-width: 470px !important;
             margin: 1.5rem auto !important;
-            box-shadow: var(--shadow-md) !important;
+            box-shadow: var(--insta-shadow-md) !important;
             overflow: hidden !important;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-            color: var(--on-surface) !important;
+            color: var(--insta-on-surface) !important;
             text-align: left !important;
         }
         .instagram-header {
             display: flex !important;
             align-items: center !important;
             padding: 12px 16px !important;
-            border-bottom: 1px solid var(--outline-variant) !important;
+            border-bottom: 1px solid var(--insta-outline-variant) !important;
         }
         .instagram-avatar {
             width: 32px !important;
@@ -114,18 +136,18 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
         .instagram-username {
             font-weight: 600 !important;
             font-size: 13px !important;
-            color: var(--on-surface) !important;
+            color: var(--insta-on-surface) !important;
             line-height: 1.2 !important;
         }
         .instagram-location {
             font-size: 11px !important;
-            color: var(--on-surface-variant) !important;
+            color: var(--insta-on-surface-variant) !important;
         }
         .instagram-image-container {
             width: 100% !important;
             max-height: 470px !important;
             overflow: hidden !important;
-            background: var(--card-bg) !important;
+            background: var(--insta-card-bg) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -151,25 +173,25 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
             padding: 0 16px 8px 16px !important;
             font-size: 13px !important;
             font-weight: 500 !important;
-            color: var(--on-surface) !important;
+            color: var(--insta-on-surface) !important;
         }
         .instagram-caption-container {
             padding: 0 16px 16px 16px !important;
             font-size: 13px !important;
             line-height: 1.5 !important;
-            color: var(--on-surface) !important;
+            color: var(--insta-on-surface) !important;
         }
         .instagram-caption-text {
             word-break: break-word !important;
             white-space: pre-wrap !important;
-            color: var(--on-surface) !important;
+            color: var(--insta-on-surface) !important;
         }
         .instagram-caption-text strong {
-            color: var(--primary) !important;
+            color: var(--insta-primary) !important;
             margin-right: 6px !important;
         }
         .instagram-hashtags {
-            color: var(--secondary) !important;
+            color: var(--insta-secondary) !important;
             margin-top: 8px !important;
             font-weight: 500 !important;
             word-break: break-word !important;
@@ -179,8 +201,8 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
             width: 100% !important;
             margin-top: 14px !important;
             padding: 8px 12px !important;
-            background-color: var(--primary) !important;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+            background-color: var(--insta-primary) !important;
+            background: linear-gradient(135deg, var(--insta-primary), var(--insta-primary-dark)) !important;
             color: white !important;
             border: none !important;
             border-radius: 8px !important;
@@ -192,11 +214,24 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
             box-shadow: 0px 2px 4px rgba(0, 168, 89, 0.1) !important;
         }
         .instagram-copy-btn:hover {
-            background: linear-gradient(135deg, var(--primary-dark), #005a30) !important;
+            background: linear-gradient(135deg, var(--insta-primary-dark), #005a30) !important;
             box-shadow: 0px 4px 8px rgba(0, 168, 89, 0.2) !important;
             transform: translateY(-1px) !important;
         }
     </style>
+    """
+
+    theme_script = """
+    <script>
+    (function() {
+        try {
+            var theme = window.parent.document.documentElement.getAttribute('data-theme');
+            if (theme) document.documentElement.setAttribute('data-theme', theme);
+        } catch(e) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    })();
+    </script>
     """
 
     script_html = """
@@ -269,6 +304,7 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
         
     html = f"""
     {styles}
+    {theme_script}
     {script_html}
     <div class="instagram-card">
         <div class="instagram-header">
