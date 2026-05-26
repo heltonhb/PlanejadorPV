@@ -303,20 +303,21 @@ def sidebar_upload():
                             except Exception:
                                 pass
                             st.session_state.renomeando = None
-                            st.rerun()
+                            st.toast("Fonte renomeada", icon="✏️")
                 with col_cancelar:
                     if st.button("❌", key=f"cancel_{chave}", use_container_width=True):
                         st.session_state.renomeando = None
-                        st.rerun()
             else:
                 col1, col2, col3 = st.sidebar.columns([3, 1, 1])
                 with col1:
                     st.markdown(f"**{icone} {nome}**")
                     st.caption(f"{chunks} trechos")
                 with col2:
-                    if st.button("✏️", key=f"ren_{chave}", help="Renomear"):
-                        st.session_state.renomeando = chave
-                        st.rerun()
+                    if st.button(
+                        "✏️", key=f"ren_{chave}", help="Renomear",
+                        on_click=lambda k=chave: st.session_state.update(renomeando=k),
+                    ):
+                        pass
                 with col3:
                     if st.button("🗑️", key=f"del_{chave}", help="Remover esta fonte"):
                         colecao = _get_docs_collection()
@@ -327,12 +328,11 @@ def sidebar_upload():
                         st.session_state.documentos.remove(chave)
                         st.session_state.documentos_meta.pop(chave, None)
                         remover_fonte_meta(chave)
-                        st.rerun()
+                        st.toast("Fonte removida", icon="🗑️")
         if "confirmar_limpeza" not in st.session_state:
             st.session_state.confirmar_limpeza = False
         if st.sidebar.button("🗑️ Limpar tudo", use_container_width=True, type="secondary", help="Apaga todas as fontes e histórico"):
             st.session_state.confirmar_limpeza = True
-            st.rerun()
         if st.session_state.get("confirmar_limpeza"):
             st.sidebar.warning("⚠️ Isso vai apagar **todas as fontes** e o **histórico**. Não é possível desfazer.")
             c1, c2 = st.sidebar.columns(2)
@@ -353,12 +353,11 @@ def sidebar_upload():
                     st.session_state.sugestoes_usadas = False
                     st.session_state.calendarios_gerados = 0
                     st.session_state.campanhas_geradas = 0
-                st.session_state.confirmar_limpeza = False
-                st.rerun()
+                    st.session_state.confirmar_limpeza = False
+                    st.toast("Tudo limpo!", icon="🧹")
             with c2:
                 if st.button("❌ Cancelar", use_container_width=True):
                     st.session_state.confirmar_limpeza = False
-                    st.rerun()
     else:
         st.sidebar.markdown("*Nenhuma fonte carregada.*")
         
@@ -390,6 +389,5 @@ def sidebar_upload():
                     if _meta_rebuild:
                         st.session_state.documentos_meta = _meta_rebuild
                         st.session_state.documentos = list(_meta_rebuild.keys())
-                        st.rerun()
             except Exception:
                 pass

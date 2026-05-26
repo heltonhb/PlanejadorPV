@@ -69,15 +69,17 @@ if "documentos_meta" not in st.session_state:
     st.session_state.documentos_meta = {}
 
 # ── Reconstruir lista de fontes do ChromaDB ──
-# Toda vez que o session_state for recriado (reboot/redeploy),
-# buscamos os metadados reais do banco vetorial.
-from utils.restore import reconstruir_fontes
+# Só roda quando o session_state está vazio (reboot/redeploy).
+# Depois que o usuário interage (adiciona/remove), NÃO sobrescrevemos,
+# senão as chaves mudam e os botões de excluir/renomear param de funcionar.
+if not st.session_state.documentos:
+    from utils.restore import reconstruir_fontes
 
-_meta_rebuild, _FONTES_RESTAURADAS = reconstruir_fontes(recarregou=_recarregou)
-if _meta_rebuild:
-    st.session_state.documentos_meta = _meta_rebuild
-    st.session_state.documentos = list(_meta_rebuild.keys())
-    st.session_state._fontes_restauradas = True
+    _meta_rebuild, _FONTES_RESTAURADAS = reconstruir_fontes(recarregou=_recarregou)
+    if _meta_rebuild:
+        st.session_state.documentos_meta = _meta_rebuild
+        st.session_state.documentos = list(_meta_rebuild.keys())
+        st.session_state._fontes_restauradas = True
 
 if "ultimo_calendario" not in st.session_state:
     st.session_state.ultimo_calendario = None
