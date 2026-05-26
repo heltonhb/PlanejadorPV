@@ -9,7 +9,8 @@ class TestGerarResumo:
         resultado = gerar_resumo("", fonte="documento")
         assert "erro" in resultado.lower()
 
-    def test_sem_api_key_retorna_mensagem_erro(self):
+    @patch("utils.gemini_client._get_gemini_key", return_value=None)
+    def test_sem_api_key_retorna_mensagem_erro(self, mock_get_key):
         with patch.dict(os.environ, {}, clear=True):
             resultado = gerar_resumo("Texto qualquer para resumo.", fonte="documento")
         assert "erro" in str(resultado).lower()

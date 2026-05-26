@@ -5,7 +5,8 @@ from utils.campanhas import gerar_campanha
 
 
 class TestGerarCampanha:
-    def test_sem_api_key_retorna_erro(self):
+    @patch("utils.gemini_client._get_gemini_key", return_value=None)
+    def test_sem_api_key_retorna_erro(self, mock_get_key):
         with patch.dict(os.environ, {}, clear=True):
             resultado = gerar_campanha(
                 objetivo="Atrair novos alunos",
@@ -101,7 +102,7 @@ class TestGerarCampanha:
             servico="Apoio escolar — Português",
         )
         assert resultado["status"] == "erro"
-        assert "Erro ao comunicar" in resultado["mensagem"]
+        assert "inesperado" in resultado["mensagem"]
 
     @patch("utils.campanhas._get_collection")
     @patch("google.genai.Client")
