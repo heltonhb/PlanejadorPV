@@ -7,6 +7,7 @@ import sys
 import streamlit as st
 
 from utils.documentos import _get_collection as _get_docs_collection
+from utils.gemini_client import get_cliente, obter_status_quota
 from components import render_upload_tab
 
 logger = logging.getLogger(__name__)
@@ -104,6 +105,38 @@ def _render_health_section():
             | **Fragmentos por chunk** | 500 chars (50 overlap) |
             """
         )
+
+        # ── Métricas de performance ──
+        st.markdown("##### 📊 Métricas de Performance")
+        try:
+            cliente = get_cliente()
+            metricas = cliente.obter_metricas()
+            quota = obter_status_quota()
+
+            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+            col_m1.metric("Requisições", metricas["total_requests"])
+            col_m2.metric("Cache Hit Rate", f"{metricas['cache_hit_rate']}%")
+            col_m3.metric("Tempo Médio", f"{metricas['tempo_medio_resposta']}s")
+            col_m4.metric("Tokens Estimados", f"{metricas['tokens_estimados']:,}")
+
+            if quota:
+                st.markdown("##### 📈 Cota Diária (RPD)")
+                qcols = st.columns(len(quota))
+                for i, (modelo, dados) in enumerate(quota.items()):
+                    with qcols[i]:
+                        usadas = dados.get("usadas", 0)
+                        limite = dados.get("limite", 1500)
+                        restantes = dados.get("restantes")
+                        rest_str = str(restantes) if restantes is not None else "?"
+                        st.markdown(f"""
+                        <div class="app-card" style="padding:0.75rem;text-align:center;">
+                        <div style="font-weight:600;font-size:0.8rem;">{modelo}</div>
+                        <div style="font-size:1.3rem;font-weight:700;color:var(--primary);">{usadas}/{limite}</div>
+                        <div style="font-size:0.75rem;color:var(--on-surface-variant);">Restantes: {rest_str}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+        except Exception:
+            st.caption("Métricas indisponíveis — cliente Gemini ainda não foi usado nesta sessão.")
 
 
 def _render_changelog():

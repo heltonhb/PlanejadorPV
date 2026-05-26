@@ -158,14 +158,30 @@ def render():
                     with cols_info[1]:
                         st.markdown(f'<span style="font-size:0.85rem;color:var(--on-surface-variant);">📏 Caracteres</span><br><span style="font-size:1.3rem;font-weight:700;">{item["caracteres"]:,}</span>', unsafe_allow_html=True)
                     with cols_info[2]:
-                        if documento_id and st.button("🗑️ Remover", key=f"del_rel_{documento_id}", help="Remover esta fonte da base", use_container_width=True):
-                            deletar_do_chromadb(documento_id, documento_id)
-                            for chv, meta in list(st.session_state.documentos_meta.items()):
-                                if meta.get("documento_id") == documento_id:
-                                    st.session_state.documentos.remove(chv)
-                                    st.session_state.documentos_meta.pop(chv, None)
-                                    remover_fonte_meta(chv)
-                                    break
+                        confirm_key = f"_confirm_del_{documento_id}"
+                        if st.session_state.get(confirm_key):
+                            st.warning("Tem certeza?")
+                            col_sim, col_nao = st.columns(2)
+                            with col_sim:
+                                if st.button("✅ Sim, remover", key=f"conf_sim_{documento_id}",
+                                             use_container_width=True, type="primary"):
+                                    deletar_do_chromadb(documento_id, documento_id)
+                                    for chv, meta in list(st.session_state.documentos_meta.items()):
+                                        if meta.get("documento_id") == documento_id:
+                                            st.session_state.documentos.remove(chv)
+                                            st.session_state.documentos_meta.pop(chv, None)
+                                            remover_fonte_meta(chv)
+                                            break
+                                    st.session_state[confirm_key] = False
+                                    st.rerun()
+                            with col_nao:
+                                if st.button("❌ Cancelar", key=f"conf_nao_{documento_id}",
+                                             use_container_width=True):
+                                    st.session_state[confirm_key] = False
+                                    st.rerun()
+                        elif documento_id and st.button("🗑️ Remover", key=f"del_rel_{documento_id}",
+                                                        help="Remover esta fonte da base", use_container_width=True):
+                            st.session_state[confirm_key] = True
                             st.rerun()
 
                     # Resumo amigável

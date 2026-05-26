@@ -20,9 +20,21 @@ def render():
         )
     with col_limpar:
         if st.session_state.mensagens:
-            if st.button("🗑️ Limpar conversa", use_container_width=True, help="Apaga todo o histórico da conversa atual."):
-                st.session_state.mensagens = []
-                st.session_state.sugestoes_usadas = False
+            if st.session_state.get("_confirm_clear_chat"):
+                st.warning("Apagar todo o histórico?")
+                cc1, cc2 = st.columns(2)
+                with cc1:
+                    if st.button("✅ Sim", key="clear_chat_sim", use_container_width=True, type="primary"):
+                        st.session_state.mensagens = []
+                        st.session_state.sugestoes_usadas = False
+                        st.session_state._confirm_clear_chat = False
+                        st.rerun()
+                with cc2:
+                    if st.button("❌ Não", key="clear_chat_nao", use_container_width=True):
+                        st.session_state._confirm_clear_chat = False
+                        st.rerun()
+            elif st.button("🗑️ Limpar conversa", use_container_width=True, help="Apaga todo o histórico da conversa atual."):
+                st.session_state._confirm_clear_chat = True
                 st.rerun()
 
     if not st.session_state.mensagens and not st.session_state.sugestoes_usadas:

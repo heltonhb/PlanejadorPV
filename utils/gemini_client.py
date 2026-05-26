@@ -309,6 +309,13 @@ class GeminiClient:
         self._cache_size = cache_size
         self._enable_cache = enable_cache
         self._client: Optional[genai.Client] = None
+        # ── Métricas ──
+        self._cache_hits: int = 0
+        self._cache_misses: int = 0
+        self._total_requests: int = 0
+        self._total_response_time: float = 0.0
+        self._last_response_time: float = 0.0
+        self._total_tokens_estimate: int = 0
     
     @property
     def api_key_configured(self) -> bool:
@@ -327,10 +334,13 @@ class GeminiClient:
     def _get_cached(self, cache_key: str) -> Optional[str]:
         """Obtém resposta do cache se disponível."""
         if not self._enable_cache:
+            self._cache_misses += 1
             return None
         if cache_key in self._cache:
             self._cache.move_to_end(cache_key)
+            self._cache_hits += 1
             return self._cache[cache_key]
+        self._cache_misses += 1
         return None
     
     def _set_cached(self, cache_key: str, value: str):
@@ -509,7 +519,12 @@ class GeminiClient:
         _aguardar_rate_limit()
 
         contents = [prompt]
+        inicio = time.time()
         resultado = self._executar_com_retry(contents, config)
+        self._last_response_time = time.time() - inicio
+        self._total_response_time += self._last_response_time
+        self._total_requests += 1
+        self._total_tokens_estimate += len(resultado) // 4  # estimativa grossa
 
         if usar_cache:
             self._set_cached(cache_key, resultado)
@@ -543,12 +558,38 @@ class GeminiClient:
         _aguardar_rate_limit()
 
         contents = [prompt, imagem]
-        return self._executar_com_retry(contents, config)
+        inicio = time.time()
+        resultado = self._executar_com_retry(contents, config)
+        self._last_response_time = time.time() - inicio
+        self._total_response_time += self._last_response_time
+        self._total_requests += 1
+        self._total_tokens_estimate += len(resultado) // 4
+
+        return resultado
     
     def limpar_cache(self):
         """Limpa o cache de respostas."""
         self._cache.clear()
         logger.info("Cache do GeminiClient limpo")
+
+    def obter_metricas(self) -> dict:
+        """Retorna métricas de performance do cliente."""
+        total = self._cache_hits + self._cache_misses
+        hit_rate = (self._cache_hits / total * 100) if total > 0 else 0.0
+        tempo_medio = (
+            self._total_response_time / self._total_requests
+            if self._total_requests > 0
+            else 0.0
+        )
+        return {
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "cache_hit_rate": round(hit_rate, 1),
+            "total_requests": self._total_requests,
+            "ultimo_tempo_resposta": round(self._last_response_time, 2),
+            "tempo_medio_resposta": round(tempo_medio, 2),
+            "tokens_estimados": self._total_tokens_estimate,
+        }
 
 
 _cliente_global: Optional[GeminiClient] = None

@@ -26,6 +26,48 @@ from tabs import (
 
 load_dotenv()
 
+# ── Autenticação básica (opcional) ──
+# Configure APP_PASSWORD no .env ou st.secrets["app_password"] para ativar
+if not st.session_state.get("_auth_checked"):
+    _env_pwd = os.getenv("APP_PASSWORD") or ""
+    _sec_pwd = ""
+    try:
+        _sec_pwd = st.secrets.get("app_password", "")
+    except Exception:
+        pass
+    APP_PASSWORD = _env_pwd or _sec_pwd
+    st.session_state._app_password = APP_PASSWORD
+    st.session_state._auth_checked = True
+
+APP_PASSWORD = st.session_state.get("_app_password", "")
+
+if APP_PASSWORD:
+    if not st.session_state.get("authenticated", False):
+        st.markdown(
+            f"""
+            <div style="display:flex;justify-content:center;align-items:center;min-height:80vh;">
+            <div class="app-card" style="max-width:400px;width:100%;padding:2.5rem;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:1rem;">🔒</div>
+            <h2 style="color:var(--primary);margin:0 0 0.5rem;">Acesso Restrito</h2>
+            <p style="color:var(--on-surface-variant);font-size:0.9rem;margin-bottom:1.5rem;">
+            Digite a senha para acessar o PlanejadorPV.</p>
+            </div></div>
+            """,
+            unsafe_allow_html=True,
+        )
+        with st.container():
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                pwd = st.text_input("Senha", type="password", label_visibility="collapsed",
+                                    placeholder="Digite a senha...")
+                if st.button("Entrar", type="primary", use_container_width=True):
+                    if pwd == APP_PASSWORD:
+                        st.session_state.authenticated = True
+                        st.rerun()
+                    else:
+                        st.error("❌ Senha incorreta.")
+        st.stop()
+
 # Inicialização da coleção ChromaDB
 # No Streamlit Cloud, o disco é efêmero — o ChromaDB morre no reboot.
 # Por isso SEMPRE tentamos recarregar do Firestore.
