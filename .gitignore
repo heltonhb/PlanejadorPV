@@ -27,6 +27,9 @@ planejadorpvem-firebase-adminsdk-fbsvc-*.json
 # Kilo AI
 .kilo/
 
+# Hermes Agent
+.hermes/
+
 # Artifacts
 =6.5.0
 *_Ensina_Mais_Tatuapé.pdf

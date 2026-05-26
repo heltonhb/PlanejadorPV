@@ -14,7 +14,12 @@ class TestGerarCalendario:
         assert resultado["status"] == "erro"
         assert "não configurada" in resultado["mensagem"]
 
-    def test_mes_invalido_retorna_erro(self):
+    @patch("utils.calendario._get_collection")
+    def test_mes_invalido_retorna_erro(self, mock_get_collection):
+        mock_collection = MagicMock()
+        mock_collection.count.return_value = 0
+        mock_get_collection.return_value = mock_collection
+
         with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}, clear=True):
             with pytest.raises(ValueError):
                 gerar_calendario("InvalidMonth", 2026)
