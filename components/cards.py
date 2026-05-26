@@ -250,4 +250,9 @@ def render_campaign_result_card(nome, objetivo, publico, servico, orcamento, can
         </div>
     </div>
     """
+    
+    # Limpa linhas vazias e espaços no início/fim para evitar problemas com parser de markdown do Streamlit
+    linhas_limpas = [linha.strip() for linha in card_html.split("\n") if linha.strip()]
+    card_html = "\n".join(linhas_limpas)
+    
     return card_html
