@@ -23,3 +23,10 @@ tessl.json
 
 # Firebase admin keys (all variants)
 planejadorpvem-firebase-adminsdk-fbsvc-*.json
+
+# Kilo AI
+.kilo/
+
+# Artifacts
+=6.5.0
+*_Ensina_Mais_Tatuapé.pdf
