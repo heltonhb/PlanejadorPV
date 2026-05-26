@@ -481,36 +481,39 @@ class GeminiClient:
         usar_cache: bool = True,
         temperatura: float = 0.7,
         max_tokens: int = 8192,
+        system_instruction: Optional[str] = None,
     ) -> str:
         """Gera texto a partir de um prompt."""
         if not self._api_key:
             diag = _diagnosticar_chave()
             raise GeminiAPIKeyError(f"GEMINI_API_KEY não configurada. {diag}")
-        
+
         if not prompt or not prompt.strip():
             return ""
-        
+
         if usar_cache:
             cache_key = _gerar_cache_key(self.modelo, prompt)
             cached = self._get_cached(cache_key)
             if cached:
                 logger.debug(f"Cache hit para prompt: {cache_key[:8]}...")
                 return cached
-        
+
         config = {
             "temperature": max(0.0, min(1.0, temperatura)),
             "max_output_tokens": max_tokens,
         }
-        
+        if system_instruction:
+            config["system_instruction"] = system_instruction
+
         # Rate limiter proativo
         _aguardar_rate_limit()
-        
+
         contents = [prompt]
         resultado = self._executar_com_retry(contents, config)
-        
+
         if usar_cache:
             self._set_cached(cache_key, resultado)
-        
+
         return resultado
     
     def gerar_com_imagem(
@@ -520,22 +523,25 @@ class GeminiClient:
         usar_cache: bool = False,
         temperatura: float = 0.7,
         max_tokens: int = 8192,
+        system_instruction: Optional[str] = None,
     ) -> str:
         """Gera texto a partir de um prompt e uma imagem."""
         if not self._api_key:
             raise GeminiAPIKeyError()
-        
+
         if not prompt or not prompt.strip():
             return ""
-        
+
         config = {
             "temperature": max(0.0, min(1.0, temperatura)),
             "max_output_tokens": max_tokens,
         }
-        
+        if system_instruction:
+            config["system_instruction"] = system_instruction
+
         # Rate limiter proativo
         _aguardar_rate_limit()
-        
+
         contents = [prompt, imagem]
         return self._executar_com_retry(contents, config)
     

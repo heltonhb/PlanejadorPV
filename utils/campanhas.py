@@ -3,37 +3,74 @@ Módulo para geração de campanhas de marketing usando Gemini.
 """
 
 import logging
+from typing import Optional
 
 from utils.documentos import _get_collection
 from utils.gemini_client import GeminiError, GeminiAPIKeyError, get_cliente
 from utils.config import MODELO_GEMINI
 from utils.helpers import sanitizar_html, tratar_erro_gemini, parse_duration_days
+from utils.prompts import PERSONA_CONSULTOR, formatar_contexto, regras_padrao
 
 logger = logging.getLogger(__name__)
 
 
 def _buscar_contexto_campanha(top_k: int = 8) -> str:
-    """Busca contexto relevante do vector store para personalizar a campanha."""
+    """Busca contexto relevante da base vetorial."""
     try:
         collection = _get_collection()
         count = collection.count()
         if count == 0:
             return ""
-
-        consulta = "marketing campanhas franquia educacional Ensina Mais Tatuapé"
+        consulta = "Ensina Mais Turma da Monica Tatuapé marketing campanha"
         resultados = collection.query(
-            query_texts=[consulta],
-            n_results=min(top_k, count),
+            query_texts=[consulta], n_results=min(top_k, count),
             include=["documents"],
         )
         docs = resultados.get("documents", [[]])
-        if docs and docs[0]:
-            return "\n\n".join(docs[0])
+        return "\n\n".join(docs[0]) if docs and docs[0] else ""
+    except Exception as e:
+        logger.warning(f"Erro ao buscar contexto campanha: {e}")
         return ""
 
-    except Exception as e:
-        logger.warning(f"Erro ao buscar contexto: {e}")
-        return ""
+
+def _cronograma_conforme_dias(dias: int) -> str:
+    """Gera template de cronograma de acordo com a duração."""
+    if dias <= 8:
+        return (
+            "### Cronograma ({dias} dias)\n"
+            "- **Dias 1-2**: [ação]\n"
+            "- **Dias 3-5**: [ação]\n"
+            "- **Dias 6-{dias}**: [ação]"
+        ).format(dias=dias)
+    elif dias <= 16:
+        return (
+            "### Cronograma ({dias} dias)\n"
+            "- **Semana 1**: [ação]\n"
+            "- **Semana 2**: [ação]"
+        ).format(dias=dias)
+    elif dias <= 24:
+        return (
+            "### Cronograma ({dias} dias)\n"
+            "- **Semana 1**: [ação]\n"
+            "- **Semana 2**: [ação]\n"
+            "- **Semana 3**: [ação]"
+        ).format(dias=dias)
+    elif dias <= 35:
+        return (
+            "### Cronograma ({dias} dias)\n"
+            "- **Semana 1**: [ação]\n"
+            "- **Semana 2**: [ação]\n"
+            "- **Semana 3**: [ação]\n"
+            "- **Semana 4**: [ação]"
+        ).format(dias=dias)
+    else:
+        return (
+            "### Cronograma ({dias} dias)\n"
+            "- **Fase 1 (Início)**: [ação]\n"
+            "- **Fase 2 (Aquecimento)**: [ação]\n"
+            "- **Fase 3 (Conversão)**: [ação]\n"
+            "- **Fase 4 (Fechamento)**: [ação]"
+        ).format(dias=dias)
 
 
 def gerar_campanha(
@@ -41,18 +78,11 @@ def gerar_campanha(
     publico: str,
     servico: str,
     nome: str = "",
-    canais: list = None,
+    canais: Optional[list] = None,
     orcamento: float = 0.0,
     datas: str = "",
 ) -> dict:
-    """
-    Gera uma campanha de marketing completa.
-
-    Returns:
-        Dicionário com status, conteúdo, contexto_usado e mensagem de erro (se houver).
-    """
-    canais = canais or []
-
+    """Gera uma campanha de marketing completa."""
     try:
         cliente = get_cliente(modelo=MODELO_GEMINI)
         if not cliente.api_key_configured:
@@ -74,7 +104,7 @@ def gerar_campanha(
         publico=publico,
         servico=servico,
         nome=nome,
-        canais=canais,
+        canais=canais or [],
         orcamento=orcamento,
         datas=datas,
         contexto=contexto,
@@ -84,6 +114,7 @@ def gerar_campanha(
         cliente = get_cliente(modelo=MODELO_GEMINI)
         conteudo = cliente.gerar_texto(
             prompt=prompt,
+            system_instruction=PERSONA_CONSULTOR,
             usar_cache=True,
             temperatura=0.7,
             max_tokens=4096,
@@ -92,7 +123,7 @@ def gerar_campanha(
         if not conteudo:
             return {
                 "status": "erro",
-                "mensagem": "Gemini retornou uma resposta vazia. Tente novamente.",
+                "mensagem": "Gemini retornou resposta vazia. Tente novamente.",
                 "conteudo": "",
             }
 
@@ -122,104 +153,72 @@ def _construir_prompt(
     datas: str,
     contexto: str,
 ) -> str:
-    """Constrói o prompt completo para geração de campanhas."""
-    prompt = (
-        f"Crie uma campanha de marketing completa para:\n\n"
-        f"Franquia: Ensina Mais Turma da Mônica\n"
-        f"Unidade: Tatuapé - SP\n"
-        f"Objetivo: {objetivo}\n"
-        f"Público-alvo: {publico}\n"
-        f"Serviço: {servico}\n"
-    )
+    """Constrói o prompt de usuário para geração de campanhas."""
+    linhas = [
+        "Crie uma campanha de marketing completa com base nas informações abaixo.",
+        "",
+        "=== DADOS DA CAMPANHA ===",
+        f"Objetivo: {objetivo}",
+        f"Público-alvo: {publico}",
+        f"Serviço: {servico}",
+        f"Franquia: Ensina Mais Turma da Mônica — Unidade Tatuapé, SP",
+    ]
 
     if nome:
-        prompt += f"Nome sugerido pelo usuário: {nome}\n"
-
+        linhas.append(f"Nome sugerido: {nome}")
     if canais:
-        prompt += f"Canais preferenciais: {', '.join(canais)}\n"
-
+        linhas.append(f"Canais: {', '.join(canais)}")
     if orcamento > 0:
-        prompt += f"Orçamento disponível: R$ {orcamento:,.2f}\n"
-
+        linhas.append(f"Orçamento: R$ {orcamento:,.2f}")
     if datas:
-        prompt += f"Período/Datas planejado: {datas}\n"
+        linhas.append(f"Período: {datas}")
 
-    if contexto:
-        prompt += (
-            f"\nUse as informações dos documentos abaixo para personalizar:\n"
-            f"{contexto}\n\n"
-        )
+    ctx = formatar_contexto(contexto)
+    if ctx:
+        linhas.append("")
+        linhas.append(ctx)
 
-    prompt += (
-        f"\nFormato da resposta (use SOMENTE Markdown, NÃO use HTML):\n\n"
-        f"## Nome da Campanha\n"
-        f"[nome da campanha]\n\n"
-        f"### Descrição\n"
-        f"[descrição da campanha]\n\n"
-        f"### Canais e Ações\n"
-    )
+    # Duração para cronograma
+    dias = parse_duration_days(datas)
+    cronograma_template = _cronograma_conforme_dias(dias)
+
+    linhas += [
+        "",
+        "FORMATO DA RESPOSTA (Markdown — NÃO use HTML):",
+        "",
+        "## Nome da Campanha",
+        "[nome da campanha]",
+        "",
+        "### Descrição",
+        "[descrição da campanha]",
+        "",
+        "### Canais e Ações",
+    ]
 
     if canais:
         for c in canais:
-            prompt += f"- **{c}**: [ações específicas para o canal {c}]\n"
+            linhas.append(f"- **{c}**: [ações específicas para {c}]")
     else:
-        prompt += (
-            f"- **Instagram**: [ideias de posts, stories ou reels]\n"
-            f"- **WhatsApp**: [texto ou roteiro para disparo]\n"
-            f"- **Material Impresso**: [ideia de flyer, cartaz ou panfleto]\n"
-        )
+        linhas += [
+            "- **Instagram**: [ideias de posts, stories ou reels]",
+            "- **WhatsApp**: [texto ou roteiro para disparo]",
+            "- **Material Impresso**: [ideia de flyer, cartaz ou panfleto]",
+        ]
 
-    dias = parse_duration_days(datas)
+    linhas += [
+        "",
+        cronograma_template,
+        "",
+        "### Investimento Sugerido",
+        "[divisão do orçamento e estimativa de investimento]",
+        "",
+        "### Métricas de Sucesso",
+        "[como medir se a campanha deu certo]",
+        "",
+        regras_padrao(
+            "Adapte a linguagem ao público-alvo informado.",
+            "Se houver contexto dos documentos, use-o para personalizar.",
+        ),
+    ]
 
-    if dias <= 8:
-        cronograma_template = (
-            f"### Cronograma ({dias} dias)\n"
-            f"- **Dias 1-2**: [ação]\n"
-            f"- **Dias 3-5**: [ação]\n"
-            f"- **Dias 6-{dias}**: [ação]"
-        )
-    elif dias <= 16:
-        cronograma_template = (
-            f"### Cronograma ({dias} dias)\n"
-            f"- **Semana 1**: [ação]\n"
-            f"- **Semana 2**: [ação]"
-        )
-    elif dias <= 24:
-        cronograma_template = (
-            f"### Cronograma ({dias} dias)\n"
-            f"- **Semana 1**: [ação]\n"
-            f"- **Semana 2**: [ação]\n"
-            f"- **Semana 3**: [ação]"
-        )
-    elif dias <= 35:
-        cronograma_template = (
-            f"### Cronograma ({dias} dias)\n"
-            f"- **Semana 1**: [ação]\n"
-            f"- **Semana 2**: [ação]\n"
-            f"- **Semana 3**: [ação]\n"
-            f"- **Semana 4**: [ação]"
-        )
-    else:
-        cronograma_template = (
-            f"### Cronograma ({dias} dias)\n"
-            f"- **Fase 1 (Início)**: [ação]\n"
-            f"- **Fase 2 (Aquecimento)**: [ação]\n"
-            f"- **Fase 3 (Conversão)**: [ação]\n"
-            f"- **Fase 4 (Fechamento)**: [ação]"
-        )
-
-    prompt += (
-        f"\n{cronograma_template}\n\n"
-        f"### Investimento Sugerido\n"
-        f"[divisão do orçamento e estimativa de investimento]\n\n"
-        f"### Métricas de Sucesso\n"
-        f"[como medir se a campanha deu certo]\n\n"
-        f"Regras:\n"
-        f"1. Seja específico e acionável — o usuário é um franqueado.\n"
-        f"2. Adapte a linguagem e os exemplos ao público-alvo informado.\n"
-        f"3. Se houver dados dos documentos, use-as.\n"
-        f"4. USE SOMENTE Markdown. NÃO use tags HTML como <div>, <span>, <style>.\n"
-        f"5. Mantenha tom profissional mas acessível."
-    )
-
-    return prompt
+    return "\n".join(linhas)

@@ -9,6 +9,8 @@ import logging
 import os
 from typing import Optional
 
+from utils.prompts import PERSONA_RAG
+
 logger = logging.getLogger(__name__)
 
 MODELOS_DISPONIVEIS = [
@@ -73,28 +75,32 @@ class GroqClient:
     def gerar_texto(
         self,
         prompt: str,
+        system_prompt: Optional[str] = None,
         temperatura: float = 0.7,
         max_tokens: int = 8192,
     ) -> str:
-        """Gera texto usando Groq."""
+        """Gera texto usando Groq.
+
+        Args:
+            prompt: Mensagem do usuário.
+            system_prompt: Instrução de sistema (persona). Usa PERSONA_RAG como padrão.
+            temperatura: Criatividade (0.0 a 1.0).
+            max_tokens: Máximo de tokens na resposta.
+
+        Returns:
+            Texto gerado.
+        """
         if not self._api_key:
             raise RuntimeError("GROQ_API_KEY não configurada.")
+
+        system_content = system_prompt or PERSONA_RAG
 
         client = self._get_client()
 
         resposta = client.chat.completions.create(
             model=self.modelo,
             messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "Você é um consultor de marketing especializado em "
-                        "franquias educacionais, com foco na rede Ensina Mais "
-                        "Turma da Mônica. Responda em português do Brasil, "
-                        "de forma clara e objetiva, usando APENAS as "
-                        "informações fornecidas nos documentos de referência."
-                    ),
-                },
+                {"role": "system", "content": system_content},
                 {"role": "user", "content": prompt},
             ],
             temperature=temperatura,

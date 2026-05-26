@@ -20,6 +20,7 @@ from utils.gemini_client import (
     get_cliente,
 )
 from utils.groq_client import get_cliente_groq
+from utils.prompts import PERSONA_RAG, formatar_contexto
 
 logger = logging.getLogger(__name__)
 
@@ -30,29 +31,28 @@ TOP_K = TOP_K_PADRAO
 def buscar_contexto(pergunta: str, top_k: int = TOP_K) -> tuple[str, list[dict]]:
     """Busca chunks relevantes, com expansão de consulta para melhor recall."""
     collection = _get_collection()
-    
+
     # Expansão de consulta: busca com múltiplas variações da pergunta
     variacoes = [pergunta]
-    
+
     # Extrair palavras-chave e criar variações
     palavras = pergunta.lower().split()
     nome_rede = [p for p in palavras if 'ensina' in p or 'mais' in p or 'mônica' in p or 'turma' in p]
-    
+
     if "diferencial" in palavras or "competitivo" in palavras or "vantagem" in palavras:
-        # Pergunta sobre diferenciais - buscar também por benefícios/programas
         if nome_rede:
             variacoes.append(f"programas educacionais {' '.join(nome_rede)}")
             variacoes.append(f"benefícios ensino {' '.join(nome_rede)}")
-    
+
     if "metodologia" in palavras or "ensino" in palavras:
         if nome_rede:
             variacoes.append(f"{' '.join(nome_rede)} robótica tecnologia apoio escolar")
-    
+
     # Executar busca com todas as variações
     todos_textos = []
     todos_fontes = []
     vistos = set()
-    
+
     for v in variacoes:
         try:
             resultados = collection.query(
@@ -61,16 +61,17 @@ def buscar_contexto(pergunta: str, top_k: int = TOP_K) -> tuple[str, list[dict]]
             )
         except Exception:
             continue
-        
+
         documentos = resultados.get("documents", [[]])
         metadatas = resultados.get("metadatas", [[]])
         distances = resultados.get("distances", [[]])
-        
+
         if not documentos or not documentos[0]:
             continue
-        
-        for doc, md, dist in zip(documentos[0], (metadatas[0] if metadatas and metadatas[0] else []), (distances[0] if distances and distances[0] else [])):
-            # Dedicar snippet como chave
+
+        for doc, md, dist in zip(documentos[0],
+                                  (metadatas[0] if metadatas and metadatas[0] else []),
+                                  (distances[0] if distances and distances[0] else [])):
             chave = doc[:100]
             if chave in vistos:
                 continue
@@ -81,22 +82,32 @@ def buscar_contexto(pergunta: str, top_k: int = TOP_K) -> tuple[str, list[dict]]
                 if md.get(k):
                     fonte[k] = md[k]
             todos_fontes.append(fonte)
-    
+
     # Limitar ao top_k mais relevantes
     combinados = list(zip(todos_textos, todos_fontes))
     combinados.sort(key=lambda x: -x[1]["relevancia"])
     combinados = combinados[:top_k]
-    
+
     if not combinados:
         return "", []
-    
+
     textos = [t for t, _ in combinados]
     fontes = [f for _, f in combinados]
-    
+
     return "\n\n".join(textos), fontes
 
 
 def perguntar(pergunta: str, contexto: str = None) -> dict:
+    """
+    Faz uma pergunta RAG: busca contexto na base vetorial e gera resposta.
+
+    Args:
+        pergunta: Pergunta do usuário.
+        contexto: Contexto opcional já fornecido (para reuso).
+
+    Returns:
+        Dicionário com resposta, fontes e provedor usado.
+    """
     fontes = []
     if not contexto:
         contexto, fontes = buscar_contexto(pergunta)
@@ -110,30 +121,16 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
             "fontes": [],
         }
 
-    prompt = (
-        f"Você é um consultor de marketing especializado em "
-        f"franquias educacionais, com foco na rede Ensina Mais Turma da Mônica. "
-        f"Responda à pergunta usando APENAS as informações fornecidas nos "
-        f"documentos de referência abaixo.\n\n"
-        f"Regras:\n"
-        f"1. Seja direto e prático — o usuário é um franqueado que quer ações aplicáveis.\n"
-        f"2. Sempre que possível, estruture a resposta com tópicos ou seções claras.\n"
-        f"3. Se mencionar dados numéricos, destaque-os.\n"
-        f"4. Se não encontrar a resposta nos documentos, diga claramente que "
-        f"não há informação suficiente.\n"
-        f"5. Mantenha o tom profissional, mas acessível — o usuário não é "
-        f"especialista em marketing.\n\n"
-        f"Documentos de referência:\n{contexto}\n\n"
-        f"Pergunta: {pergunta}"
-    )
+    prompt = _construir_prompt_rag(pergunta, contexto)
 
     # ── Tentar Gemini primeiro ──
     try:
         cliente = get_cliente(modelo=MODELO)
         resposta = cliente.gerar_texto(
             prompt=prompt,
+            system_instruction=PERSONA_RAG,
             usar_cache=True,
-            temperatura=0.7,
+            temperatura=0.4,
             max_tokens=8192,
         )
         return {"resposta": resposta, "fontes": fontes, "provedor": "gemini"}
@@ -157,7 +154,7 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
             "resposta": f"Erro ao comunicar com o Gemini: {e.message[:200]}",
             "fontes": [], "provedor": "",
         }
-    
+
     # ── Fallback: Groq ──
     try:
         groq = get_cliente_groq()
@@ -172,10 +169,11 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
                 ),
                 "fontes": [], "provedor": "",
             }
-        
+
         resposta = groq.gerar_texto(
             prompt=prompt,
-            temperatura=0.7,
+            system_prompt=PERSONA_RAG,
+            temperatura=0.4,
             max_tokens=8192,
         )
         return {
@@ -189,3 +187,22 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
             "resposta": f"Gemini e Groq falharam. Gemini: cota diária excedida. Groq: {str(e)[:100]}.",
             "fontes": [], "provedor": "",
         }
+
+
+def _construir_prompt_rag(pergunta: str, contexto: str) -> str:
+    """Constrói o prompt de usuário para a consulta RAG."""
+    ctx = formatar_contexto(contexto)
+    if not ctx:
+        return f"Pergunta: {pergunta}"
+
+    return (
+        f"{ctx}\n"
+        f"Com base SOMENTE no contexto acima, responda:\n\n"
+        f"Pergunta: {pergunta}\n\n"
+        f"IMPORTANTE:\n"
+        f"1. Se não encontrar a resposta no contexto, diga claramente que não há "
+        f"informação suficiente — NÃO invente.\n"
+        f"2. Quando possível, indique de qual documento a informação veio.\n"
+        f"3. Se houver dados numéricos, destaque-os.\n"
+        f"4. Estruture a resposta em tópicos quando ajudar na clareza."
+    )

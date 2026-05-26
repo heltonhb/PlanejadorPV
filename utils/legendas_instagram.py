@@ -9,6 +9,7 @@ from utils.gemini_client import GeminiError, GeminiAPIKeyError, get_cliente
 from utils.config import MODELO_GEMINI
 from utils.constants import TOM_ESTILO
 from utils.helpers import sanitizar_html, tratar_erro_gemini
+from utils.prompts import PERSONA_SOCIAL_MEDIA, formatar_contexto
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ TOP_K = 6
 
 
 def _buscar_contexto(top_k: int = TOP_K) -> str:
-    """Busca contexto relevante do vector store."""
+    """Busca contexto relevante da base vetorial."""
     try:
         collection = _get_collection()
         count = collection.count()
@@ -30,7 +31,7 @@ def _buscar_contexto(top_k: int = TOP_K) -> str:
             include=["documents"],
         )
         docs = resultados.get("documents", [[]])
-        return "\n\n".join(docs) if docs else ""
+        return "\n\n".join(docs[0]) if docs and docs[0] else ""
 
     except Exception as e:
         logger.warning(f"Erro ao buscar contexto: {e}")
@@ -46,6 +47,13 @@ def gerar_legenda(
 ) -> dict:
     """
     Gera 3 opções de legenda para Instagram com base em uma imagem.
+
+    Args:
+        image: Objeto de imagem (PIL ou bytes) para análise.
+        tom: Tom da legenda (ver TOM_ESTILO em constants.py).
+        tema: Tema sugerido opcional.
+        instrucoes: Instruções adicionais opcionais.
+        top_k: Número de chunks de contexto a buscar.
 
     Returns:
         Dicionário com status, conteúdo, contexto_usado e tom.
@@ -76,10 +84,10 @@ def gerar_legenda(
     prompt = _construir_prompt(tom, estilo, tema, instrucoes, contexto)
 
     try:
-        cliente = get_cliente(modelo=MODELO_GEMINI)
         conteudo = cliente.gerar_com_imagem(
             prompt=prompt,
             imagem=image,
+            system_instruction=PERSONA_SOCIAL_MEDIA,
             usar_cache=False,
             temperatura=0.7,
             max_tokens=4096,
@@ -118,51 +126,52 @@ def _construir_prompt(
     instrucoes: str,
     contexto: str,
 ) -> str:
-    """Constrói o prompt completo para geração de legendas."""
-    prompt = (
-        "Você é um social media especializado em franquias educacionais, "
-        "criando conteúdo para o Instagram da unidade Tatuapé da rede "
-        "Ensina Mais Turma da Mônica.\n\n"
-        f"TOM: {tom}\n{estilo}\n\n"
-        "Analise a imagem fornecida e gere **3 opções de legenda** para o Instagram.\n\n"
-        "Cada opção deve conter:\n"
-        "- Um texto de legenda envolvente (2-4 parágrafos curtos)\n"
-        "- Entre 5-10 hashtags relevantes\n"
-    )
+    """Constrói o prompt de usuário para geração de legendas."""
+    linhas = [
+        "Analise a imagem fornecida e gere 3 opções de legenda para o Instagram.",
+        "",
+        "=== CONFIGURAÇÃO ===",
+        f"TOM: {tom}",
+        estilo,
+    ]
 
     if tema:
-        prompt += f"\nTEMA SUGERIDO: {tema}\n"
+        linhas.append(f"TEMA SUGERIDO: {tema}")
 
     if instrucoes:
-        prompt += f"\nINSTRUÇÕES ADICIONAIS: {instrucoes}\n"
+        linhas.append(f"INSTRUÇÕES ADICIONAIS: {instrucoes}")
 
-    if contexto:
-        prompt += (
-            f"\nUse as informações abaixo sobre a unidade para personalizar:\n"
-            f"{contexto}\n\n"
-        )
+    ctx = formatar_contexto(contexto)
+    if ctx:
+        linhas.append(ctx)
 
-    prompt += (
-        "\nRegras:\n"
-        "1. Relacione a legenda com o que aparece na imagem.\n"
-        "2. Use linguagem adequada para pais de alunos (público-alvo).\n"
-        "3. Inclua calls-to-action relevantes (comente, compartilhe, marque).\n"
-        "4. Se o contexto mencionar serviços específicos, destaque-os.\n"
-        "5. Varie o formato entre as 3 opções (uma mais curta, uma mais detalhada, etc).\n\n"
-        "Formato da resposta:\n"
-        "---\n"
-        "## Opção 1: [título informal]\n"
-        "[texto da legenda]\n\n"
-        "**Hashtags:** #tag1 #tag2 ...\n"
-        "---\n"
-        "## Opção 2: [título informal]\n"
-        "[texto da legenda]\n\n"
-        "**Hashtags:** #tag1 #tag2 ...\n"
-        "---\n"
-        "## Opção 3: [título informal]\n"
-        "[texto da legenda]\n\n"
-        "**Hashtags:** #tag1 #tag2 ...\n"
-        "---\n"
-    )
+    linhas += [
+        "",
+        "REGRAS:",
+        "1. Relacione a legenda com o que aparece na imagem.",
+        "2. Use linguagem adequada para pais de alunos (público-alvo).",
+        "3. Inclua calls-to-action relevantes (comente, compartilhe, marque).",
+        "4. Se o contexto mencionar serviços específicos, destaque-os.",
+        "5. Varie o formato entre as 3 opções (uma mais curta, uma mais detalhada, etc).",
+        "6. NÃO use tags HTML. Use apenas Markdown.",
+        "",
+        "FORMATO DA RESPOSTA:",
+        "---",
+        "## Opção 1: [título informal]",
+        "[texto da legenda]",
+        "",
+        "**Hashtags:** #tag1 #tag2 ...",
+        "---",
+        "## Opção 2: [título informal]",
+        "[texto da legenda]",
+        "",
+        "**Hashtags:** #tag1 #tag2 ...",
+        "---",
+        "## Opção 3: [título informal]",
+        "[texto da legenda]",
+        "",
+        "**Hashtags:** #tag1 #tag2 ...",
+        "---",
+    ]
 
-    return prompt
+    return "\n".join(linhas)
