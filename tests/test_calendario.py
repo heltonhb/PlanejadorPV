@@ -7,7 +7,8 @@ from utils.calendario import gerar_calendario
 
 
 class TestGerarCalendario:
-    def test_sem_api_key_retorna_erro(self):
+    @patch("utils.gemini_client._get_gemini_key", return_value=None)
+    def test_sem_api_key_retorna_erro(self, mock_get_key):
         with patch.dict(os.environ, {}, clear=True):
             resultado = gerar_calendario("Janeiro", 2026)
         assert resultado["status"] == "erro"
@@ -55,7 +56,7 @@ class TestGerarCalendario:
         assert resultado["contexto_usado"] is True
 
     @patch("utils.calendario._get_collection")
-    @patch("google.genai.Client")
+    @patch("utils.gemini_client.genai.Client")
     def test_erro_gemini_retorna_erro(self, mock_client_class, mock_get_collection):
         mock_collection = MagicMock()
         mock_collection.count.return_value = 0
@@ -67,7 +68,7 @@ class TestGerarCalendario:
 
         resultado = gerar_calendario("Janeiro", 2026)
         assert resultado["status"] == "erro"
-        assert "Erro ao comunicar" in resultado["mensagem"]
+        assert "inesperado" in resultado["mensagem"]
 
     @patch("utils.calendario._get_collection")
     @patch("google.genai.Client")
