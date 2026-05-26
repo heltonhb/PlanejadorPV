@@ -43,12 +43,41 @@ def render_campaign_result_card(nome, objetivo, publico, servico, orcamento, can
     }
     expected_metric = metrics_map.get(objetivo, "15+ leads qualificados")
     
-    timeline_steps = [
-        {"week": "Semana 1", "label": "Planejamento", "desc": "Criação dos criativos e disparos iniciais WhatsApp."},
-        {"week": "Semana 2", "label": "Captação", "desc": "Postagem regular, anúncios online e landing page ativa."},
-        {"week": "Semana 3", "label": "Vendas", "desc": "Contato telefônico com leads, agendamento de testes."},
-        {"week": "Semana 4", "label": "Matrículas", "desc": "Fechamento na unidade Tatuapé e acolhimento dos alunos."}
-    ]
+    from utils.helpers import parse_duration_days
+    dias = parse_duration_days(datas)
+    
+    if dias <= 8:
+        timeline_steps = [
+            {"week": "Dias 1-2", "label": "Planejamento", "desc": "Definição do público e estruturação dos disparos."},
+            {"week": "Dias 3-5", "label": "Divulgação", "desc": "Envio no WhatsApp, posts e anúncios ativos."},
+            {"week": f"Dias 6-{dias}", "label": "Vendas", "desc": "Atendimento e matrículas na unidade Tatuapé."}
+        ]
+    elif dias <= 16:
+        timeline_steps = [
+            {"week": "Semana 1", "label": "Planejamento e Captação", "desc": "Criação de artes, anúncios e disparos iniciais."},
+            {"week": "Semana 2", "label": "Vendas e Fechamento", "desc": "Agendamento de testes, contatos e matrículas."}
+        ]
+    elif dias <= 24:
+        timeline_steps = [
+            {"week": "Semana 1", "label": "Planejamento", "desc": "Criação dos criativos e disparos iniciais WhatsApp."},
+            {"week": "Semana 2", "label": "Captação", "desc": "Postagem regular, anúncios online e landing page ativa."},
+            {"week": "Semana 3", "label": "Matrículas", "desc": "Fechamento na unidade Tatuapé e acolhimento dos alunos."}
+        ]
+    elif dias <= 35:
+        timeline_steps = [
+            {"week": "Semana 1", "label": "Planejamento", "desc": "Criação dos criativos e disparos iniciais WhatsApp."},
+            {"week": "Semana 2", "label": "Captação", "desc": "Postagem regular, anúncios online e landing page ativa."},
+            {"week": "Semana 3", "label": "Vendas", "desc": "Contato telefônico com leads, agendamento de testes."},
+            {"week": "Semana 4", "label": "Matrículas", "desc": "Fechamento na unidade Tatuapé e acolhimento dos alunos."}
+        ]
+    else:
+        fase_dur = dias // 4
+        timeline_steps = [
+            {"week": "Fase 1", "label": "Alinhamento", "desc": f"Preparação do material e início das campanhas (Dias 1-{fase_dur})."},
+            {"week": "Fase 2", "label": "Aquecimento", "desc": f"Abordagem multicanal e atração de leads (Dias {fase_dur+1}-{fase_dur*2})."},
+            {"week": "Fase 3", "label": "Conversão", "desc": f"Relacionamento direto e agendamento de testes (Dias {fase_dur*2+1}-{fase_dur*3})."},
+            {"week": "Fase 4", "label": "Matrículas", "desc": f"Campanha de fechamento e matrículas finais (Dias {fase_dur*3+1}-{dias})."}
+        ]
     
     steps_html = ""
     for idx, step in enumerate(timeline_steps):
@@ -205,6 +234,25 @@ def render_campaign_result_card(nome, objetivo, publico, servico, orcamento, can
         }
     </style>
     """
+    
+    # Adiciona estilos dinâmicos baseados no número de etapas para responsividade
+    num_steps = len(timeline_steps)
+    margin_percentage = 100 / (2 * num_steps)
+    step_width = 100 / num_steps
+    
+    dynamic_styles = f"""
+    <style>
+        .timeline-steps::before {{
+            left: {margin_percentage}% !important;
+            right: {margin_percentage}% !important;
+        }}
+        .timeline-step {{
+            width: {step_width}% !important;
+        }}
+    </style>
+    """
+    styles += dynamic_styles
+    
     
     card_html = f"""
     {styles}

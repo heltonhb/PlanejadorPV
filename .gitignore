@@ -10,3 +10,16 @@ vector_store/
 planejadorpvem-firebase-adminsdk-fbsvc-6a72618c78.json
 logs-*.txt
 .aider*
+
+# Agent/IDE config directories
+.agents/
+.claude/
+.cursor/
+.gemini/
+.tessl/
+.mcp.json
+skills-lock.json
+tessl.json
+
+# Firebase admin keys (all variants)
+planejadorpvem-firebase-adminsdk-fbsvc-*.json

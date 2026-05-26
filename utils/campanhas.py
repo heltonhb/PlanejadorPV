@@ -235,11 +235,48 @@ def _construir_prompt(
             f"- **Material Impresso**: [ideia de flyer, cartaz ou panfleto]\n"
         )
     
+    from utils.helpers import parse_duration_days
+    dias = parse_duration_days(datas)
+    
+    if dias <= 8:
+        cronograma_template = (
+            f"### Cronograma ({dias} dias)\n"
+            f"- **Dias 1-2**: [ação]\n"
+            f"- **Dias 3-5**: [ação]\n"
+            f"- **Dias 6-{dias}**: [ação]"
+        )
+    elif dias <= 16:
+        cronograma_template = (
+            f"### Cronograma ({dias} dias)\n"
+            f"- **Semana 1**: [ação]\n"
+            f"- **Semana 2**: [ação]"
+        )
+    elif dias <= 24:
+        cronograma_template = (
+            f"### Cronograma ({dias} dias)\n"
+            f"- **Semana 1**: [ação]\n"
+            f"- **Semana 2**: [ação]\n"
+            f"- **Semana 3**: [ação]"
+        )
+    elif dias <= 35:
+        cronograma_template = (
+            f"### Cronograma ({dias} dias)\n"
+            f"- **Semana 1**: [ação]\n"
+            f"- **Semana 2**: [ação]\n"
+            f"- **Semana 3**: [ação]\n"
+            f"- **Semana 4**: [ação]"
+        )
+    else:
+        cronograma_template = (
+            f"### Cronograma ({dias} dias)\n"
+            f"- **Fase 1 (Início)**: [ação]\n"
+            f"- **Fase 2 (Aquecimento)**: [ação]\n"
+            f"- **Fase 3 (Conversão)**: [ação]\n"
+            f"- **Fase 4 (Fechamento)**: [ação]"
+        )
+
     prompt += (
-        f"\n### Cronograma\n"
-        f"- **Semana 1**: [ação]\n"
-        f"- **Semana 2**: [ação]\n"
-        f"- **Semana 3**: [ação]\n\n"
+        f"\n{cronograma_template}\n\n"
         f"### Investimento Sugerido\n"
         f"[divisão do orçamento e estimativa de investimento]\n\n"
         f"### Métricas de Sucesso\n"
