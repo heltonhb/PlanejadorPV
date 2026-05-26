@@ -81,7 +81,7 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
             display: flex !important;
             align-items: center !important;
             padding: 12px 16px !important;
-            border-bottom: 1px solid #efefef !important;
+            border-bottom: 1px solid var(--outline-variant) !important;
         }
         .instagram-avatar {
             width: 32px !important;
@@ -114,18 +114,18 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
         .instagram-username {
             font-weight: 600 !important;
             font-size: 13px !important;
-            color: #262626 !important;
+            color: var(--on-surface) !important;
             line-height: 1.2 !important;
         }
         .instagram-location {
             font-size: 11px !important;
-            color: #8e8e8e !important;
+            color: var(--on-surface-variant) !important;
         }
         .instagram-image-container {
             width: 100% !important;
             max-height: 470px !important;
             overflow: hidden !important;
-            background-color: #fafafa !important;
+            background: var(--card-bg) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -151,24 +151,25 @@ def render_instagram_mockup(index, title, content_markdown, img_base64_str):
             padding: 0 16px 8px 16px !important;
             font-size: 13px !important;
             font-weight: 500 !important;
-            color: #262626 !important;
+            color: var(--on-surface) !important;
         }
         .instagram-caption-container {
             padding: 0 16px 16px 16px !important;
             font-size: 13px !important;
             line-height: 1.5 !important;
-            color: #262626 !important;
+            color: var(--on-surface) !important;
         }
         .instagram-caption-text {
             word-break: break-word !important;
             white-space: pre-wrap !important;
+            color: var(--on-surface) !important;
         }
         .instagram-caption-text strong {
-            color: #262626 !important;
+            color: var(--primary) !important;
             margin-right: 6px !important;
         }
         .instagram-hashtags {
-            color: #00376b !important;
+            color: var(--secondary) !important;
             margin-top: 8px !important;
             font-weight: 500 !important;
             word-break: break-word !important;
