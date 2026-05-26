@@ -1,20 +1,10 @@
+"""Módulo de orquestração para processamento e indexação de documentos.
+Delega extração para utils/extractors.py e OCR para utils/ocr.py.
 """
-Módulo para processamento e extração de texto de documentos.
-"""
-
 import logging
-import os
 import re
-import tempfile
-import traceback
 from pathlib import Path
-from typing import Optional
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-import pdfplumber
-import fitz
 from chromadb import PersistentClient
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -24,60 +14,11 @@ from utils.config import (
     CHUNK_OVERLAP,
     CHROMA_PATH,
     COLLECTION_NAME,
-    TESSDATA_PATH,
-    TESSDATA_URL,
 )
+from utils.extractors import extrair_arquivo, extrair_texto
+from utils.ocr import diagnosticar_ocr
 
-_CAMINHOS_SISTEMA_OCR = [
-    Path("/usr/share/tesseract-ocr/5/tessdata"),
-    Path("/usr/share/tesseract-ocr/4/tessdata"),
-    Path("/usr/share/tesseract-ocr/3/tessdata"),
-    Path("/usr/local/share/tessdata"),
-    Path("/usr/share/tessdata"),
-]
-
-
-def _encontrar_modelo_ocr() -> Optional[Path]:
-    """Procura o modelo OCR por.traineddata, baixa se necessário."""
-    # 1. Procurar primeiro no diretório local (download prévio)
-    local = TESSDATA_PATH / "por.traineddata"
-    if local.exists():
-        return local
-    
-    # 2. Procurar nos caminhos do sistema (instalado via apt)
-    for p in _CAMINHOS_SISTEMA_OCR:
-        modelo = p / "por.traineddata"
-        if modelo.exists():
-            logger.info("Modelo OCR encontrado em: %s", modelo)
-            return modelo
-    
-    # 3. Não encontrou — baixar
-    TESSDATA_PATH.mkdir(parents=True, exist_ok=True)
-    try:
-        import requests as req
-        logger.info("Baixando modelo OCR português...")
-        r = req.get(TESSDATA_URL, timeout=30)
-        r.raise_for_status()
-        local.write_bytes(r.content)
-        logger.info("Modelo OCR baixado: %s", local)
-        return local
-    except Exception as e:
-        logger.warning("não foi possível baixar modelo OCR: %s", e)
-        return None
-
-EXTENSOES_SUPORTADAS = {
-    ".pdf": "pdf",
-    ".docx": "docx",
-    ".doc": "docx",
-    ".txt": "texto",
-    ".md": "texto",
-    ".png": "imagem",
-    ".jpg": "imagem",
-    ".jpeg": "imagem",
-    ".gif": "imagem",
-    ".bmp": "imagem",
-    ".tiff": "imagem",
-}
+logger = logging.getLogger(__name__)
 
 
 def sanitizar_id(nome: str) -> str:
@@ -192,303 +133,6 @@ def deletar_do_chromadb(documento_id: str, chave: str = "") -> None:
         logger.error("Todos os fallbacks falharam ao deletar '%s': %s", chave, e)
 
 
-def _extrair_pdfplumber(tmp_path: str) -> tuple[Optional[str], int]:
-    """Extrai texto de PDF usando pdfplumber."""
-    try:
-        with pdfplumber.open(tmp_path) as pdf:
-            paginas = len(pdf.pages)
-            partes = []
-            for page in pdf.pages:
-                t = page.extract_text()
-                if t:
-                    partes.append(t)
-            return "\n".join(partes), paginas
-    except Exception:
-        logger.warning("pdfplumber falhou:\n%s", traceback.format_exc())
-        return None, 0
-
-
-def _extrair_pymupdf(tmp_path: str) -> tuple[Optional[str], int]:
-    """Extrai texto de PDF usando PyMuPDF."""
-    try:
-        doc = fitz.open(tmp_path)
-        paginas = len(doc)
-        texto = "\n".join(page.get_text() or "" for page in doc)
-        doc.close()
-        return texto, paginas
-    except Exception:
-        logger.warning("pymupdf falhou:\n%s", traceback.format_exc())
-        return None, 0
-
-
-def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
-    """Extrai texto de PDF usando OCR (Tesseract).
-    
-    Tenta tesserocr primeiro (nativo, rápido). Se falhar no import
-    (ex: signal.signal em thread não-principal), usa pytesseract
-    como fallback (subprocesso, sem signal).
-    """
-    from PIL import Image
-    
-    # Tentar tesserocr (C native, mas falha em thread não-principal)
-    try:
-        from tesserocr import PyTessBaseAPI
-        modelo = _encontrar_modelo_ocr()
-        if modelo:
-            doc = fitz.open(tmp_path)
-            paginas = len(doc)
-            api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
-            textos = []
-            for page in doc:
-                pix = page.get_pixmap(dpi=200)
-                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                api.SetImage(img)
-                t = api.GetUTF8Text()
-                if t:
-                    textos.append(t.strip())
-            api.End()
-            doc.close()
-            if textos:
-                return "\n\n".join(textos), paginas
-    except Exception as e:
-        logger.warning("tesserocr falhou: %s", e)
-    
-    # Fallback: pytesseract (subprocesso, funciona em qualquer thread)
-    logger.info("usando pytesseract como fallback")
-    try:
-        import pytesseract
-        doc = fitz.open(tmp_path)
-        paginas = len(doc)
-        textos = []
-        for page in doc:
-            pix = page.get_pixmap(dpi=200)
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            t = pytesseract.image_to_string(img, lang="por")
-            if t and t.strip():
-                textos.append(t.strip())
-        doc.close()
-        return "\n\n".join(textos), paginas
-    except Exception as e:
-        logger.warning("pytesseract falhou: %s", e)
-        return None, 0
-
-
-def _extrair_docx(tmp_path: str) -> tuple[Optional[str], int]:
-    """Extrai texto de documentos DOCX."""
-    try:
-        from docx import Document
-        
-        doc = Document(tmp_path)
-        paragrafos = [p.text for p in doc.paragraphs if p.text.strip()]
-        texto = "\n\n".join(paragrafos)
-        
-        tabelas_texto = []
-        for table in doc.tables:
-            for row in table.rows:
-                row_text = " | ".join(cell.text for cell in row.cells)
-                if row_text.strip():
-                    tabelas_texto.append(row_text)
-        
-        if tabelas_texto:
-            texto += "\n\n[Tabelas]\n" + "\n".join(tabelas_texto)
-        
-        return texto, len(paragrafos)
-    except ImportError:
-        logger.warning("python-docx não disponível")
-        return None, 0
-    except Exception:
-        logger.warning("docx falhou:\n%s", traceback.format_exc())
-        return None, 0
-
-
-def _extrair_texto_puro(tmp_path: str) -> tuple[str, int]:
-    """Extrai texto de arquivos de texto puro."""
-    try:
-        with open(tmp_path, "r", encoding="utf-8") as f:
-            texto = f.read()
-        linhas = texto.split("\n")
-        return texto, len(linhas)
-    except Exception:
-        logger.warning("texto puro falhou:\n%s", traceback.format_exc())
-        return "", 0
-
-
-def _extrair_imagem_ocr(tmp_path: str) -> tuple[Optional[str], int]:
-    """Extrai texto de imagens usando OCR."""
-    from PIL import Image
-    
-    # Tentar tesserocr
-    try:
-        from tesserocr import PyTessBaseAPI
-        modelo = _encontrar_modelo_ocr()
-        if modelo:
-            img = Image.open(tmp_path)
-            api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
-            api.SetImage(img)
-            texto = api.GetUTF8Text()
-            api.End()
-            img.close()
-            if texto and texto.strip():
-                return texto.strip(), 1
-    except Exception as e:
-        logger.warning("tesserocr imagem falhou: %s", e)
-    
-    # Fallback: pytesseract
-    try:
-        import pytesseract
-        img = Image.open(tmp_path)
-        texto = pytesseract.image_to_string(img, lang="por")
-        img.close()
-        return texto.strip(), 1
-    except Exception as e:
-        logger.warning("pytesseract imagem falhou: %s", e)
-        return None, 0
-
-
-def _extrair_texto_worker(pdf_bytes: bytes) -> dict:
-    """Worker function para extração de texto de PDF."""
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-        tmp.write(pdf_bytes)
-        tmp_path = tmp.name
-    
-    erros = []
-    try:
-        texto, paginas = _extrair_pdfplumber(tmp_path)
-        metodo = "pdfplumber"
-        if not texto or not texto.strip():
-            logger.info("pdfplumber não extraiu texto, tentando pymupdf")
-            texto, paginas = _extrair_pymupdf(tmp_path)
-            metodo = "pymupdf"
-        if not texto or not texto.strip():
-            logger.info("pymupdf não extraiu texto, tentando OCR")
-            texto, paginas = _extrair_ocr(tmp_path)
-            metodo = "ocr"
-        
-        if not texto or not texto.strip():
-            logger.warning("nenhum método extraiu texto do PDF (%d páginas)", paginas)
-        
-        return {"texto": texto or "", "metodo": metodo, "paginas": paginas}
-    except Exception as e:
-        logger.error("extração falhou: %s\n%s", e, traceback.format_exc())
-        return {"texto": "", "metodo": f"erro: {e}", "paginas": 0}
-    finally:
-        try:
-            os.unlink(tmp_path)
-        except Exception:
-            pass
-
-
-def extrair_texto(pdf_bytes: bytes) -> dict:
-    """Extrai texto de bytes de PDF.
-    
-    Tenta extração inline primeiro. Se falhar com RuntimeError
-    de signal (thread não-principal no Cloud), faz fallback
-    para subprocesso dedicado.
-    """
-    resultado = _extrair_texto_worker(pdf_bytes)
-    
-    # Se método começar com "erro:", verificar se é signal
-    if resultado["metodo"].startswith("erro:") and "signal" in resultado["metodo"]:
-        logger.warning("extração inline falhou por signal, tentando subprocesso")
-        try:
-            resultado = _extrair_subprocesso(pdf_bytes)
-        except Exception as e2:
-            logger.error("subprocesso também falhou: %s", e2)
-            return {
-                "status": "erro",
-                "mensagem": f"Extração falhou mesmo em subprocesso: {e2}",
-                "paginas": 0,
-                "metodo": "erro",
-            }
-    
-    # Converter para formato esperado por processar_documento
-    if resultado.get("status") is None:
-        return resultado
-    return resultado
-
-
-def _extrair_subprocesso(pdf_bytes: bytes) -> dict:
-    """Executa extração de texto em um subprocesso dedicado.
-    
-    Necessário no Streamlit Cloud onde a thread principal
-    pode não estar disponível para signal.signal().
-    """
-    import base64
-    import json
-    import subprocess
-    import sys
-    
-    worker_path = Path(__file__).parent / "_extract_worker.py"
-    payload = {"pdf_b64": base64.b64encode(pdf_bytes).decode("ascii")}
-    
-    proc = subprocess.run(
-        [sys.executable, str(worker_path)],
-        input=json.dumps(payload).encode(),
-        capture_output=True,
-        timeout=120,
-    )
-    
-    if proc.returncode != 0:
-        stderr = proc.stderr.decode(errors="replace")
-        raise RuntimeError(f"worker retornou código {proc.returncode}: {stderr}")
-    
-    try:
-        return json.loads(proc.stdout.decode())
-    except json.JSONDecodeError as e:
-        raise RuntimeError(f"resposta inválida do worker: {e}")
-
-
-def extrair_arquivo(bytes_arquivo: bytes, nome_arquivo: str) -> dict:
-    """Extrai texto de um arquivo baseado em sua extensão."""
-    extensao = Path(nome_arquivo).suffix.lower()
-    tipo = EXTENSOES_SUPORTADAS.get(extensao, "desconhecido")
-    
-    if tipo == "desconhecido":
-        return {
-            "texto": "",
-            "metodo": "extensão não suportada",
-            "paginas": 0,
-            "erro": f"Extensão {extensao} não suportada",
-        }
-    
-    with tempfile.NamedTemporaryFile(suffix=extensao, delete=False) as tmp:
-        tmp.write(bytes_arquivo)
-        tmp_path = tmp.name
-    
-    try:
-        if tipo == "pdf":
-            return extrair_texto(bytes_arquivo)
-        
-        elif tipo == "docx":
-            texto, paginas = _extrair_docx(tmp_path)
-            return {
-                "texto": texto or "",
-                "metodo": "docx",
-                "paginas": paginas,
-            }
-        
-        elif tipo == "texto":
-            texto, paginas = _extrair_texto_puro(tmp_path)
-            return {
-                "texto": texto,
-                "metodo": "texto",
-                "paginas": paginas,
-            }
-        
-        elif tipo == "imagem":
-            texto, paginas = _extrair_imagem_ocr(tmp_path)
-            return {
-                "texto": texto or "",
-                "metodo": "ocr",
-                "paginas": paginas,
-            }
-        
-        return {"texto": "", "metodo": "erro", "paginas": 0}
-    
-    finally:
-        os.unlink(tmp_path)
-
-
 def chunk_texto(texto: str) -> list[dict]:
     """Divide texto em chunks para indexação."""
     splitter = RecursiveCharacterTextSplitter(
@@ -558,44 +202,7 @@ def salvar_resumo_documento(documento_id: str, resumo: str):
         logger.debug(f"Erro ao salvar resumo no ChromaDB: {e}")
 
 
-def _diagnosticar_ocr() -> str:
-    """Retorna diagnóstico do estado do OCR."""
-    diag = []
-    
-    # Verificar tesserocr
-    try:
-        import tesserocr
-        diag.append(f"tesserocr OK (v{getattr(tesserocr, '__version__', '?')})")
-        modelo = _encontrar_modelo_ocr()
-        if modelo:
-            diag.append(f"modelo OK")
-            try:
-                from tesserocr import PyTessBaseAPI
-                api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
-                api.End()
-                diag.append("PyTessBaseAPI OK")
-            except Exception as e2:
-                diag.append(f"PyTessBaseAPI ERRO: {e2}")
-        else:
-            diag.append("modelo AUSENTE")
-    except Exception as e:
-        diag.append(f"tesserocr AUSENTE: {e}")
-    
-    # Verificar pytesseract (fallback)
-    try:
-        import pytesseract
-        v = pytesseract.__version__ if hasattr(pytesseract, '__version__') else '?'
-        diag.append(f"pytesseract OK (v{v})")
-        # Testar se o binário tesseract está acessível
-        try:
-            pytesseract.get_tesseract_version()
-            diag.append("tesseract bin OK")
-        except Exception as e2:
-            diag.append(f"tesseract bin ERRO: {e2}")
-    except Exception as e:
-        diag.append(f"pytesseract AUSENTE: {e}")
-    
-    return "; ".join(diag)
+
 
 
 def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
@@ -615,7 +222,7 @@ def processar_documento(pdf_bytes: bytes, nome_arquivo: str = None) -> dict:
         if metodo.startswith("erro:"):
             msg += f" Detalhes: {metodo[5:]}"
         elif metodo == "ocr":
-            ocr_diag = _diagnosticar_ocr()
+            ocr_diag = diagnosticar_ocr()
             msg += f" Diagnóstico OCR: {ocr_diag}"
         return {
             "status": "erro",
