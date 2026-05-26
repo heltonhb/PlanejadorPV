@@ -42,6 +42,13 @@ except Exception as e:
     logger.warning("Não foi possível recarregar do Firestore: %s", e)
     _recarregou = 0
 
+# Backfill automático: chunks legados sem documento_id recebem um
+try:
+    from utils.documentos import _backfill_documento_id
+    _backfill_documento_id()
+except Exception:
+    pass
+
 # Injetar CSS e configurações visuais
 inject_css_and_theme()
 

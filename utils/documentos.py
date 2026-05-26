@@ -95,6 +95,103 @@ def _get_collection():
     )
 
 
+def _backfill_documento_id() -> int:
+    """Backfill silencioso de documento_id em chunks legados.
+
+    Chunks criados antes da adição do campo documento_id (commit 8885025)
+    não têm esse metadado. Essa função infere o documento_id a partir do
+    chunk_id (prefixo antes do _NNN) e atualiza os metadados no ChromaDB.
+
+    Returns:
+        int: número de chunks reparados
+    """
+    try:
+        collection = _get_collection()
+        total = collection.count()
+        if total == 0:
+            return 0
+
+        data = collection.get(include=["metadatas"])
+        repaired_ids = []
+        repaired_mds = []
+        changed = False
+
+        for i, md in enumerate(data["metadatas"]):
+            if md is None:
+                continue
+            if md.get("documento_id"):
+                continue  # já tem, pula
+
+            chunk_id = data["ids"][i]
+            match = re.match(r'^(.+?)(_\d+)?$', chunk_id)
+            doc_id = sanitizar_id(match.group(1)) if match else sanitizar_id(chunk_id)
+            md["documento_id"] = doc_id
+            repaired_ids.append(chunk_id)
+            repaired_mds.append(md)
+            changed = True
+
+        if changed:
+            collection.update(ids=repaired_ids, metadatas=repaired_mds)
+            logger.info("Backfill: %d chunks legados receberam documento_id", len(repaired_ids))
+
+        return len(repaired_ids)
+    except Exception as e:
+        logger.warning("Backfill de documento_id falhou: %s", e)
+        return 0
+
+
+def deletar_do_chromadb(documento_id: str, chave: str = "") -> None:
+    """Remove chunks do ChromaDB, com fallback para chave sem documento_id.
+
+    Args:
+        documento_id: ID do documento no ChromaDB (pode ser vazio para legados).
+        chave: Nome/chave da fonte no session_state (usado no fallback).
+    """
+    colecao = _get_collection()
+
+    if documento_id:
+        try:
+            colecao.delete(where={"documento_id": documento_id})
+            return
+        except Exception as e:
+            logger.warning(
+                "Erro ao deletar por documento_id '%s': %s", documento_id, e
+            )
+
+    # Fallback 1: inferir documento_id a partir da chave
+    if chave:
+        try:
+            inferred = sanitizar_id(chave)
+            colecao.delete(where={"documento_id": inferred})
+            logger.info(
+                "Delete por inferência (chave='%s' → doc_id='%s') OK",
+                chave, inferred,
+            )
+            return
+        except Exception as e:
+            logger.warning("Fallback por inferência falhou: %s", e)
+
+    # Fallback 2: varredura por metadados
+    try:
+        data = colecao.get(include=["metadatas"])
+        ids_para_remover = []
+        for i, md in enumerate(data["metadatas"]):
+            chunk_id = data["ids"][i]
+            if not md:
+                continue
+            if md.get("documento_id") and documento_id and md["documento_id"] == documento_id:
+                ids_para_remover.append(chunk_id)
+            elif chave and md.get("arquivo", "") == chave:
+                ids_para_remover.append(chunk_id)
+        if ids_para_remover:
+            colecao.delete(ids=ids_para_remover)
+            logger.info(
+                "Fallback 2 deletou %d chunks por varredura", len(ids_para_remover)
+            )
+    except Exception as e:
+        logger.error("Todos os fallbacks falharam ao deletar '%s': %s", chave, e)
+
+
 def _extrair_pdfplumber(tmp_path: str) -> tuple[Optional[str], int]:
     """Extrai texto de PDF usando pdfplumber."""
     try:

@@ -1,7 +1,7 @@
 """Componentes de upload e sidebar."""
 
 import streamlit as st
-from utils.documentos import processar_documento, _get_collection as _get_docs_collection, sanitizar_id, salvar_resumo_documento
+from utils.documentos import processar_documento, _get_collection as _get_docs_collection, sanitizar_id, salvar_resumo_documento, deletar_do_chromadb
 from utils.ingestao import processar_url, processar_html, processar_instagram, processar_texto, processar_planilha
 from utils.resumos import gerar_resumo
 from utils.firebase_store import salvar_fonte_meta, remover_fonte_meta
@@ -320,11 +320,7 @@ def sidebar_upload():
                         pass
                 with col3:
                     if st.button("🗑️", key=f"del_{chave}", help="Remover esta fonte"):
-                        colecao = _get_docs_collection()
-                        try:
-                            colecao.delete(where={"documento_id": meta["documento_id"]})
-                        except Exception:
-                            pass
+                        deletar_do_chromadb(meta.get("documento_id", ""), chave)
                         st.session_state.documentos.remove(chave)
                         st.session_state.documentos_meta.pop(chave, None)
                         remover_fonte_meta(chave)

@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.documentos import _get_collection as _get_docs_collection
+from utils.documentos import _get_collection as _get_docs_collection, deletar_do_chromadb
 from utils.relatorios import resumo_conteudo
 from utils.exportacao import exportar_relatorio_csv
 from utils.firebase_store import remover_fonte_meta
@@ -152,11 +152,7 @@ def render():
                         st.markdown(f'<span style="font-size:0.85rem;color:var(--on-surface-variant);">📏 Caracteres</span><br><span style="font-size:1.3rem;font-weight:700;">{item["caracteres"]:,}</span>', unsafe_allow_html=True)
                     with cols_info[2]:
                         if documento_id and st.button("🗑️ Remover", key=f"del_rel_{documento_id}", help="Remover esta fonte da base", use_container_width=True):
-                            colecao = _get_docs_collection()
-                            try:
-                                colecao.delete(where={"documento_id": documento_id})
-                            except Exception:
-                                pass
+                            deletar_do_chromadb(documento_id, documento_id)
                             for chv, meta in list(st.session_state.documentos_meta.items()):
                                 if meta.get("documento_id") == documento_id:
                                     st.session_state.documentos.remove(chv)
