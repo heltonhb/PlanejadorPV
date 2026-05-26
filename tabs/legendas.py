@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from utils.legendas_instagram import gerar_legenda, TOM_ESTILO
+from utils.legendas_instagram import gerar_legenda
+from utils.constants import TOM_ESTILO
 from components.instagram import parse_instagram_options, render_instagram_mockup
 
 

@@ -18,27 +18,23 @@ from typing import Optional
 
 from google import genai
 
+from utils.config import (
+    MODELO_GEMINI,
+    MODELOS_FALLBACK_GEMINI,
+    MAX_RETRIES_GEMINI,
+    BACKOFF_BASE,
+    CACHE_SIZE,
+    RATE_LIMIT_INTERVALO,
+)
+
 logger = logging.getLogger(__name__)
 
-# Configurações
-# gemini-2.0-flash: free tier = 30 RPM (1 req a cada 2s)
-# gemini-2.5-flash: free tier = 10 RPM (1 req a cada 6s) — maior qualidade
-MODELO_PADRAO = "gemini-2.5-flash"
-MODELOS_FALLBACK = [
-    "gemini-2.5-flash",  # 10 RPM, 1.500 RPD — melhor qualidade
-    "gemini-2.0-flash",  # 30 RPM — fallback (compatível google-genai SDK 1.8.0)
-]
-
-# Modelos que foram testados e NÃO funcionam no SDK 1.8.0 (API v1beta):
-# - gemini-1.5-flash → 404 NOT_FOUND
-# - gemini-2.0-flash-exp → 404 NOT_FOUND
-MAX_RETRIES = 3
-BACKOFF_BASE = 2  # segundos
-CACHE_SIZE = 256  # número de entradas no cache LRU
-
-# Rate limiter global — proativo para evitar 429
-# Usamos 7s para ficar abaixo do limite de 10 RPM do gemini-2.5-flash free tier
-MIN_INTERVALO_REQ = 7  # segundos entre requisições
+MODELO_PADRAO = MODELO_GEMINI
+MODELOS_FALLBACK = MODELOS_FALLBACK_GEMINI
+MAX_RETRIES = MAX_RETRIES_GEMINI
+BACKOFF_BASE_SECONDS = BACKOFF_BASE
+LRU_CACHE_SIZE = CACHE_SIZE
+MIN_INTERVALO_REQ = RATE_LIMIT_INTERVALO
 
 
 class GeminiError(Exception):
@@ -298,7 +294,7 @@ class GeminiClient:
         modelo: str = MODELO_PADRAO,
         modelos_fallback: Optional[list[str]] = None,
         max_retries: int = MAX_RETRIES,
-        cache_size: int = CACHE_SIZE,
+        cache_size: int = LRU_CACHE_SIZE,
         enable_cache: bool = True,
     ):
         self._api_key = api_key or _get_gemini_key()
@@ -443,10 +439,10 @@ class GeminiClient:
                     # Erro de rate limit (RPM) ou outro → retry com backoff
                     if not isinstance(erro_classificado, GeminiQuotaError):
                         todas_quota = False
-                        wait_time = BACKOFF_BASE ** tentativa
+                        wait_time = BACKOFF_BASE_SECONDS ** tentativa
                     else:
                         limite_tentativas = max(limite_tentativas, 3)
-                        wait_time = 5 * (BACKOFF_BASE ** tentativa)
+                        wait_time = 5 * (BACKOFF_BASE_SECONDS ** tentativa)
                     
                     if tentativa < limite_tentativas - 1:
                         logger.warning(

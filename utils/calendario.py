@@ -6,24 +6,12 @@ import calendar
 import logging
 
 from utils.documentos import _get_collection
-from utils.gemini_client import (
-    GeminiError,
-    GeminiAPIKeyError,
-    GeminiQuotaError,
-    GeminiDailyQuotaError,
-    GeminiServerError,
-    GeminiSafetyError,
-    get_cliente,
-)
+from utils.gemini_client import GeminiError, GeminiAPIKeyError, get_cliente
+from utils.config import MODELO_GEMINI
+from utils.constants import MESES
+from utils.helpers import sanitizar_html, tratar_erro_gemini
 
 logger = logging.getLogger(__name__)
-
-MODELO = "gemini-2.5-flash"
-
-MESES = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-]
 
 
 def _buscar_contexto_calendario(mes: str, top_k: int = 10) -> str:
@@ -44,7 +32,7 @@ def _buscar_contexto_calendario(mes: str, top_k: int = 10) -> str:
 
 def gerar_calendario(mes: str, ano: int) -> dict:
     try:
-        cliente = get_cliente(modelo=MODELO)
+        cliente = get_cliente(modelo=MODELO_GEMINI)
         if not cliente.api_key_configured:
             return {"status": "erro", "mensagem": "GEMINI_API_KEY não configurada.", "conteudo": ""}
     except GeminiAPIKeyError:
@@ -103,50 +91,17 @@ def gerar_calendario(mes: str, ano: int) -> dict:
                 "mensagem": "Gemini retornou uma resposta vazia. Tente novamente.",
                 "conteudo": "",
             }
-        # Remover HTML que o Gemini insiste em gerar
-        import re
-        conteudo = re.sub(r'<[^>]*>', '', conteudo)
-        conteudo = re.sub(r'\n{3,}', '\n\n', conteudo)
+        conteudo = sanitizar_html(conteudo)
         return {
             "status": "ok",
             "conteudo": conteudo,
             "contexto_usado": bool(contexto),
         }
 
-    except GeminiAPIKeyError:
-        return {
-            "status": "erro",
-            "mensagem": "Chave da API Gemini inválida ou não encontrada.",
-            "conteudo": "",
-        }
-    except GeminiDailyQuotaError:
-        return {
-            "status": "erro",
-            "mensagem": "⚠️ Limite **diário** de requisições excedido. O Google Gemini resetará a cota — você poderá usar o app novamente amanhã.",
-            "conteudo": "",
-        }
-    except GeminiQuotaError:
-        return {
-            "status": "erro",
-            "mensagem": "Limite de requisições excedido. Aguarde alguns minutos e tente novamente.",
-            "conteudo": "",
-        }
-    except GeminiServerError:
-        return {
-            "status": "erro",
-            "mensagem": "Servidor do Gemini temporariamente indisponível. Tente novamente em alguns instantes.",
-            "conteudo": "",
-        }
-    except GeminiSafetyError:
-        return {
-            "status": "erro",
-            "mensagem": "O conteúdo foi bloqueado pelos filtros de segurança do Gemini. Tente reformular a solicitação.",
-            "conteudo": "",
-        }
     except GeminiError as e:
-        logger.error(f"Erro Gemini: {e}")
+        logger.error(f"Erro Gemini em gerar_calendario: {e}")
         return {
             "status": "erro",
-            "mensagem": f"Erro ao comunicar com o Gemini: {e.message[:200]}",
+            "mensagem": tratar_erro_gemini(e),
             "conteudo": "",
         }

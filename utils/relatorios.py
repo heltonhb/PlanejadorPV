@@ -1,16 +1,9 @@
 import logging
+
 from utils.documentos import _get_collection
+from utils.constants import ICONES_FONTE
 
 logger = logging.getLogger(__name__)
-
-ICONES_FONTE = {
-    "pdf": "📄",
-    "url": "🔗",
-    "html": "🌐",
-    "instagram": "📷",
-    "texto": "📝",
-    "planilha": "📊",
-}
 
 
 def resumo_conteudo() -> dict:

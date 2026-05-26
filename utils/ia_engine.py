@@ -8,6 +8,7 @@ quando a cota diária do Gemini é excedida.
 import logging
 import time
 
+from utils.config import MODELO_GEMINI, TOP_K_PADRAO
 from utils.documentos import _get_collection
 from utils.gemini_client import (
     GeminiError,
@@ -22,8 +23,8 @@ from utils.groq_client import get_cliente_groq
 
 logger = logging.getLogger(__name__)
 
-MODELO = "gemini-2.5-flash"
-TOP_K = 12
+MODELO = MODELO_GEMINI
+TOP_K = TOP_K_PADRAO
 
 
 def buscar_contexto(pergunta: str, top_k: int = TOP_K) -> tuple[str, list[dict]]:
@@ -93,31 +94,6 @@ def buscar_contexto(pergunta: str, top_k: int = TOP_K) -> tuple[str, list[dict]]
     fontes = [f for _, f in combinados]
     
     return "\n\n".join(textos), fontes
-    documentos = resultados.get("documents", [[]])
-    metadatas = resultados.get("metadatas", [[]])
-    distances = resultados.get("distances", [[]])
-
-    if not documentos or not documentos[0]:
-        return "", []
-
-    textos = documentos[0]
-    metas = metadatas[0] if metadatas and metadatas[0] else []
-    dists = distances[0] if distances and distances[0] else []
-
-    fontes = []
-    for md, dist in zip(metas, dists):
-        fonte = {"fonte": md.get("fonte", "desconhecida"), "relevancia": round(1 - dist, 3)}
-        if md.get("arquivo"):
-            fonte["arquivo"] = md["arquivo"]
-        if md.get("url"):
-            fonte["url"] = md["url"]
-        if md.get("perfil"):
-            fonte["perfil"] = md["perfil"]
-        if md.get("titulo"):
-            fonte["titulo"] = md["titulo"]
-        fontes.append(fonte)
-
-    return "\n\n".join(documentos[0]), fontes
 
 
 def perguntar(pergunta: str, contexto: str = None) -> dict:

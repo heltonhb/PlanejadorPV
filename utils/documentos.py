@@ -19,15 +19,15 @@ from chromadb import PersistentClient
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-CHROMA_PATH = Path("vector_store")
-COLLECTION_NAME = "documentos_ensina_mais"
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
+from utils.config import (
+    CHUNK_SIZE,
+    CHUNK_OVERLAP,
+    CHROMA_PATH,
+    COLLECTION_NAME,
+    TESSDATA_PATH,
+    TESSDATA_URL,
+)
 
-TESSDATA_PATH = Path("tessdata")
-TESSDATA_URL = "https://github.com/tesseract-ocr/tessdata/raw/main/por.traineddata"
-
-# Caminhos do sistema onde o tesseract-ocr-por pode estar instalado
 _CAMINHOS_SISTEMA_OCR = [
     Path("/usr/share/tesseract-ocr/5/tessdata"),
     Path("/usr/share/tesseract-ocr/4/tessdata"),

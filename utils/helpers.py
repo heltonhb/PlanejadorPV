@@ -1,3 +1,11 @@
+import re
+import logging
+
+from utils.gemini_client import GeminiError, GeminiAPIKeyError, GeminiQuotaError, GeminiDailyQuotaError, GeminiServerError, GeminiSafetyError
+
+logger = logging.getLogger(__name__)
+
+
 def formatar_numero(numero: int | float) -> str:
     """Formata números com separadores de milhar."""
     return f"{numero:,}".replace(",", ".")
@@ -69,4 +77,50 @@ def parse_duration_days(datas_str: str) -> int:
             pass
             
     return 30
+
+
+def sanitizar_html(texto: str) -> str:
+    """
+    Remove tags HTML que o Gemini insiste em gerar e normaliza
+    quebras de linha excessivas.
+    """
+    texto = re.sub(r"<[^>]*>", "", texto)
+    texto = re.sub(r"\n{3,}", "\n\n", texto)
+    return texto.strip()
+
+
+def tratar_erro_gemini(erro: GeminiError) -> str:
+    """
+    Retorna mensagem de erro amigável padronizada baseada no tipo
+    de exceção Gemini levantada.
+    """
+    if isinstance(erro, GeminiAPIKeyError):
+        return (
+            "GEMINI_API_KEY não configurada. "
+            "Configure a variável de ambiente GEMINI_API_KEY no arquivo .env "
+            "ou nas variáveis de ambiente do sistema."
+        )
+    if isinstance(erro, GeminiDailyQuotaError):
+        return (
+            "\u26a0\ufe0f Limite **diário** de requisições excedido. "
+            "A cota gratuita do Gemini Free tem limite de 1.500 requisições por dia. "
+            "Tente novamente amanhã ou configure uma chave com cota paga."
+        )
+    if isinstance(erro, GeminiQuotaError):
+        return (
+            "Limite de requisições excedido. "
+            "A cota gratuita do Gemini é de 10 requisições por minuto. "
+            "Aguarde alguns instantes e tente novamente."
+        )
+    if isinstance(erro, GeminiServerError):
+        return (
+            "Servidor do Gemini temporariamente indisponível. "
+            "O erro ocorreu do lado do Google. Tente novamente em alguns minutos."
+        )
+    if isinstance(erro, GeminiSafetyError):
+        return (
+            "O conteúdo foi bloqueado pelas regras de segurança do Gemini. "
+            "Revise o prompt para remover conteúdo que possa violar as políticas."
+        )
+    return f"Erro inesperado no Gemini: {erro.message[:200]}"
 

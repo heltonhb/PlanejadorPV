@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import date
-from utils.calendario import gerar_calendario, MESES
+from utils.calendario import gerar_calendario
+from utils.constants import MESES
 from components.fontes import render_markdown_with_copy
 
 
