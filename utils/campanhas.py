@@ -1,14 +1,13 @@
 """
-Módulo para geração de campanhas de marketing usando Gemini.
+Módulo para geração de campanhas de marketing usando Hermes Operator.
 """
 
 import logging
 from typing import Optional
 
 from utils.documentos import _get_collection
-from utils.gemini_client import GeminiError, GeminiAPIKeyError, get_cliente
-from utils.config import MODELO_GEMINI
-from utils.helpers import sanitizar_html, tratar_erro_gemini, parse_duration_days
+from utils.hermes_operator_client import get_cliente_hermes
+from utils.helpers import sanitizar_html, tratar_erro_ia, parse_duration_days
 from utils.prompts import PERSONA_CONSULTOR, formatar_contexto, regras_padrao
 
 logger = logging.getLogger(__name__)
@@ -83,18 +82,11 @@ def gerar_campanha(
     datas: str = "",
 ) -> dict:
     """Gera uma campanha de marketing completa."""
-    try:
-        cliente = get_cliente(modelo=MODELO_GEMINI)
-        if not cliente.api_key_configured:
-            return {
-                "status": "erro",
-                "mensagem": "GEMINI_API_KEY não configurada.",
-                "conteudo": "",
-            }
-    except GeminiAPIKeyError:
+    hermes = get_cliente_hermes()
+    if not hermes.disponivel:
         return {
             "status": "erro",
-            "mensagem": "GEMINI_API_KEY não configurada.",
+            "mensagem": "Chave do Hermes Operator não configurada.",
             "conteudo": "",
         }
 
@@ -111,11 +103,9 @@ def gerar_campanha(
     )
 
     try:
-        cliente = get_cliente(modelo=MODELO_GEMINI)
-        conteudo = cliente.gerar_texto(
+        conteudo = hermes.gerar_texto(
             prompt=prompt,
-            system_instruction=PERSONA_CONSULTOR,
-            usar_cache=True,
+            system_prompt=PERSONA_CONSULTOR,
             temperatura=0.7,
             max_tokens=4096,
         )
@@ -123,7 +113,7 @@ def gerar_campanha(
         if not conteudo:
             return {
                 "status": "erro",
-                "mensagem": "Gemini retornou resposta vazia. Tente novamente.",
+                "mensagem": "Hermes Operator retornou resposta vazia. Tente novamente.",
                 "conteudo": "",
             }
 
@@ -135,10 +125,10 @@ def gerar_campanha(
             "contexto_usado": bool(contexto),
         }
 
-    except GeminiError as e:
+    except RuntimeError as e:
         return {
             "status": "erro",
-            "mensagem": tratar_erro_gemini(e),
+            "mensagem": tratar_erro_ia(e),
             "conteudo": "",
         }
 

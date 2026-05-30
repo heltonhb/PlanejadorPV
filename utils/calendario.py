@@ -1,15 +1,14 @@
 """
-Módulo para geração de calendários editoriais usando Gemini.
+Módulo para geração de calendários editoriais usando Hermes Operator.
 """
 
 import calendar
 import logging
 
 from utils.documentos import _get_collection
-from utils.gemini_client import GeminiError, GeminiAPIKeyError, get_cliente
-from utils.config import MODELO_GEMINI
+from utils.hermes_operator_client import get_cliente_hermes
 from utils.constants import MESES
-from utils.helpers import sanitizar_html, tratar_erro_gemini
+from utils.helpers import sanitizar_html, tratar_erro_ia
 from utils.prompts import PERSONA_CONSULTOR, formatar_contexto, FRANQUIA_INFO
 
 logger = logging.getLogger(__name__)
@@ -33,12 +32,9 @@ def _buscar_contexto_calendario(mes: str, top_k: int = 10) -> str:
 
 
 def gerar_calendario(mes: str, ano: int) -> dict:
-    try:
-        cliente = get_cliente(modelo=MODELO_GEMINI)
-        if not cliente.api_key_configured:
-            return {"status": "erro", "mensagem": "GEMINI_API_KEY não configurada.", "conteudo": ""}
-    except GeminiAPIKeyError:
-        return {"status": "erro", "mensagem": "GEMINI_API_KEY não configurada.", "conteudo": ""}
+    hermes = get_cliente_hermes()
+    if not hermes.disponivel:
+        return {"status": "erro", "mensagem": "Chave do Hermes Operator não configurada.", "conteudo": ""}
 
     contexto = _buscar_contexto_calendario(mes)
     dias_no_mes = calendar.monthrange(ano, MESES.index(mes) + 1)[1]
@@ -46,17 +42,16 @@ def gerar_calendario(mes: str, ano: int) -> dict:
     prompt = _construir_prompt(mes, ano, dias_no_mes, contexto)
 
     try:
-        conteudo = cliente.gerar_texto(
+        conteudo = hermes.gerar_texto(
             prompt=prompt,
-            system_instruction=PERSONA_CONSULTOR,
-            usar_cache=True,
+            system_prompt=PERSONA_CONSULTOR,
             temperatura=0.7,
             max_tokens=4096,
         )
         if not conteudo:
             return {
                 "status": "erro",
-                "mensagem": "Gemini retornou uma resposta vazia. Tente novamente.",
+                "mensagem": "Hermes Operator retornou uma resposta vazia. Tente novamente.",
                 "conteudo": "",
             }
         conteudo = sanitizar_html(conteudo)
@@ -66,11 +61,11 @@ def gerar_calendario(mes: str, ano: int) -> dict:
             "contexto_usado": bool(contexto),
         }
 
-    except GeminiError as e:
-        logger.error(f"Erro Gemini em gerar_calendario: {e}")
+    except RuntimeError as e:
+        logger.error(f"Erro Hermes em gerar_calendario: {e}")
         return {
             "status": "erro",
-            "mensagem": tratar_erro_gemini(e),
+            "mensagem": tratar_erro_ia(e),
             "conteudo": "",
         }
 

@@ -219,29 +219,21 @@ def _render_upload_tab(container, aba, key_prefix=""):
 
 
 def _render_quota_status():
-    """Renderiza indicador de cota diária restante na sidebar."""
+    """Renderiza indicador de status do Hermes Operator na sidebar."""
     try:
-        from utils.gemini_client import obter_status_quota
-        status = obter_status_quota()
-        if not status:
+        from utils.hermes_operator_client import get_cliente_hermes
+        hermes = get_cliente_hermes()
+        if not hermes.disponivel:
             return
         
         st.sidebar.divider()
-        st.sidebar.markdown("### 📊 Cota diária")
-        for modelo, info in status.items():
-            rest = info["restantes"]
-            limite = info["limite"]
-            bloqueado = info["bloqueado"]
-            conhecido = info.get("conhecido", True)
-            nome = modelo.replace("gemini-", "").replace("-flash", "").replace("-2.0", " 2.0")
-            if bloqueado:
-                st.sidebar.markdown(f"🔴 **{nome}**: esgotada")
-            elif not conhecido:
-                st.sidebar.markdown(f"⚪ **{nome}**: ?/{limite} (aguardando)")
-            elif rest is not None and rest < 50:
-                st.sidebar.markdown(f"🟡 **{nome}**: {rest}/{limite}")
-            elif rest is not None:
-                st.sidebar.markdown(f"🟢 **{nome}**: {rest}/{limite}")
+        st.sidebar.markdown("### 🤖 Hermes Operator")
+        metricas = hermes.obter_metricas()
+        st.sidebar.caption(
+            f"Modelo: `{hermes.modelo.split('/')[-1]}` · "
+            f"Requisições: {metricas['total_requests']} · "
+            f"Tempo médio: {metricas['tempo_medio_resposta']}s"
+        )
     except Exception:
         pass
 

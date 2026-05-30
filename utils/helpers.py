@@ -1,8 +1,6 @@
 import re
 import logging
 
-from utils.gemini_client import GeminiError, GeminiAPIKeyError, GeminiQuotaError, GeminiDailyQuotaError, GeminiServerError, GeminiSafetyError
-
 logger = logging.getLogger(__name__)
 
 
@@ -89,38 +87,43 @@ def sanitizar_html(texto: str) -> str:
     return texto.strip()
 
 
-def tratar_erro_gemini(erro: GeminiError) -> str:
+def tratar_erro_ia(erro: Exception, provedor: str = "Hermes Operator") -> str:
     """
-    Retorna mensagem de erro amigável padronizada baseada no tipo
-    de exceção Gemini levantada.
+    Retorna mensagem de erro amigável padronizada para qualquer provedor de IA.
+
+    Args:
+        erro: Exceção capturada.
+        provedor: Nome do provedor para exibição na mensagem.
+
+    Returns:
+        Mensagem de erro amigável em português.
     """
-    if isinstance(erro, GeminiAPIKeyError):
+    msg = str(erro).lower()
+
+    if "API_KEY" in str(erro).upper() or "api key" in msg:
         return (
-            "GEMINI_API_KEY não configurada. "
-            "Configure a variável de ambiente GEMINI_API_KEY no arquivo .env "
-            "ou nas variáveis de ambiente do sistema."
+            f"🔑 Chave de API do **{provedor}** não configurada ou inválida. "
+            f"Configure a variável no arquivo .env ou nas secrets do Streamlit."
         )
-    if isinstance(erro, GeminiDailyQuotaError):
+    if "quota" in msg or "429" in msg or "rate limit" in msg or "too many" in msg:
+        if "daily" in msg or "per day" in msg or "diário" in msg:
+            return (
+                f"⚠️ **{provedor}**: limite **diário** de requisições excedido. "
+                f"Tente novamente amanhã ou configure uma chave com cota maior."
+            )
         return (
-            "\u26a0\ufe0f Limite **diário** de requisições excedido. "
-            "A cota gratuita do Gemini Free tem limite de 1.500 requisições por dia. "
-            "Tente novamente amanhã ou configure uma chave com cota paga."
+            f"⚠️ **{provedor}**: limite de requisições excedido. "
+            f"Aguarde alguns instantes e tente novamente."
         )
-    if isinstance(erro, GeminiQuotaError):
+    if any(w in msg for w in ["500", "503", "unavailable", "timeout", "temporariamente"]):
         return (
-            "Limite de requisições excedido. "
-            "A cota gratuita do Gemini é de 10 requisições por minuto. "
-            "Aguarde alguns instantes e tente novamente."
+            f"🔧 **{provedor}** temporariamente indisponível. "
+            f"Tente novamente em alguns minutos."
         )
-    if isinstance(erro, GeminiServerError):
+    if "safety" in msg or "blocked" in msg or "harm" in msg:
         return (
-            "Servidor do Gemini temporariamente indisponível. "
-            "O erro ocorreu do lado do Google. Tente novamente em alguns minutos."
+            f"🛡️ O conteúdo foi bloqueado pelas regras de segurança do **{provedor}**. "
+            f"Revise o prompt e tente novamente."
         )
-    if isinstance(erro, GeminiSafetyError):
-        return (
-            "O conteúdo foi bloqueado pelas regras de segurança do Gemini. "
-            "Revise o prompt para remover conteúdo que possa violar as políticas."
-        )
-    return f"Erro inesperado no Gemini: {erro.message[:200]}"
+    return f"❌ Erro inesperado no **{provedor}**: {str(erro)[:200]}"
 

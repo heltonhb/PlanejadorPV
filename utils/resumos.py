@@ -1,5 +1,5 @@
 """
-Módulo para geração de resumos de documentos usando Gemini.
+Módulo para geração de resumos de documentos usando Hermes Operator.
 
 Chamado após upload de PDF/URL/HTML para gerar uma descrição curta
 do documento — usada na listagem e busca.
@@ -7,13 +7,11 @@ do documento — usada na listagem e busca.
 
 import logging
 
-from utils.gemini_client import GeminiAPIKeyError, get_cliente
-from utils.config import MODELO_GEMINI
+from utils.hermes_operator_client import get_cliente_hermes
 from utils.prompts import PERSONA_RESUMOS
 
 logger = logging.getLogger(__name__)
 
-MODELO = MODELO_GEMINI
 TAMANHO_MAXIMO_TEXTO = 8_000
 TAMANHO_MAXIMO_RESUMO = 200
 
@@ -43,19 +41,18 @@ def gerar_resumo(texto: str, fonte: str = "documento") -> str:
     )
 
     try:
-        cliente = get_cliente(modelo=MODELO)
-        resumo = cliente.gerar_texto(
+        hermes = get_cliente_hermes()
+        if not hermes.disponivel:
+            return "Erro: chave do Hermes Operator não configurada"
+
+        resumo = hermes.gerar_texto(
             prompt=prompt,
-            system_instruction=PERSONA_RESUMOS,
-            usar_cache=True,
+            system_prompt=PERSONA_RESUMOS,
             temperatura=0.3,
             max_tokens=100,
         )
         return resumo[:TAMANHO_MAXIMO_RESUMO].strip()
 
-    except GeminiAPIKeyError:
-        logger.warning("GEMINI_API_KEY não configurada")
-        return "Erro: GEMINI_API_KEY não configurada"
     except Exception as e:
         logger.error(f"Erro ao gerar resumo: {e}")
         return f"Erro ao gerar resumo: {str(e)}"

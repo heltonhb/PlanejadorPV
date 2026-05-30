@@ -7,7 +7,7 @@ import sys
 import streamlit as st
 
 from utils.documentos import _get_collection as _get_docs_collection
-from utils.gemini_client import get_cliente, obter_status_quota
+from utils.hermes_operator_client import get_cliente_hermes
 from components import render_upload_tab
 
 logger = logging.getLogger(__name__)
@@ -64,8 +64,8 @@ def _render_health_section():
         unsafe_allow_html=True,
     )
 
-    gemini = _checar_api_key("Gemini", "GEMINI_API_KEY")
-    groq = _checar_api_key("Groq", "GROQ_API_KEY")
+    hermes = _checar_api_key("Hermes Operator", "HERMES_OPERATOR_API_KEY")
+    gemini = _checar_api_key("Gemini (fallback)", "GEMINI_API_KEY")
     chroma = _checar_chromadb()
     firebase = _checar_firestore()
 
@@ -81,10 +81,10 @@ def _render_health_section():
             unsafe_allow_html=True,
         )
 
-    _health_card(cols[0], "🔑 Gemini", gemini["status"], gemini["label"],
-                 "var(--primary)" if gemini["configurada"] else "var(--danger)")
-    _health_card(cols[1], "🔑 Groq (fallback)", groq["status"], groq["label"],
-                 "var(--primary)" if groq["configurada"] else "var(--on-surface-variant)")
+    _health_card(cols[0], "🔑 Hermes Operator", hermes["status"], hermes["label"],
+                 "var(--primary)" if hermes["configurada"] else "var(--danger)")
+    _health_card(cols[1], "🔑 Gemini (fallback)", gemini["status"], gemini["label"],
+                 "var(--primary)" if gemini["configurada"] else "var(--on-surface-variant)")
     _health_card(cols[2], "🗄️ ChromaDB", chroma["status"], chroma["label"],
                  "var(--primary)" if chroma["conectado"] else "var(--danger)")
     _health_card(cols[3], "☁️ Firestore", firebase["status"], firebase["label"],
@@ -99,8 +99,8 @@ def _render_health_section():
             | **Python** | {sys.version.split()[0]} |
             | **App** | v{__app_version__} ({__app_build__}) |
             | **Streamlit** | {st.__version__} |
-            | **Modelo Gemini** | `gemini-2.5-flash` |
-            | **Rate limit** | {os.getenv('MIN_INTERVALO_REQ', '7s')} |
+            | **Modelo Principal** | `deepseek/deepseek-chat` (Hermes Operator) |
+            | **Rate limit (ia_engine)** | {os.getenv('MIN_INTERVALO_REQ', '7s')} |
             | **Coleção ChromaDB** | `documentos_ensina_mais` |
             | **Fragmentos por chunk** | 500 chars (50 overlap) |
             """
@@ -109,9 +109,8 @@ def _render_health_section():
         # ── Métricas de performance ──
         st.markdown("##### 📊 Métricas de Performance")
         try:
-            cliente = get_cliente()
-            metricas = cliente.obter_metricas()
-            quota = obter_status_quota()
+            hermes = get_cliente_hermes()
+            metricas = hermes.obter_metricas()
 
             col_m1, col_m2, col_m3, col_m4 = st.columns(4)
             col_m1.metric("Requisições", metricas["total_requests"])
@@ -119,24 +118,8 @@ def _render_health_section():
             col_m3.metric("Tempo Médio", f"{metricas['tempo_medio_resposta']}s")
             col_m4.metric("Tokens Estimados", f"{metricas['tokens_estimados']:,}")
 
-            if quota:
-                st.markdown("##### 📈 Cota Diária (RPD)")
-                qcols = st.columns(len(quota))
-                for i, (modelo, dados) in enumerate(quota.items()):
-                    with qcols[i]:
-                        usadas = dados.get("usadas", 0)
-                        limite = dados.get("limite", 1500)
-                        restantes = dados.get("restantes")
-                        rest_str = str(restantes) if restantes is not None else "?"
-                        st.markdown(f"""
-                        <div class="app-card" style="padding:0.75rem;text-align:center;">
-                        <div style="font-weight:600;font-size:0.8rem;">{modelo}</div>
-                        <div style="font-size:1.3rem;font-weight:700;color:var(--primary);">{usadas}/{limite}</div>
-                        <div style="font-size:0.75rem;color:var(--on-surface-variant);">Restantes: {rest_str}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
         except Exception:
-            st.caption("Métricas indisponíveis — cliente Gemini ainda não foi usado nesta sessão.")
+            st.caption("Métricas indisponíveis — cliente Hermes Operator ainda não foi usado nesta sessão.")
 
 
 def _render_changelog():

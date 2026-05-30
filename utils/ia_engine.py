@@ -1,8 +1,8 @@
 """
 Módulo principal do motor RAG — consulta a base vetorial e gera respostas.
 
-Usa Gemini como provedor principal e Groq como fallback automático
-quando a cota diária do Gemini é excedida.
+Usa Hermes Operator (deepseek/deepseek-chat via OpenRouter) como provedor
+principal, com fallback para Gemini e depois Groq.
 """
 
 import logging
@@ -10,6 +10,10 @@ import time
 
 from utils.config import MODELO_GEMINI, TOP_K_PADRAO
 from utils.documentos import _get_collection
+from utils.hermes_operator_client import (
+    HermesOperatorClient,
+    get_cliente_hermes,
+)
 from utils.gemini_client import (
     GeminiError,
     GeminiAPIKeyError,
@@ -101,6 +105,11 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
     """
     Faz uma pergunta RAG: busca contexto na base vetorial e gera resposta.
 
+    Ordem de tentativa:
+    1. Hermes Operator (deepseek via OpenRouter) — PRIMÁRIO
+    2. Gemini (fallback se Hermes Operator falhar)
+    3. Groq (fallback final)
+
     Args:
         pergunta: Pergunta do usuário.
         contexto: Contexto opcional já fornecido (para reuso).
@@ -123,7 +132,25 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
 
     prompt = _construir_prompt_rag(pergunta, contexto)
 
-    # ── Tentar Gemini primeiro ──
+    # ── 1. Tentar Hermes Operator (primário) ──
+    try:
+        hermes = get_cliente_hermes()
+        if not hermes.disponivel:
+            logger.warning("Hermes Operator não configurado, pulando para Gemini...")
+        else:
+            resposta = hermes.gerar_texto(
+                prompt=prompt,
+                system_prompt=PERSONA_RAG,
+                temperatura=0.4,
+                max_tokens=8192,
+            )
+            return {"resposta": resposta, "fontes": fontes, "provedor": "hermes_operator"}
+    except RuntimeError as e:
+        logger.warning(f"Hermes Operator falhou: {e}. Tentando Gemini...")
+    except Exception as e:
+        logger.warning(f"Hermes Operator erro inesperado: {e}. Tentando Gemini...")
+
+    # ── 2. Tentar Gemini (fallback) ──
     try:
         cliente = get_cliente(modelo=MODELO)
         resposta = cliente.gerar_texto(
@@ -155,17 +182,14 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
             "fontes": [], "provedor": "",
         }
 
-    # ── Fallback: Groq ──
+    # ── 3. Groq (fallback final) ──
     try:
         groq = get_cliente_groq()
         if not groq.disponivel:
             return {
                 "resposta": (
-                    "⚠️ Gemini está com cota esgotada e o Groq (fallback) "
-                    "não está configurado. Para continuar usando, adicione "
-                    "`GROQ_API_KEY` nos Secrets do Streamlit Cloud ou "
-                    "gere uma nova chave Gemini.\n\n"
-                    "Chave Groq gratuita em: https://console.groq.com"
+                    "⚠️ Hermes Operator e Gemini falharam, e o Groq (fallback) "
+                    "não está configurado. Verifique as chaves de API ou tente novamente."
                 ),
                 "fontes": [], "provedor": "",
             }
@@ -177,14 +201,19 @@ def perguntar(pergunta: str, contexto: str = None) -> dict:
             max_tokens=8192,
         )
         return {
-            "resposta": resposta + "\n\n🤖 *Respondido via Groq (fallback automático)*",
+            "resposta": resposta + "\n\n🤖 *Respondido via Groq (fallback)*",
             "fontes": fontes,
             "provedor": "groq",
         }
     except Exception as e:
         logger.error(f"Groq fallback falhou: {e}")
         return {
-            "resposta": f"Gemini e Groq falharam. Gemini: cota diária excedida. Groq: {str(e)[:100]}.",
+            "resposta": (
+                "Todos os provedores falharam. "
+                f"Hermes Operator: indisponível. "
+                f"Gemini: cota esgotada. "
+                f"Groq: {str(e)[:100]}."
+            ),
             "fontes": [], "provedor": "",
         }
 

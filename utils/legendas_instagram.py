@@ -1,14 +1,18 @@
 """
-Módulo para geração de legendas para Instagram usando Gemini.
+Módulo para geração de legendas para Instagram — Gemini como padrão.
+
+O Gemini analisa a imagem enviada para gerar legendas contextuais.
+Caso o Gemini esteja indisponível, cai para Hermes Operator (apenas texto).
 """
 
 import logging
 
 from utils.documentos import _get_collection
+from utils.hermes_operator_client import get_cliente_hermes
 from utils.gemini_client import GeminiError, GeminiAPIKeyError, get_cliente
 from utils.config import MODELO_GEMINI
 from utils.constants import TOM_ESTILO
-from utils.helpers import sanitizar_html, tratar_erro_gemini
+from utils.helpers import sanitizar_html, tratar_erro_ia
 from utils.prompts import PERSONA_SOCIAL_MEDIA, formatar_contexto
 
 logger = logging.getLogger(__name__)
@@ -46,10 +50,13 @@ def gerar_legenda(
     top_k: int = TOP_K,
 ) -> dict:
     """
-    Gera 3 opções de legenda para Instagram com base em uma imagem.
+    Gera 3 opções de legenda para Instagram.
+
+    Usa **Gemini** como padrão (analisa a imagem + contexto).
+    Se Gemini falhar, usa Hermes Operator como fallback (apenas texto).
 
     Args:
-        image: Objeto de imagem (PIL ou bytes) para análise.
+        image: Objeto de imagem (PIL ou bytes) para análise via Gemini.
         tom: Tom da legenda (ver TOM_ESTILO em constants.py).
         tema: Tema sugerido opcional.
         instrucoes: Instruções adicionais opcionais.
@@ -62,61 +69,74 @@ def gerar_legenda(
         logger.warning(f"Tom '{tom}' não reconhecido, usando 'Educativo'")
         tom = "Educativo"
 
-    try:
-        cliente = get_cliente(modelo=MODELO_GEMINI)
-        if not cliente.api_key_configured:
-            return {
-                "status": "erro",
-                "mensagem": "GEMINI_API_KEY não configurada.",
-                "legendas": [],
-                "hashtags": [],
-            }
-    except GeminiAPIKeyError:
-        return {
-            "status": "erro",
-            "mensagem": "GEMINI_API_KEY não configurada.",
-            "legendas": [],
-            "hashtags": [],
-        }
-
     contexto = _buscar_contexto(top_k)
     estilo = TOM_ESTILO.get(tom, TOM_ESTILO["Educativo"])
     prompt = _construir_prompt(tom, estilo, tema, instrucoes, contexto)
 
+    # ── 1. Gemini (padrão) — com análise de imagem ──
     try:
-        conteudo = cliente.gerar_com_imagem(
-            prompt=prompt,
-            imagem=image,
-            system_instruction=PERSONA_SOCIAL_MEDIA,
-            usar_cache=False,
-            temperatura=0.7,
-            max_tokens=4096,
-        )
+        cliente = get_cliente(modelo=MODELO_GEMINI)
+        if cliente.api_key_configured:
+            conteudo = cliente.gerar_com_imagem(
+                prompt=prompt,
+                imagem=image,
+                system_instruction=PERSONA_SOCIAL_MEDIA,
+                usar_cache=False,
+                temperatura=0.7,
+                max_tokens=4096,
+            )
 
-        if not conteudo:
+            if not conteudo:
+                return {
+                    "status": "erro",
+                    "mensagem": "Gemini retornou resposta vazia.",
+                    "legendas": [],
+                    "hashtags": [],
+                }
+
+            conteudo = sanitizar_html(conteudo)
             return {
-                "status": "erro",
-                "mensagem": "Gemini retornou resposta vazia.",
-                "legendas": [],
-                "hashtags": [],
+                "status": "ok",
+                "conteudo": conteudo,
+                "contexto_usado": bool(contexto),
+                "tom": tom,
             }
+    except (GeminiError, GeminiAPIKeyError) as e:
+        logger.warning(f"Gemini falhou, tentando Hermes Operator: {e}")
+    except Exception as e:
+        logger.error(f"Gemini erro inesperado, tentando Hermes Operator: {e}")
 
-        conteudo = sanitizar_html(conteudo)
+    # ── 2. Fallback: Hermes Operator (apenas texto) ──
+    hermes = get_cliente_hermes()
+    if hermes.disponivel:
+        try:
+            conteudo = hermes.gerar_texto(
+                prompt=prompt,
+                system_prompt=PERSONA_SOCIAL_MEDIA,
+                temperatura=0.7,
+                max_tokens=4096,
+            )
+            if conteudo:
+                conteudo = sanitizar_html(conteudo)
+                return {
+                    "status": "ok",
+                    "conteudo": conteudo,
+                    "contexto_usado": bool(contexto),
+                    "tom": tom,
+                }
+        except Exception as e:
+            logger.error(f"Hermes Operator fallback também falhou: {e}")
 
-        return {
-            "status": "ok",
-            "conteudo": conteudo,
-            "contexto_usado": bool(contexto),
-            "tom": tom,
-        }
-
-    except GeminiError as e:
-        return {
-            "status": "erro",
-            "mensagem": tratar_erro_gemini(e),
-            "legendas": [],
-            "hashtags": [],
-        }
+    # ── 3. Nenhum funcionou ──
+    return {
+        "status": "erro",
+        "mensagem": (
+            "Nenhum provedor de IA disponível para gerar legendas. "
+            "Verifique as chaves de API."
+        ),
+        "legendas": [],
+        "hashtags": [],
+    }
 
 
 def _construir_prompt(
@@ -128,7 +148,7 @@ def _construir_prompt(
 ) -> str:
     """Constrói o prompt de usuário para geração de legendas."""
     linhas = [
-        "Analise a imagem fornecida e gere 3 opções de legenda para o Instagram.",
+        "Gere 3 opções de legenda para o Instagram da franquia Ensina Mais Turma da Mônica.",
         "",
         "=== CONFIGURAÇÃO ===",
         f"TOM: {tom}",
@@ -148,12 +168,11 @@ def _construir_prompt(
     linhas += [
         "",
         "REGRAS:",
-        "1. Relacione a legenda com o que aparece na imagem.",
-        "2. Use linguagem adequada para pais de alunos (público-alvo).",
-        "3. Inclua calls-to-action relevantes (comente, compartilhe, marque).",
-        "4. Se o contexto mencionar serviços específicos, destaque-os.",
-        "5. Varie o formato entre as 3 opções (uma mais curta, uma mais detalhada, etc).",
-        "6. NÃO use tags HTML. Use apenas Markdown.",
+        "1. Use linguagem adequada para pais de alunos (público-alvo).",
+        "2. Inclua calls-to-action relevantes (comente, compartilhe, marque).",
+        "3. Se o contexto mencionar serviços específicos, destaque-os.",
+        "4. Varie o formato entre as 3 opções (uma mais curta, uma mais detalhada, etc).",
+        "5. NÃO use tags HTML. Use apenas Markdown.",
         "",
         "FORMATO DA RESPOSTA:",
         "---",
