@@ -19,7 +19,25 @@ __app_build__ = "2025-05-26"
 
 def _checar_api_key(nome: str, env_var: str) -> dict:
     """Verifica se uma chave de API está configurada no ambiente."""
+    # Tenta os.getenv direto
     chave = os.getenv(env_var)
+    
+    # Se não achou, tenta carregar do .env
+    if not chave:
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+            chave = os.getenv(env_var)
+        except Exception:
+            pass
+    
+    # Se ainda não achou, tenta Streamlit Secrets
+    if not chave:
+        try:
+            chave = st.secrets.get(env_var)
+        except Exception:
+            pass
+    
     if chave:
         mascara = chave[:6] + "…" + chave[-4:] if len(chave) > 12 else "***"
         return {"status": "✅", "label": f"{mascara}", "configurada": True}
