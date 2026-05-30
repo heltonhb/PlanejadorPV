@@ -22,11 +22,12 @@ def _checar_api_key(nome: str, env_var: str) -> dict:
     # Tenta os.getenv direto
     chave = os.getenv(env_var)
     
-    # Se não achou, tenta carregar do .env
+    # Se não achou, tenta carregar do .env (com caminho absoluto)
     if not chave:
         try:
             from dotenv import load_dotenv
-            load_dotenv()
+            env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+            load_dotenv(dotenv_path=env_path)
             chave = os.getenv(env_var)
         except Exception:
             pass
