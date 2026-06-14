@@ -2,6 +2,10 @@ import logging
 import os
 import streamlit as st
 
+# Desabilitar telemetria do OpenTelemetry antes de qualquer import do chromadb
+os.environ["OTEL_SDK_DISABLED"] = "true"
+os.environ["OTEL_PYTHON_DISABLED"] = "true"
+
 logger = logging.getLogger(__name__)
 
 st.set_page_config(
