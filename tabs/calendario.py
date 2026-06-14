@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import date
 from utils.calendario import gerar_calendario
 from utils.constants import MESES
+from utils.exportacao import exportar_conteudo_pdf, exportar_conteudo_xlsx
 from components.fontes import render_markdown_with_copy
 import logging
 
@@ -79,4 +80,31 @@ def render():
             key="cal_copy",
             label="Copiar Calendário",
         )
+
+        st.divider()
+        st.markdown(
+            '<h4 style="margin-top:0; margin-bottom:1rem;font-weight:700; color: var(--on-surface);">📥 Exportar Calendário</h4>',
+            unsafe_allow_html=True,
+        )
+        col_pdf, col_xlsx = st.columns(2)
+        with col_pdf:
+            pdf_data = exportar_conteudo_pdf(st.session_state.ultimo_calendario, titulo="Calendário Editorial")
+            st.download_button(
+                "📥 PDF",
+                data=pdf_data,
+                file_name="calendario_editorial.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                key="btn_exportar_calendario_pdf",
+            )
+        with col_xlsx:
+            xlsx_data = exportar_conteudo_xlsx(st.session_state.ultimo_calendario, titulo="Calendário Editorial")
+            st.download_button(
+                "📥 XLSX",
+                data=xlsx_data,
+                file_name="calendario_editorial.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                key="btn_exportar_calendario_xlsx",
+            )
     st.markdown('</div>', unsafe_allow_html=True)

@@ -71,18 +71,27 @@ if APP_PASSWORD:
 # Inicialização da coleção ChromaDB
 # No Streamlit Cloud, o disco é efêmero — o ChromaDB morre no reboot.
 # Por isso SEMPRE tentamos recarregar do Firestore.
-try:
-    collection = _get_docs_collection()
-    _total_inicial = collection.count()
-    _recarregou = 0
-    if _total_inicial == 0:
-        from utils.firebase_store import recarregar_chunks
-        _recarregou = recarregar_chunks()
-        if _recarregou > 0:
-            logger.info("Firestore → ChromaDB: %d chunks restaurados", _recarregou)
-except Exception as e:
-    logger.warning("Não foi possível recarregar do Firestore: %s", e)
-    _recarregou = 0
+_recarregou = 0
+_MAX_TENTATIVAS = 3
+_collection = None
+for _tentativa in range(_MAX_TENTATIVAS):
+    try:
+        _collection = _get_docs_collection()
+        _total_inicial = _collection.count()
+        if _total_inicial == 0:
+            from utils.firebase_store import recarregar_chunks
+            _recarregou = recarregar_chunks()
+            if _recarregou > 0:
+                logger.info("Firestore → ChromaDB: %d chunks restaurados", _recarregou)
+        break
+    except Exception as e:
+        logger.warning("Tentativa %d/%d — Erro ao conectar ao ChromaDB: %s", _tentativa + 1, _MAX_TENTATIVAS, e)
+        if _tentativa < _MAX_TENTATIVAS - 1:
+            import time
+            time.sleep(1)
+        else:
+            logger.error("Falha após %d tentativas. Algumas funcionalidades podem não estar disponíveis.", _MAX_TENTATIVAS)
+            _collection = None
 
 # Backfill automático: chunks legados sem documento_id recebem um
 try:

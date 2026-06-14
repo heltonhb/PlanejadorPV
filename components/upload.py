@@ -5,6 +5,7 @@ from utils.documentos import processar_documento, _get_collection as _get_docs_c
 from utils.ingestao import processar_url, processar_html, processar_instagram, processar_texto, processar_planilha
 from utils.resumos import gerar_resumo
 from utils.firebase_store import salvar_fonte_meta, remover_fonte_meta
+from utils.prompts import sugerir_conteudo_pdf, PERSONA_SUGESTOES_CONTEUDO
 
 
 def _render_upload_tab(container, aba, key_prefix=""):
@@ -40,6 +41,69 @@ def _render_upload_tab(container, aba, key_prefix=""):
                             "resumo": resumo,
                         }
                         salvar_fonte_meta(nome, st.session_state.documentos_meta[nome])
+                        
+                        # ── Botão de sugestão de conteúdo via IA ──
+                        container.divider()
+                        container.markdown("#### 🤖 Sugestões de Conteúdo via IA")
+                        container.caption("Use o conteúdo do PDF para gerar ideias de marketing digital.")
+                        
+                        tipo_sugestao = container.selectbox(
+                            "Tipo de sugestão:",
+                            ["geral", "instagram", "campanha", "calendario"],
+                            format_func=lambda x: {
+                                "geral": "📋 Geral (posts, carrosséis, Reels)",
+                                "instagram": "📱 Posts para Instagram",
+                                "campanha": "📢 Mini campanha (3 posts)",
+                                "calendario": "📅 Calendário de 1 semana",
+                            }[x],
+                            key=f"{key_prefix}sug_tipo",
+                        )
+                        
+                        if container.button(
+                            "✨ Gerar sugestões de conteúdo",
+                            key=f"{key_prefix}sug_btn",
+                            type="primary",
+                            use_container_width=True,
+                        ):
+                            try:
+                                with container.status("Gerando sugestões com IA..."):
+                                    from utils.ia_engine import buscar_contexto
+                                    from utils.gemini_client import get_cliente
+                                    from utils.config import MODELO_GEMINI
+                                    
+                                    # Buscar contexto do documento no ChromaDB
+                                    doc_id = sanitizar_id(nome)
+                                    contexto, _ = buscar_contexto(
+                                        f"conteúdo do documento {nome}",
+                                        top_k=10,
+                                    )
+                                    
+                                    if not contexto:
+                                        # Fallback: usar resumo do documento
+                                        contexto = resumo if resumo else resultado.get("texto_completo", "")[:2000]
+                                    
+                                    # Gerar prompt e chamar IA
+                                    prompt = sugerir_conteudo_pdf(contexto, tipo_sugestao)
+                                    cliente_gemini = get_cliente(modelo=MODELO_GEMINI)
+                                    resposta = cliente_gemini.gerar_texto(
+                                        prompt=prompt,
+                                        system_instruction=PERSONA_SUGESTOES_CONTEUDO,
+                                        usar_cache=False,
+                                        temperatura=0.7,
+                                        max_tokens=4096,
+                                    )
+                                    
+                                    if resposta:
+                                        container.markdown("---")
+                                        container.markdown("**💡 Sugestões geradas:**")
+                                        container.markdown(resposta)
+                                        
+                                        # Botão para copiar
+                                        container.code(resposta, language=None)
+                                    else:
+                                        container.warning("Não foi possível gerar sugestões. Tente novamente.")
+                            except Exception as e:
+                                container.error(f"Erro ao gerar sugestões: {str(e)}")
                     else:
                         container.error(f"{resultado['mensagem']}")
                 except Exception as e:

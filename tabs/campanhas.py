@@ -2,6 +2,7 @@ import streamlit as st
 from utils.campanhas import gerar_campanha
 from utils.constants import OBJETIVOS, PUBLICOS, SERVICOS
 from utils.helpers import sanitizar_html
+from utils.exportacao import exportar_conteudo_pdf, exportar_conteudo_xlsx
 from components.cards import render_campaign_result_card
 from components.fontes import render_markdown_with_copy
 import logging
@@ -113,4 +114,31 @@ def render():
             key="camp_copy",
             label="Copiar Campanha",
         )
+
+        st.divider()
+        st.markdown(
+            '<h4 style="margin-top:0; margin-bottom:1rem;font-weight:700; color: var(--on-surface);">📥 Exportar Campanha</h4>',
+            unsafe_allow_html=True,
+        )
+        col_pdf, col_xlsx = st.columns(2)
+        with col_pdf:
+            pdf_data = exportar_conteudo_pdf(_conteudo, titulo="Campanha de Marketing")
+            st.download_button(
+                "📥 PDF",
+                data=pdf_data,
+                file_name="campanha_marketing.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                key="btn_exportar_campanha_pdf",
+            )
+        with col_xlsx:
+            xlsx_data = exportar_conteudo_xlsx(_conteudo, titulo="Campanha de Marketing")
+            st.download_button(
+                "📥 XLSX",
+                data=xlsx_data,
+                file_name="campanha_marketing.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                key="btn_exportar_campanha_xlsx",
+            )
     st.markdown('</div>', unsafe_allow_html=True)

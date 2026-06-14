@@ -1,7 +1,11 @@
 import streamlit as st
 from utils.documentos import _get_collection as _get_docs_collection, deletar_do_chromadb
 from utils.relatorios import resumo_conteudo
-from utils.exportacao import exportar_relatorio_csv
+from utils.exportacao import (
+    exportar_relatorio_csv,
+    exportar_relatorio_pdf,
+    exportar_relatorio_xlsx,
+)
 from utils.firebase_store import remover_fonte_meta
 import logging
 
@@ -217,14 +221,36 @@ def render():
                 '<h4 style="margin-top:0; margin-bottom:1rem;font-weight:700; color: var(--on-surface);">📥 Exportar relatório da base</h4>',
                 unsafe_allow_html=True,
             )
-            csv_data = exportar_relatorio_csv(relatorio)
-            st.download_button(
-                "📥 Exportar CSV",
-                data=csv_data,
-                file_name="relatorio_conteudo.csv",
-                mime="text/csv",
-                use_container_width=True,
-                key="btn_exportar_relatorio",
-            )
+            col_csv, col_pdf, col_xlsx = st.columns(3)
+            with col_csv:
+                csv_data = exportar_relatorio_csv(relatorio)
+                st.download_button(
+                    "📥 CSV",
+                    data=csv_data,
+                    file_name="relatorio_conteudo.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                    key="btn_exportar_relatorio_csv",
+                )
+            with col_pdf:
+                pdf_data = exportar_relatorio_pdf(relatorio)
+                st.download_button(
+                    "📥 PDF",
+                    data=pdf_data,
+                    file_name="relatorio_conteudo.pdf",
+                    mime="application/pdf",
+                    use_container_width=True,
+                    key="btn_exportar_relatorio_pdf",
+                )
+            with col_xlsx:
+                xlsx_data = exportar_relatorio_xlsx(relatorio)
+                st.download_button(
+                    "📥 XLSX",
+                    data=xlsx_data,
+                    file_name="relatorio_conteudo.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                    key="btn_exportar_relatorio_xlsx",
+                )
             st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
