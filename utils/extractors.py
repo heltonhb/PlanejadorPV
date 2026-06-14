@@ -13,8 +13,13 @@ import traceback
 from pathlib import Path
 from typing import Optional
 
-import fitz
 import pdfplumber
+
+try:
+    import fitz
+    _HAS_FITZ = True
+except ImportError:
+    _HAS_FITZ = False
 
 from utils.ocr import encontrar_modelo_ocr
 
@@ -57,6 +62,9 @@ def _extrair_pdfplumber(tmp_path: str) -> tuple[Optional[str], int]:
 
 def _extrair_pymupdf(tmp_path: str) -> tuple[Optional[str], int]:
     """Extrai texto de PDF usando PyMuPDF."""
+    if not _HAS_FITZ:
+        logger.info("pymupdf indisponível (não instalado)")
+        return None, 0
     try:
         doc = fitz.open(tmp_path)
         paginas = len(doc)
@@ -82,7 +90,7 @@ def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
         from tesserocr import PyTessBaseAPI
 
         modelo = encontrar_modelo_ocr()
-        if modelo:
+        if modelo and _HAS_FITZ:
             doc = fitz.open(tmp_path)
             paginas = len(doc)
             api = PyTessBaseAPI(lang="por", path=str(modelo.parent))
@@ -103,6 +111,9 @@ def _extrair_ocr(tmp_path: str) -> tuple[Optional[str], int]:
 
     # Fallback: pytesseract (subprocesso, funciona em qualquer thread)
     logger.info("usando pytesseract como fallback")
+    if not _HAS_FITZ:
+        logger.info("pymupdf indisponível para OCR")
+        return None, 0
     try:
         import pytesseract
 

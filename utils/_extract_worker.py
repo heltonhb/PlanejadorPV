@@ -12,8 +12,13 @@ import traceback
 # --- Copiar as funções de extração aqui (evita import circular) ---
 
 import pdfplumber
-import fitz
 import logging
+
+try:
+    import fitz
+    _HAS_FITZ = True
+except ImportError:
+    _HAS_FITZ = False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,6 +40,8 @@ def _extrair_pdfplumber(tmp_path: str) -> tuple[str, int]:
 
 
 def _extrair_pymupdf(tmp_path: str) -> tuple[str, int]:
+    if not _HAS_FITZ:
+        return "", 0
     try:
         doc = fitz.open(tmp_path)
         paginas = len(doc)
