@@ -325,7 +325,7 @@ def _criar_pdf_base(titulo: str) -> "FPDF":
         def header(self):
             self.set_font("Helvetica", "B", 10)
             self.set_text_color(0, 168, 89)
-            self.cell(0, 8, "PlanejadorPV — Marketing Inteligente", new_x="LMARGIN", new_y="NEXT", align="R")
+            self.cell(0, 8, "PlanejadorPV - Marketing Inteligente", new_x="LMARGIN", new_y="NEXT", align="R")
             self.set_draw_color(0, 168, 89)
             self.line(10, self.get_y(), 200, self.get_y())
             self.ln(4)
@@ -485,6 +485,69 @@ def exportar_markdown_docx(conteudo_md: str) -> bytes:
 
     buf = io.BytesIO()
     doc.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Generic content export helpers (consumed by calendario.py & campanhas.py)
+# ---------------------------------------------------------------------------
+
+def exportar_conteudo_pdf(conteudo_md: str, titulo: str = "Documento") -> bytes:
+    """Export any markdown content as PDF with a title header."""
+    pdf = _criar_pdf_base(titulo)
+    _adicionar_md_ao_pdf(pdf, conteudo_md)
+    return bytes(pdf.output())
+
+
+def exportar_conteudo_xlsx(conteudo_md: str, titulo: str = "Planilha") -> bytes:
+    """Export markdown content as a simple two-column XLSX."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = titulo[:31]  # Excel sheet name max 31 chars
+
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="00A859", end_color="00A859", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
+
+    headers = ["Seção", "Conteúdo"]
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = thin_border
+
+    current_section = ""
+    row_num = 2
+    for line in conteudo_md.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("### "):
+            current_section = line[4:].strip()
+        elif line.startswith("## "):
+            current_section = line[3:].strip()
+        elif line.startswith("# "):
+            current_section = line[2:].strip()
+        else:
+            ws.cell(row=row_num, column=1, value=current_section).border = thin_border
+            ws.cell(row=row_num, column=2, value=line.lstrip("-").strip()).border = thin_border
+            row_num += 1
+
+    ws.column_dimensions["A"].width = 30
+    ws.column_dimensions["B"].width = 80
+
+    buf = io.BytesIO()
+    wb.save(buf)
     buf.seek(0)
     return buf.getvalue()
 
