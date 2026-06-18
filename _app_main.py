@@ -55,10 +55,13 @@ if True:  # Bloquear opentelemetry sempre para evitar quebras por conflitos de p
         """Módulo-fantasma que ignora qualquer atributo/import."""
 
         def __getattr__(self, name):
+            if name.startswith("__"):
+                raise AttributeError(name)
             return _FakeModule(f"{self.__name__}.{name}")
 
         def __call__(self, *a, **kw):
             return self
+
 
     for _name in _ot_names:
         if _name not in sys.modules:
