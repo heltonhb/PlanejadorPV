@@ -10,7 +10,7 @@ import streamlit as st
 # no Python 3.14. Injetamos módulos fantasma em sys.modules para evitar
 # que a cadeia de imports rompa.
 # ---------------------------------------------------------------------------
-if sys.version_info >= (3, 14):
+if True:  # Bloquear opentelemetry sempre para evitar quebras por conflitos de protobuf/ChromaDB
     _ot_names = [
         "opentelemetry",
         "opentelemetry.api",
