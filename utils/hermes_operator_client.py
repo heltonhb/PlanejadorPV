@@ -112,11 +112,6 @@ class HermesOperatorClient:
         """Verifica se a chave está configurada."""
         return bool(self._api_key)
 
-    @property
-    def disponivel(self) -> bool:
-        """Verifica se a chave está configurada."""
-        return bool(self._api_key)
-
     def gerar_texto(
         self,
         prompt: str,
