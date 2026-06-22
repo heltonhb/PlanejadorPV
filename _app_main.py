@@ -1,94 +1,8 @@
 import logging
-import os
-import sys
-import types
 import streamlit as st
 
-# ---------------------------------------------------------------------------
-# Bloquear opentelemetry no Python 3.14 antes de qualquer import do chromadb.
-# os opentelemetry-proto gera _pb2.py que depende de protobuf-upb, ausente
-# no Python 3.14. Injetamos módulos fantasma em sys.modules para evitar
-# que a cadeia de imports rompa.
-# ---------------------------------------------------------------------------
-if True:  # Bloquear opentelemetry sempre para evitar quebras por conflitos de protobuf/ChromaDB
-    _ot_names = [
-        "opentelemetry",
-        "opentelemetry.api",
-        "opentelemetry.api.logs",
-        "opentelemetry.api.metrics",
-        "opentelemetry.api.trace",
-        "opentelemetry.context",
-        "opentelemetry.context.context",
-        "opentelemetry.exporter",
-        "opentelemetry.exporter.otlp",
-        "opentelemetry.exporter.otlp.proto",
-        "opentelemetry.exporter.otlp.proto.grpc",
-        "opentelemetry.exporter.otlp.proto.grpc.trace_exporter",
-        "opentelemetry.metrics",
-        "opentelemetry.metrics._internal",
-        "opentelemetry.metrics._internal.export",
-        "opentelemetry.metrics.export",
-        "opentelemetry.proto",
-        "opentelemetry.proto.common",
-        "opentelemetry.proto.common.v1",
-        "opentelemetry.proto.common.v1.common_pb2",
-        "opentelemetry.proto.resource",
-        "opentelemetry.proto.resource.v1",
-        "opentelemetry.proto.resource.v1.resource_pb2",
-        "opentelemetry.proto.trace",
-        "opentelemetry.proto.trace.v1",
-        "opentelemetry.proto.trace.v1.trace_pb2",
-        "opentelemetry.sdk",
-        "opentelemetry.sdk.environment_variables",
-        "opentelemetry.sdk.resources",
-        "opentelemetry.sdk.trace",
-        "opentelemetry.sdk.trace.export",
-        "opentelemetry.sdk.trace.export.in_memory",
-        "opentelemetry.trace",
-        "opentelemetry.trace.propagation",
-        "opentelemetry.trace.span",
-        "opentelemetry.util",
-        "opentelemetry.util._once",
-    ]
-
-    class _FakeModule(types.ModuleType):
-        """Módulo-fantasma que ignora qualquer atributo/import."""
-
-        def __getattr__(self, name):
-            if name.startswith("__"):
-                raise AttributeError(name)
-            return _FakeModule(f"{self.__name__}.{name}")
-
-        def __call__(self, *a, **kw):
-            return self
-
-
-    for _name in _ot_names:
-        if _name not in sys.modules:
-            sys.modules[_name] = _FakeModule(_name)
-
-    # classes frequentemente referenciadas
-    sys.modules["opentelemetry.trace"].get_tracer_provider = lambda: None
-    sys.modules["opentelemetry.trace"].get_tracer = lambda *a, **kw: None
-    sys.modules["opentelemetry.trace"].set_tracer_provider = lambda *a, **kw: None
-    sys.modules["opentelemetry.trace"].NonRecordingSpan = type(
-        "NonRecordingSpan", (), {}
-    )
-    sys.modules["opentelemetry.trace"].Span = type("Span", (), {})
-    sys.modules["opentelemetry.trace"].Link = type("Link", (), {})
-    sys.modules["opentelemetry.trace"].SpanContext = type("SpanContext", (), {})
-    sys.modules["opentelemetry.trace"].SpanKind = type(
-        "SpanKind", (), {"INTERNAL": 0, "SERVER": 1, "CLIENT": 2, "PRODUCER": 3, "CONSUMER": 4}
-    )
-    sys.modules["opentelemetry.trace"].StatusCode = type(
-        "StatusCode", (), {"UNSET": 0, "OK": 1, "ERROR": 2}
-    )
-    sys.modules["opentelemetry.sdk.trace.export"].SpanExporter = type(
-        "SpanExporter", (), {}
-    )
-    sys.modules["opentelemetry.sdk.resources"].Resource = type("Resource", (), {})
-    sys.modules["opentelemetry.api"].set_tracer_provider = lambda *a, **kw: None
-    sys.modules["opentelemetry.api"].get_tracer_provider = lambda: None
+# Bloqueia opentelemetry antes do ChromaDB carregar (módulos fantasma)
+import utils.otel_fix  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +17,7 @@ from dotenv import load_dotenv
 from utils.documentos import _get_collection as _get_docs_collection
 from utils.restore import reconstruir_fontes
 from components import inject_css_and_theme, render_header, sidebar_upload
+from utils.auth import require_auth
 from tabs import (
     render_dashboard,
     render_chat,
@@ -115,46 +30,7 @@ from tabs import (
 load_dotenv()
 
 # ── Autenticação básica (opcional) ──
-# Configure APP_PASSWORD no .env ou st.secrets["app_password"] para ativar
-if not st.session_state.get("_auth_checked"):
-    _env_pwd = os.getenv("APP_PASSWORD") or ""
-    _sec_pwd = ""
-    try:
-        _sec_pwd = st.secrets.get("app_password", "")
-    except Exception:
-        pass
-    APP_PASSWORD = _env_pwd or _sec_pwd
-    st.session_state._app_password = APP_PASSWORD
-    st.session_state._auth_checked = True
-
-APP_PASSWORD = st.session_state.get("_app_password", "")
-
-if APP_PASSWORD:
-    if not st.session_state.get("authenticated", False):
-        st.markdown(
-            f"""
-            <div style="display:flex;justify-content:center;align-items:center;min-height:80vh;">
-            <div class="app-card" style="max-width:400px;width:100%;padding:2.5rem;text-align:center;">
-            <div style="font-size:3rem;margin-bottom:1rem;">🔒</div>
-            <h2 style="color:var(--primary);margin:0 0 0.5rem;">Acesso Restrito</h2>
-            <p style="color:var(--on-surface-variant);font-size:0.9rem;margin-bottom:1.5rem;">
-            Digite a senha para acessar o PlanejadorPV.</p>
-            </div></div>
-            """,
-            unsafe_allow_html=True,
-        )
-        with st.container():
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                pwd = st.text_input("Senha", type="password", label_visibility="collapsed",
-                                    placeholder="Digite a senha...")
-                if st.button("Entrar", type="primary", use_container_width=True):
-                    if pwd == APP_PASSWORD:
-                        st.session_state.authenticated = True
-                        st.rerun()
-                    else:
-                        st.error("❌ Senha incorreta.")
-        st.stop()
+require_auth()
 
 # Inicialização da coleção ChromaDB
 # No Streamlit Cloud, o disco é efêmero — o ChromaDB morre no reboot.
