@@ -563,7 +563,12 @@
 
     /* ── Mobile Optimization ── */
     @media (max-width: 640px) {
-        .stMainBlockContainer { padding: 1rem !important; }
+        body { overflow-x: hidden; }
+
+        .stMainBlockContainer {
+            padding: 1rem !important;
+            padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+        }
         .app-header { padding: 1rem 1.25rem !important; }
         .app-title { font-size: 1.1rem !important; }
         .app-subtitle { font-size: 0.75rem !important; }
@@ -607,15 +612,107 @@
             font-size: 0.8rem;
             padding: 0.4rem 0.85rem;
         }
-        
-        .stTabs [role="tablist"] {
+
+        /* ════════════════════════════════════════════
+           FIX P0 — Bottom Tab Navigation (Phase 7)
+           ════════════════════════════════════════════ */
+
+        /* Container stays in normal flow — only tablist is fixed */
+        div[data-testid="stTabs"] {
+            position: relative;
+        }
+        /* Tab bar: fixed at bottom */
+        div[data-testid="stTabs"] div[role="tablist"] {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: var(--surface, #161B22);
+            border-top: 1px solid var(--outline-variant, #21262D);
+            padding: 0.25rem 0;
+            padding-bottom: calc(0.25rem + env(safe-area-inset-bottom, 0px));
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 0;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
             flex-wrap: nowrap !important;
             overflow-x: auto !important;
-            padding: 0.25rem !important;
         }
-        
-        .stTabs [role="tab"] {
-            padding: 0.5rem 1rem !important;
-            font-size: 0.8rem !important;
+        /* Content panels stay in normal flow, NOT fixed */
+        div[data-testid="stTabs"] > div:not([role="tablist"]) {
+            position: relative !important;
+            pointer-events: auto !important;
+        }
+        /* Each tab button */
+        div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] {
+            flex: 1;
+            min-width: 0;
+            margin: 0 2px;
+            padding: 0.5rem 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--on-surface-variant, #A0ABB3);
+            border-radius: var(--radius-sm, 8px);
+            background: transparent;
+            border: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            cursor: pointer;
+            position: relative;
+            line-height: 1.3;
+        }
+        /* Active tab */
+        div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"] {
+            color: var(--primary, #00A859);
+            background: rgba(0, 168, 89, 0.08);
+        }
+        /* Active tab underline indicator */
+        div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"]::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            border-radius: 1.5px;
+            background: var(--primary, #00A859);
+        }
+        /* Hover state */
+        div[data-testid="stTabs"] div[role="tablist"] button[role="tab"]:hover {
+            color: var(--primary, #00A859);
+            background: rgba(0, 168, 89, 0.08);
+        }
+        /* Focus-visible ring (keyboard nav) */
+        div[data-testid="stTabs"] div[role="tablist"] button[role="tab"]:focus-visible {
+            outline: 2px solid var(--primary, #00A859);
+            outline-offset: -2px;
+            border-radius: var(--radius-sm, 8px);
+        }
+        /* Active press feedback */
+        div[data-testid="stTabs"] div[role="tablist"] button[role="tab"]:active {
+            transform: scale(0.95);
+            background: rgba(0, 168, 89, 0.15);
+        }
+
+        /* Footer hidden on mobile (replaced by bottom tab bar) */
+        .app-footer { display: none; }
+    }
+
+    /* ── PWA Standalone safe-area overrides ── */
+    @media (display-mode: standalone) {
+        @media (max-width: 640px) {
+            .stMainBlockContainer {
+                padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+            div[data-testid="stTabs"] div[role="tablist"] {
+                padding-bottom: calc(0.25rem + env(safe-area-inset-bottom, 0px));
+            }
+        }
+        .stApp {
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
     }
