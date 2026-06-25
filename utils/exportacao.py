@@ -1,6 +1,7 @@
 import csv
 import io
 import re
+import unicodedata
 from datetime import datetime
 
 
@@ -353,6 +354,26 @@ def _criar_pdf_base(titulo: str) -> "FPDF":
     return pdf
 
 
+def _sanitizar_latin1(texto: str) -> str:
+    """Substitui caracteres Unicode fora do Latin-1 por equivalentes ASCII seguros para fpdf2 Helvetica."""
+    mapa = {
+        '\u2014': '-- ',   # — (em dash)
+        '\u2013': '-',     # – (en dash)
+        '\u2018': "'",     # ' (curly single open)
+        '\u2019': "'",     # ' (curly single close)
+        '\u201c': '"',     # " (curly double open)
+        '\u201d': '"',     # " (curly double close)
+        '\u2026': '...',   # … (ellipsis)
+        '\u2022': '-',     # • (bullet)
+        '\u00a0': ' ',     # non-breaking space
+        '\u2030': '%',     # ‰ (per mille) — opcional, raro
+    }
+    for char, repl in mapa.items():
+        texto = texto.replace(char, repl)
+    # Remove quaisquer outros chars que não estejam no Latin-1
+    return texto.encode('latin-1', errors='replace').decode('latin-1')
+
+
 def _adicionar_md_ao_pdf(pdf: "FPDF", conteudo_md: str):
     for line in conteudo_md.split("\n"):
         line = line.strip()
@@ -363,19 +384,19 @@ def _adicionar_md_ao_pdf(pdf: "FPDF", conteudo_md: str):
             pdf.set_font("Helvetica", "B", 16)
             pdf.set_text_color(0, 0, 0)
             pdf.ln(4)
-            pdf.multi_cell(0, 8, line[2:].strip())
+            pdf.multi_cell(0, 8, _sanitizar_latin1(line[2:].strip()))
             pdf.ln(2)
         elif line.startswith("## "):
             pdf.set_font("Helvetica", "B", 13)
             pdf.set_text_color(0, 100, 50)
             pdf.ln(3)
-            pdf.multi_cell(0, 7, line[3:].strip())
+            pdf.multi_cell(0, 7, _sanitizar_latin1(line[3:].strip()))
             pdf.ln(1)
         elif line.startswith("### "):
             pdf.set_font("Helvetica", "B", 11)
             pdf.set_text_color(0, 80, 40)
             pdf.ln(2)
-            pdf.multi_cell(0, 6, line[4:].strip())
+            pdf.multi_cell(0, 6, _sanitizar_latin1(line[4:].strip()))
             pdf.ln(1)
         else:
             clean = line.lstrip("-").strip()
@@ -383,7 +404,7 @@ def _adicionar_md_ao_pdf(pdf: "FPDF", conteudo_md: str):
             pdf.set_font("Helvetica", "", 10)
             pdf.set_text_color(40, 40, 40)
             prefix = "  •  " if line.startswith("-") else ""
-            pdf.multi_cell(0, 5, prefix + clean)
+            pdf.multi_cell(0, 5, _sanitizar_latin1(prefix + clean))
 
 
 def exportar_relatorio_pdf(relatorio: dict) -> bytes:
@@ -418,7 +439,7 @@ def exportar_relatorio_pdf(relatorio: dict) -> bytes:
         if item.get("resumo"):
             pdf.set_font("Helvetica", "I", 9)
             pdf.set_text_color(60, 60, 60)
-            pdf.multi_cell(0, 5, f"Resumo: {item['resumo']}")
+            pdf.multi_cell(0, 5, _sanitizar_latin1(f"Resumo: {item['resumo']}"))
         pdf.ln(3)
 
     return bytes(pdf.output())
