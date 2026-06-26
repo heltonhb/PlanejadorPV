@@ -354,17 +354,47 @@ def _criar_pdf_base(titulo: str) -> "FPDF":
     return pdf
 
 
-def _quebrar_palavras_longas(texto: str, limite: int = 45) -> str:
-    """Insere zero-width spaces (\u200b) em palavras sem espaços que excedem `limite`
-    caracteres, para que o fpdf2 consiga quebrá-las em múltiplas linhas."""
+def _largura_media_fonte(pdf: "FPDF", chars_teste: int = 50) -> float:
+    """Estima a largura média de um caractere no pdf com a fonte corrente."""
+    try:
+        largura_teste = pdf.get_string_width("x" * chars_teste)
+        return largura_teste / chars_teste
+    except Exception:
+        return 4.5  # fallback ~ Helvetica 10pt
+
+
+def _multi_cell_seguro(pdf: "FPDF", w: float, h: float, texto: str):
+    """Chama pdf.multi_cell com fallback manual se o fpdf2 não conseguir quebrar a linha."""
+    try:
+        pdf.multi_cell(w, h, texto)
+    except Exception:
+        # Fallback: força quebra manual a cada ~50 caracteres
+        # Usa \n para break explícito (funciona em TODAS versões do fpdf2)
+        largura_chars = 50  # caracteres por linha segura
+        linhas = []
+        for paragrafo in texto.split("\n"):
+            while len(paragrafo) > largura_chars:
+                # Quebra no espaço mais próximo ou no limite
+                quebra = paragrafo.rfind(" ", 0, largura_chars + 1)
+                if quebra == -1 or quebra == 0:
+                    quebra = largura_chars
+                linhas.append(paragrafo[:quebra])
+                paragrafo = paragrafo[quebra:].lstrip()
+            if paragrafo:
+                linhas.append(paragrafo)
+        # Tenta de novo com as quebras manuais
+        pdf.multi_cell(w, h, "\n".join(linhas))
+
+
+def _que_brar_palavras_longas(texto: str, limite: int = 80) -> str:
+    """Quebra palavras sem espaços que excedem `limite` caracteres
+    inserindo \n (força quebra de linha no fpdf2)."""
     partes = []
     for palavra in texto.split(" "):
         if len(palavra) > limite:
-            # Insere \u200b a cada `limite` caracteres
-            quebrada = "\u200b".join(
+            partes.append("\n".join(
                 palavra[i:i+limite] for i in range(0, len(palavra), limite)
-            )
-            partes.append(quebrada)
+            ))
         else:
             partes.append(palavra)
     return " ".join(partes)
@@ -389,40 +419,43 @@ def _sanitizar_latin1(texto: str) -> str:
     # Remove quaisquer outros chars que não estejam no Latin-1
     texto = texto.encode('latin-1', errors='replace').decode('latin-1')
     # Quebra palavras muito longas para evitar erro do fpdf2
-    return _quebrar_palavras_longas(texto)
+    return _que_brar_palavras_longas(texto)
 
 
 def _adicionar_md_ao_pdf(pdf: "FPDF", conteudo_md: str):
+    # Garante x no início para evitar erro de espaço horizontal
+    pdf.set_x(pdf.l_margin)
     for line in conteudo_md.split("\n"):
         line = line.strip()
         if not line:
             pdf.ln(3)
             continue
+        pdf.set_x(pdf.l_margin)  # re-bate x antes de cada linha
         if line.startswith("# "):
             pdf.set_font("Helvetica", "B", 16)
             pdf.set_text_color(0, 0, 0)
             pdf.ln(4)
-            pdf.multi_cell(0, 8, _sanitizar_latin1(line[2:].strip()))
+            _multi_cell_seguro(pdf, 0, 8, _sanitizar_latin1(line[2:].strip()))
             pdf.ln(2)
         elif line.startswith("## "):
             pdf.set_font("Helvetica", "B", 13)
             pdf.set_text_color(0, 100, 50)
             pdf.ln(3)
-            pdf.multi_cell(0, 7, _sanitizar_latin1(line[3:].strip()))
+            _multi_cell_seguro(pdf, 0, 7, _sanitizar_latin1(line[3:].strip()))
             pdf.ln(1)
         elif line.startswith("### "):
             pdf.set_font("Helvetica", "B", 11)
             pdf.set_text_color(0, 80, 40)
             pdf.ln(2)
-            pdf.multi_cell(0, 6, _sanitizar_latin1(line[4:].strip()))
+            _multi_cell_seguro(pdf, 0, 6, _sanitizar_latin1(line[4:].strip()))
             pdf.ln(1)
         else:
             clean = line.lstrip("-").strip()
             clean = re.sub(r"\*\*(.*?)\*\*", r"\1", clean)
             pdf.set_font("Helvetica", "", 10)
             pdf.set_text_color(40, 40, 40)
-            prefix = "  •  " if line.startswith("-") else ""
-            pdf.multi_cell(0, 5, _sanitizar_latin1(prefix + clean))
+            prefix = "  \u2022  " if line.startswith("-") else ""
+            _multi_cell_seguro(pdf, 0, 5, _sanitizar_latin1(prefix + clean))
 
 
 def exportar_relatorio_pdf(relatorio: dict) -> bytes:
