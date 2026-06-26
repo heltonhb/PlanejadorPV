@@ -354,6 +354,22 @@ def _criar_pdf_base(titulo: str) -> "FPDF":
     return pdf
 
 
+def _quebrar_palavras_longas(texto: str, limite: int = 45) -> str:
+    """Insere zero-width spaces (\u200b) em palavras sem espaços que excedem `limite`
+    caracteres, para que o fpdf2 consiga quebrá-las em múltiplas linhas."""
+    partes = []
+    for palavra in texto.split(" "):
+        if len(palavra) > limite:
+            # Insere \u200b a cada `limite` caracteres
+            quebrada = "\u200b".join(
+                palavra[i:i+limite] for i in range(0, len(palavra), limite)
+            )
+            partes.append(quebrada)
+        else:
+            partes.append(palavra)
+    return " ".join(partes)
+
+
 def _sanitizar_latin1(texto: str) -> str:
     """Substitui caracteres Unicode fora do Latin-1 por equivalentes ASCII seguros para fpdf2 Helvetica."""
     mapa = {
@@ -371,7 +387,9 @@ def _sanitizar_latin1(texto: str) -> str:
     for char, repl in mapa.items():
         texto = texto.replace(char, repl)
     # Remove quaisquer outros chars que não estejam no Latin-1
-    return texto.encode('latin-1', errors='replace').decode('latin-1')
+    texto = texto.encode('latin-1', errors='replace').decode('latin-1')
+    # Quebra palavras muito longas para evitar erro do fpdf2
+    return _quebrar_palavras_longas(texto)
 
 
 def _adicionar_md_ao_pdf(pdf: "FPDF", conteudo_md: str):
